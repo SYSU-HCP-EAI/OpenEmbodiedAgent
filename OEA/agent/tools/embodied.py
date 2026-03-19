@@ -35,6 +35,42 @@ class EmbodiedActionTool(Tool):
         self.provider = provider
         self.model = model
 
+    @property
+    def name(self) -> str:
+        return "execute_robot_action"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Execute a physical action on the robot. "
+            "The action will be validated by a Critic before execution."
+        )
+
+    @property
+    def parameters(self) -> dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "action_type": {
+                    "type": "string",
+                    "description": (
+                        "The type of action to execute "
+                        "(e.g., 'point_to', 'move_to', 'pick_up')."
+                    ),
+                },
+                "parameters": {
+                    "type": "object",
+                    "description": (
+                        "The parameters for the action "
+                        "(e.g., {'x': 10, 'y': 20, 'z': 0})."
+                    ),
+                },
+                "reasoning": {
+                    "type": "string",
+                    "description": "The reasoning behind choosing this action.",
+                },
+            },
+            "required": ["action_type", "parameters", "reasoning"],
     def to_schema(self) -> dict[str, Any]:
         return {
             "type": "function",

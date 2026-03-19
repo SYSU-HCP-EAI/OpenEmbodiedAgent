@@ -85,7 +85,7 @@ git clone https://github.com/your-repo/OpenEmbodiedAgent.git
 cd OpenEmbodiedAgent
 pip install -e .
 # Install simulation dependencies (e.g., watchdog)
-pip install watchdog
+pip install pybullet watchdog
 ```
 
 ### 2. Initialize Workspace

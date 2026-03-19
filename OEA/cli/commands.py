@@ -210,9 +210,6 @@ def onboard():
     console.print("\n[dim]Want Telegram/WhatsApp? See: https://github.com/HKUDS/OEA#-chat-apps[/dim]")
 
 
-
-
-
 def _make_provider(config: Config):
     """Create the appropriate LLM provider from config."""
     from OEA.providers.base import GenerationSettings

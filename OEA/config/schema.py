@@ -251,10 +251,26 @@ class AgentDefaults(Base):
         return self.memory_window is not None and "context_window_tokens" not in self.model_fields_set
 
 
+class ModeConfig(Base):
+    """Configuration for agent mode."""
+
+    model: str = "anthropic/claude-opus-4-5"
+    describe: str = "This is a description of the mode."
+
+
+class AgentModes(Base):
+    """Configuration for agent modes."""
+
+    enabled: bool = False
+    default_mode: str = "auto"
+    models: dict[str, ModeConfig] = Field(default_factory=dict)
+
+
 class AgentsConfig(Base):
     """Agent configuration."""
 
     defaults: AgentDefaults = Field(default_factory=AgentDefaults)
+    modes: AgentModes = Field(default_factory=AgentModes)
 
 
 class ProviderConfig(Base):

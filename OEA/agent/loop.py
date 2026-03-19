@@ -17,6 +17,8 @@ from OEA.agent.context import ContextBuilder
 from OEA.agent.memory import MemoryConsolidator
 from OEA.agent.subagent import SubagentManager
 from OEA.agent.tools.cron import CronTool
+from OEA.agent.tools.agent import AgentModeTool
+from OEA.agent.tools.image import ImageTool
 from OEA.agent.tools.embodied import EmbodiedActionTool
 from OEA.agent.tools.filesystem import EditFileTool, ListDirTool, ReadFileTool, WriteFileTool
 from OEA.agent.tools.message import MessageTool
@@ -27,6 +29,7 @@ from OEA.agent.tools.web import WebFetchTool, WebSearchTool
 from OEA.bus.events import InboundMessage, OutboundMessage
 from OEA.bus.queue import MessageBus
 from OEA.providers.base import LLMProvider
+from OEA.providers.providers_manager import ProvidersManager
 from OEA.session.manager import Session, SessionManager
 
 if TYPE_CHECKING:
@@ -110,6 +113,13 @@ class AgentLoop:
             get_tool_definitions=self.tools.get_definitions,
         )
         self._register_default_tools()
+        # Load env variables
+        try:
+            from dotenv import load_dotenv
+
+            load_dotenv(dotenv_path=self.workspace / ".env")
+        except Exception:
+            logger.warning("Failed to load .env file, ignore using env variables")
 
     def _register_default_tools(self) -> None:
         """Register the default set of tools."""
@@ -128,6 +138,15 @@ class AgentLoop:
         self.tools.register(SpawnTool(manager=self.subagents))
         if self.cron_service:
             self.tools.register(CronTool(self.cron_service))
+        if isinstance(self.provider, ProvidersManager):
+            self.tools.register(AgentModeTool(self.provider))
+            self.tools.register(ImageTool(self.provider, send_callback=self.bus.publish_outbound))
+            # Embodied action tool (Critic-gated hardware dispatch)
+            self.tools.register(EmbodiedActionTool(
+                workspace=self.workspace,
+                provider=self.provider,
+                model=self.model,
+            ))
         # Embodied action tool (Critic-gated hardware dispatch)
         self.tools.register(EmbodiedActionTool(
             workspace=self.workspace,
