@@ -177,4 +177,4 @@ OEA 通过 HAL (Hardware Abstraction Layer) 协议支持多种具身本体。
 
 ---
 
-**特别鸣谢**：本项目基于 [nanobot](https://github.com/your-repo/nanobot) 开发，感谢其提供的超轻量级 Agent 框架。欢迎大家前往 [nanobot](https://github.com/your-repo/nanobot) 点赞支持！
+**特别鸣谢**：本项目基于 [nanobot](https://github.com/HKUDS/nanobot) 开发，感谢其提供的超轻量级 Agent 框架。欢迎大家前往 [nanobot](https://github.com/HKUDS/nanobot) 点赞支持！
