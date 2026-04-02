@@ -173,5 +173,9 @@ PRs and Issues are welcome! Please refer to `docs/USER_DEVELOPMENT_GUIDE.md` for
 ## Affiliations
 
 <p align="center">
-   <img src="docs/imgs/HCP.jpg" alt="PhyAgentOS" width="160">
+   <img src="docs/imgs/SYSU.png" alt="SYSU" width="150">
+   <img src="docs/imgs/Pengcheng.png" alt="HCP" width="150">
+   <img src="docs/imgs/HCP.jpg" alt="HCP" width="150">
 </p>
+
+We welcome any individual or team to join as a contributor！
