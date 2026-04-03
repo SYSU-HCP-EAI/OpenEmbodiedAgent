@@ -12,6 +12,9 @@
   </p>
 </div>
 
+## Long Demo    
+[![Watch the video](https://img.youtube.com/vi/LtUWamZRyhM/maxresdefault.jpg)](https://youtu.be/LtUWamZRyhM?si=UjKNdqFnO1knfWbX)
+
 ## 📖 Introduction
 
 **Physical Agent Operation System (PhyAgentOS)** is a self-evolving embodied AI framework based on Agentic workflows. Moving away from the "black-box" model of traditional "large models directly controlling hardware," PhyAgentOS pioneers a **"Cognitive-Physical Decoupling"** architectural paradigm. By constructing a Language-Action Interface, it completely decouples action representation from embodiment morphology, enabling standardized mapping from high-reasoning cloud models to edge physical execution layers.
@@ -47,6 +50,12 @@ PhyAgentOS utilizes a **"State-as-a-File"** protocol matrix, natively supporting
   <img src="docs/imgs/ReKep.gif" alt="rekep" width="900">
   <br>
   PhyAgentOS achieves natural language-driven grasping tasks through ReKep (Dobot Nova 2).
+</div>
+
+<div align="center">
+  <img src="docs/imgs/Franka_QA_Pick&Up.gif" alt="rekep" width="900">
+  <br>
+  PhyAgentOS achieves realtime dialog and natural language-driven pick&up task through ReKep (Franka Research 3).
 </div>
 
 ## 🏗️ Architecture
