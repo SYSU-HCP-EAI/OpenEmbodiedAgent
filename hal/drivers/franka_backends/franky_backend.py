@@ -175,7 +175,7 @@ class FrankyBackend(FrankaBackend):
         roll: float,
         pitch: float,
         yaw: float,
-        speed: float = 0.5,
+        speed: float = 0.05,
         **kwargs: Any,
     ) -> str:
         """移动末端执行器到笛卡尔位置 / Move end-effector to Cartesian position."""
@@ -209,7 +209,7 @@ class FrankyBackend(FrankaBackend):
     def move_joints(
         self,
         joints: list[float] | dict[str, float],
-        speed: float = 0.5,
+        speed: float = 0.05,
         **kwargs: Any,
     ) -> str:
         """移动关节到目标位置 / Move joints to target positions."""

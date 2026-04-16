@@ -2,13 +2,15 @@
 
 > Franka Robot Compatibility Matrix
 
-本文档提供 Franka Research 3 (FR3) 与不同软件包的版本兼容性信息。
+本文档提供 Franka Research 3 (FR3) 与不同软件包的版本兼容性粗略信息。
+
+详细信息请参考官方文档与网站。
 
 ---
 
 ## 1. Robot System Version 与 libfranka/pylibfranka 兼容性
 
-根据 Franka 官方文档整理：
+根据 Franka 官方文档整理([参考资料](https://frankarobotics.github.io/docs/compatibility.html))：
 
 | Robot System Version | libfranka 版本要求 | Robot/Gripper Server | Ubuntu | ROS2 Humble | ROS2 Jazzy |
 |:-------------------:|:------------------:|:--------------------:|:------:|:-----------:|:----------:|
@@ -32,13 +34,7 @@
 
 ### 2.1 pylibfranka 后端
 
-| pylibfranka 版本 | libfranka 要求 | Robot System >= | 特点 |
-|:----------------:|:--------------:|:---------------:|:-----|
-| 0.21.x | libfranka >= 0.21 | 5.9.0 | 最新版本，功能最全 |
-| 0.20.x | libfranka >= 0.20 | 5.9.0 | 稳定版本 |
-| 0.19.x | libfranka >= 0.19 | 5.7.2 | 适用于 Robot System 9 |
-| 0.18.x | libfranka >= 0.18 | 5.9.0 | 经典版本 |
-| 0.15.x ~ 0.17.x | libfranka >= 0.15 | 5.7.2 | 旧版本兼容 |
+从 libfranka 0.20.2 以上才开始有 pylibfranka
 
 **安装命令**:
 ```bash
@@ -49,11 +45,6 @@ pip install pylibfranka           # 最新版本
 ### 2.2 franky-control 后端
 
 `franky-control` (github.com/TimSchneider42/franky) 是一个基于 libfranka 的高层运动库。
-
-| franky-control 版本 | libfranka 要求 | Robot System >= | 特点 |
-|:-------------------:|:--------------:|:---------------:|:-----|
-| 1.1.x (最新) | libfranka >= 0.15 | 5.7.2 | 最新版本，更宽松的兼容性 |
-| 1.0.x | libfranka >= 0.14 | 5.7.0 | 早期稳定版本 |
 
 **安装命令**:
 ```bash

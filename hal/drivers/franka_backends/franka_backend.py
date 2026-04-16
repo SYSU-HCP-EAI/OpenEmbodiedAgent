@@ -215,7 +215,7 @@ class FrankaBackend(ABC):
         roll: float,
         pitch: float,
         yaw: float,
-        speed: float = 0.5,
+        speed: float = 0.05,
         **kwargs: Any,
     ) -> str:
         """

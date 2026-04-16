@@ -321,6 +321,8 @@ WorkStation PC --> Control Box (Shop Floor: 172.16.0.x) --> Robot Arm (内部网
 
 推荐同时安装两个后端，系统自动选择：
 
+🚨在安装之前请检查安装的库的版本与机器人系统的版本是否兼容
+
 ```bash
 # pylibfranka (官方 Python 绑定)
 pip install pylibfranka
@@ -356,7 +358,7 @@ python hal/hal_watchdog.py \
 - [hal/profiles/franka_research3.md](../../hal/profiles/franka_research3.md)
 - [appendix/franka_compatibility.md](appendix/franka_compatibility.md) - 版本兼容性表格
 - [appendix/franka_capabilities.md](appendix/franka_capabilities.md) - 后端能力对比
-- [franka_version_guide.md](franka_version_guide.md) - 升降级教程
+- [appendix/franka_version_guide.md](appendix/franka_version_guide.md) - 有关版本兼容的说明
 
 ### 7.5 ReKep 真实机器人插件
 

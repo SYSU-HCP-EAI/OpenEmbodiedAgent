@@ -2,7 +2,9 @@
 
 > Franka Version Upgrade/Downgrade Guide
 
-本文档提供 Franka 相关软件包的版本管理和故障排查指南。
+本文档提供 Franka 相关软件包的版本管理和故障排查粗略指南。
+
+详细信息请参考官方文档以及网站。
 
 ---
 
@@ -122,7 +124,11 @@ cd franky
 pip install -e .
 ```
 
-### 3.2 更新 franky-control
+### 3.2 安装特定版本
+
+可参照 `hal/drivers/franka_backends/setup_utils/franky_install.sh` 的安装脚本模板来编写安装对应特定版本 libfranka 的 franky-control。 详细文档见 [franky 官方文档](https://github.com/TimSchneider42/franky?tab=readme-ov-file#installing-franky)。
+
+### 3.3 更新 franky-control
 
 ```bash
 # 更新到最新版本
@@ -134,7 +140,7 @@ git pull
 pip install -e .
 ```
 
-### 3.3 卸载 franky-control
+### 3.4 卸载 franky-control
 
 ```bash
 pip uninstall franky-control -y

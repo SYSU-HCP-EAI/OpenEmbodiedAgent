@@ -329,7 +329,7 @@ class FrankaMultiBackendDriver(BaseDriver):
         roll = params.get("roll", 0.0)
         pitch = params.get("pitch", 0.0)
         yaw = params.get("yaw", 0.0)
-        speed = params.get("speed", 0.5)
+        speed = params.get("speed", 0.05)
 
         return self._negotiator.active_backend.move_to(
             x, y, z, roll, pitch, yaw, speed
@@ -345,7 +345,7 @@ class FrankaMultiBackendDriver(BaseDriver):
         else:
             joints = {f"q{i}": params.get(f"q{i}", 0.0) for i in range(1, 8)}
 
-        speed = params.get("speed", 0.5)
+        speed = params.get("speed", 0.05)
         return self._negotiator.active_backend.move_joints(joints, speed)
 
     def _execute_grasp(self, params: dict) -> str:

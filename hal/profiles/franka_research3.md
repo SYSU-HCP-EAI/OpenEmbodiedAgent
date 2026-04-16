@@ -68,6 +68,9 @@ NOT directly to the Robot Arm. The Control Box then communicates with the arm vi
 | Max Cartesian speed | 0.5 m/s (configurable) |
 | Max joint velocity | 2.175 rad/s per joint |
 | Collision behavior | Default: stop and release impedance |
+| Home position/Safe position (Cartesian space)| position: [0.307, 0.0, 0.487], orientation: [1.0, 0.0, 0.0, 0.0] (configurable)|
+| Home position/Safe position (joint space)| [0.0, -math.pi / 4, 0.0, -3*math.pi / 4, 0.0, math.pi / 2, math.pi / 4] (configurable)|
+
 
 ## Connection
 
@@ -85,6 +88,7 @@ NOT directly to the Robot Arm. The Control Box then communicates with the arm vi
 - **FCI activation**: Must be activated via Desk interface on the Control Box
 - **Joint limits**: Hard limits at ±2.8973 rad
 - **Network**: Control PC must be on same subnet as Control Box (e.g., 172.16.0.x)
+- **Physical limits**: see [official document](https://frankarobotics.github.io/docs/robot_specifications.html)
 
 ## Prerequisites
 
@@ -129,5 +133,5 @@ Use `force_backend` option to explicitly select a backend if needed.
 - Higher-level behaviors (task planning, visual servoing) should be composed by OEA workflow layers.
 - The driver supports joint position, Cartesian pose, and gripper control modes.
 - Force/torque control and advanced impedance modes require pylibfranka backend (not available in franky).
-- See [franka_compatibility.md](../../docs/user_manual/appendix/franka_compatibility.md) for version compatibility details.
-- See [franka_version_guide.md](../../docs/user_manual/franka_version_guide.md) for installation and upgrade guides.
+- See [official document](https://frankarobotics.github.io/docs/compatibility.html) and [franka_compatibility.md](../../docs/user_manual/appendix/franka_compatibility.md) for version compatibility details.
+- See [franka_version_guide.md](../../docs/user_manual/appendix/franka_version_guide.md) for installation and upgrade guides.
