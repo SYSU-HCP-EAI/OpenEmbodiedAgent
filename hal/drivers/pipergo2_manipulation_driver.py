@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from hal.base_driver import BaseDriver
+from hal.simulation.isaac_scene_bootstrap import apply_lighting_for_mode, focus_viewport_on_robot
 
 _PROFILES_DIR = Path(__file__).resolve().parent.parent / "profiles"
 
@@ -263,13 +264,19 @@ class PiperGo2ManipulationDriver(BaseDriver):
         steps: list[str] = []
         if rb.get("apply_room_lighting", True):
             try:
-                if self._apply_room_lighting():
-                    steps.append("lighting:grey_studio")
+                mode = str(rb.get("lighting", self._room_lighting)).strip()
+                steps.extend(apply_lighting_for_mode(self._api, mode))
             except Exception as exc:
                 steps.append(f"lighting_skipped:{exc}")
         if rb.get("focus_view_on_robot", True):
             try:
-                self._focus_view_xy(self._robot_start[:2], float(self._robot_start[2]))
+                focus_viewport_on_robot(
+                    (float(self._robot_start[0]), float(self._robot_start[1])),
+                    float(self._robot_start[2]),
+                    camera_eye_offset=self._camera_eye_offset,
+                    camera_target_z_offset=self._camera_target_z_offset,
+                    camera_target_min_z=self._camera_target_min_z,
+                )
                 steps.append("viewport_focus")
             except Exception as exc:
                 steps.append(f"viewport_focus_skipped:{exc}")
@@ -312,101 +319,6 @@ class PiperGo2ManipulationDriver(BaseDriver):
                 )
                 steps.append(f"micro_navigate:{micro_msg}")
         return "bootstrap[" + ",".join(steps) + "]"
-
-    def _focus_view_xy(self, robot_xy: tuple[float, ...], robot_z: float) -> None:
-        try:
-            from isaacsim.core.utils.viewports import set_camera_view
-        except ImportError:
-            try:
-                from omni.isaac.core.utils.viewports import set_camera_view
-            except ImportError:
-                return
-        eye = [
-            float(robot_xy[0]) + float(self._camera_eye_offset[0]),
-            float(robot_xy[1]) + float(self._camera_eye_offset[1]),
-            float(robot_z) + float(self._camera_eye_offset[2]),
-        ]
-        target = [
-            float(robot_xy[0]),
-            float(robot_xy[1]),
-            max(float(robot_z) + float(self._camera_target_z_offset), float(self._camera_target_min_z)),
-        ]
-        set_camera_view(
-            eye=eye,
-            target=target,
-            camera_prim_path="/OmniverseKit_Persp",
-        )
-
-    def _apply_room_lighting(self) -> bool:
-        """Best-effort switch to Grey Studio style environment lighting."""
-        lighting = self._room_lighting.replace("-", "_").replace(" ", "_")
-        if lighting not in {"grey_studio", "gray_studio"}:
-            return False
-        # Avoid omni.kit.commands here because some Isaac builds log hard errors
-        # when these commands are unregistered (even if wrapped in try/except).
-        try:
-            from omni.kit.app import get_app  # type: ignore
-            settings = get_app().get_settings()
-            for key, value in (
-                ("/rtx/environment/visible", True),
-                ("/rtx/environment/mode", "Studio"),
-                ("/rtx/environment/lightRig", "Grey Studio"),
-                ("/rtx/environment/lightRigName", "Grey Studio"),
-                ("/rtx/sceneDb/ambientLightIntensity", 0.35),
-            ):
-                try:
-                    settings.set(key, value)
-                except Exception:
-                    pass
-            try:
-                stage = self._api._env.runner._world.stage if self._api and self._env else None
-                if stage is not None:
-                    for path in ("/Environment/DomeLight", "/World/DomeLight"):
-                        prim = stage.GetPrimAtPath(path)
-                        if prim and prim.IsValid():
-                            attr = prim.GetAttribute("inputs:color")
-                            if attr:
-                                attr.Set((0.72, 0.74, 0.78))
-                            iattr = prim.GetAttribute("inputs:intensity")
-                            if iattr:
-                                iattr.Set(1800.0)
-                            break
-            except Exception:
-                pass
-            self._ensure_default_dome_light()
-            return True
-        except Exception:
-            return self._ensure_default_dome_light()
-
-    def _ensure_default_dome_light(self) -> bool:
-        if self._api is None or self._env is None:
-            return False
-        try:
-            from pxr import Sdf, UsdLux
-
-            stage = self._api._env.runner._world.stage
-            if stage is None:
-                return False
-
-            target_path = None
-            for path in ("/Environment/DomeLight", "/World/DomeLight", "/World/PAOS_DefaultDomeLight"):
-                prim = stage.GetPrimAtPath(path)
-                if prim and prim.IsValid():
-                    target_path = path
-                    break
-            if target_path is None:
-                target_path = "/World/PAOS_DefaultDomeLight"
-                UsdLux.DomeLight.Define(stage, Sdf.Path(target_path))
-            dome = UsdLux.DomeLight(stage.GetPrimAtPath(target_path))
-
-            dome.CreateIntensityAttr(1800.0)
-            dome.CreateExposureAttr(0.0)
-            dome.CreateColorAttr((0.72, 0.74, 0.78))
-            if not dome.GetTextureFileAttr().HasAuthoredValue():
-                dome.CreateTextureFileAttr("")
-            return True
-        except Exception:
-            return False
 
     def _collision_patch_merom_scene(self) -> None:
         from pxr import PhysxSchema, Usd, UsdPhysics

@@ -1,9 +1,9 @@
 {
-  "scene_asset_path": "/home/zyserver/work/my_project/InternUtopia/internutopia/demo/merom_scene_baked.usd",
+  "scene_asset_path": "examples/merom_scene_baked.usd",
   "robot_start": [
     0.58,
     7.50704,
-    0.55
+    0.5
   ],
   "arm_mass_scale": 0.25,
   "navigation_action_name": null,
@@ -242,7 +242,8 @@
     "apply_room_lighting": true,
     "pre_collision_passive_steps": 60,
     "post_collision_passive_steps": 90,
-    "scene_preview_steps": 240,
+    "scene_preview_use_hold": true,
+    "scene_preview_steps": 120,
     "stabilize_passive_first_steps": 80,
     "stabilize_steps": 160,
     "collision_patch": true,
@@ -272,7 +273,14 @@
     "primary_pick_color_keywords": [
       "red",
       "red"
-    ]
+    ],
+    "navigate_after_pick_threshold": 0.14,
+    "navigate_after_pick_settle_steps": 90,
+    "navigate_after_pick_slowdown_radius": 0.3,
+    "navigate_after_pick_fine_forward_speed": 0.2,
+    "navigate_after_pick_fine_rotation_speed": 0.8,
+    "navigate_after_pick_fine_stop_steps": 12,
+    "navigate_after_pick_arm_hold_mode": "rest_closed"
   },
   "pythonpath": [
     "/home/zyserver/work/my_project/InternUtopia"

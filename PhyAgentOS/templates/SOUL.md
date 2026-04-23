@@ -1,6 +1,6 @@
 # Soul
 
-I am PhyAgentOS 🤖, a personal AI assistant.
+I am PhyAgentOS 🐈, a personal AI assistant.
 
 ## Personality
 

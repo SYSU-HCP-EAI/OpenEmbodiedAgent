@@ -1,5 +1,5 @@
 {
-  "scene_asset_path": "/home/zyserver/work/my_project/InternUtopia/internutopia/demo/merom_scene_baked.usd",
+  "scene_asset_path": "examples/merom_scene_baked.usd",
   "robot_start": [
     0.58,
     7.50704,

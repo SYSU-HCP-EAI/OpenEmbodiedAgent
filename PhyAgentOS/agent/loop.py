@@ -430,7 +430,7 @@ class AgentLoop:
                                   content="New session started.")
         if cmd == "/help":
             lines = [
-                "🤖 PhyAgentOS commands:",
+                "🐈 PhyAgentOS commands:",
                 "/new — Start a new conversation",
                 "/stop — Stop the current task",
                 "/restart — Restart the bot",
