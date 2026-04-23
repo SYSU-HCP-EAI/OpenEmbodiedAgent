@@ -1,19 +1,5 @@
 {
-  "isaac_env": {
-    "display": ":99",
-    "env": {
-      "ISAAC_PATH": "/isaac-sim",
-      "CARB_APP_PATH": "/isaac-sim/kit",
-      "EXP_PATH": "/isaac-sim/apps",
-      "INTERNUTOPIA_ASSETS_PATH": "/data/datasets/GRScenes"
-    },
-    "setup_python_env": "/isaac-sim/setup_python_env.sh",
-    "extra_pythonpath": [
-      "/data/wangyuanlei/InternUtopia"
-    ]
-  },
-  "scene_asset_path": "/data/wangyuanlei/InternUtopia/internutopia/demo/merom_scene_baked.usd",
-  "robot_usd_path": "/data/wangyuanlei/InternUtopia/internutopia/demo/urdf/pipergo2/pipergo2.usd",
+  "scene_asset_path": "/home/zyserver/work/my_project/InternUtopia/internutopia/demo/merom_scene_baked.usd",
   "robot_start": [
     0.58,
     7.50704,
@@ -80,9 +66,9 @@
         0.41172
       ],
       "scale": [
-        0.04,
-        0.04,
-        0.04
+        0.05,
+        0.05,
+        0.05
       ],
       "color": [
         0.85,
@@ -91,7 +77,7 @@
       ]
     },
     {
-      "kind": "dynamic_cube",
+      "kind": "visual_cube",
       "name": "nearby_block_tall",
       "prim_path": "/World/nearby_block_tall",
       "position": [
@@ -100,9 +86,9 @@
         0.41172
       ],
       "scale": [
-        0.05,
-        0.05,
-        0.05
+        0.04,
+        0.04,
+        0.09
       ],
       "color": [
         0.2,
@@ -156,7 +142,7 @@
     "pause_steps": 90,
     "arm_settle_steps": 90,
     "arm_motion_steps": 150,
-    "navigation_offset": 0.41,
+    "navigation_offset": 0.42,
     "enable_arm_ik": true,
     "allow_arm_heuristic_fallback": false
   },
@@ -270,21 +256,8 @@
     "micro_navigate_threshold": 0.12,
     "focus_view_on_robot": true,
     "set_masses": {
-      "pick_cube": 0.02,
-      "nearby_block_tall": 0.02,
+      "pick_cube": 0.05,
       "place_pedestal": 100.0
-    },
-    "sticky_material": {
-      "path": "/World/PhysicsMaterials/StickyGrip",
-      "static_friction": 2.0,
-      "dynamic_friction": 2.0,
-      "restitution": 0.0,
-      "targets": [
-        "/World/pick_cube",
-        "/World/env_0/robots/pipergo2/piper_link7",
-        "/World/env_0/robots/pipergo2/piper_link8",
-        "/World/env_0/robots/pipergo2/piper_gripper_base"
-      ]
     }
   },
   "pick_place_defaults": {
@@ -302,54 +275,6 @@
     ]
   },
   "pythonpath": [
-    "/data/wangyuanlei/InternUtopia"
-  ],
-  "vla": {
-    "ckpt_path": "/data/wangyuanlei/vla",
-    "task_text": "pick up the red cube",
-    "robot_prim_path": "/World/env_0/robots/pipergo2",
-    "pick_target_prim_path": "/World/pick_cube",
-    "pick_nav_offset": 0.42,
-    "home_xy": [0.58, 7.50704],
-    "sim_hz": 240,
-    "control_hz": 10,
-    "n_action_steps": 2,
-    "max_ticks": 20,
-    "cube_lift_threshold": 0.07,
-    "close_gripper_ramp_ticks": 8,
-    "close_gripper_hold_sim_steps": 60,
-    "max_per_tick_delta_arm": 0.45,
-    "max_per_tick_delta_gripper": 0.06,
-    "vla_gripper_training_max": 0.07,
-    "piper_gripper_width_max": 0.07,
-    "arm_action_name": "arm_joint_controller",
-    "cam_resolution": [640, 400],
-    "cam_warmup_steps": 60,
-    "attach_on_start": true,
-    "dump_root": "/tmp/paos_pipergo2_test_logs/paos",
-    "dump_every": 1,
-    "cameras": {
-      "camera1": {
-        "parent": "/World",
-        "translation": [3.05, 7.676, 0.58],
-        "orientation": [0.9813, 0.0, 0.192, 0.0],
-        "clipping_range": [0.005, 100.0],
-        "focal_length": 1.8
-      },
-      "camera2": {
-        "parent": "/World/env_0/robots/pipergo2/piper_gripper_base",
-        "translation": [0.08, 0.0, 0.02],
-        "orientation": [0.7071, 0.0, -0.7071, 0.0],
-        "clipping_range": [0.005, 100.0],
-        "flip_horizontal": true
-      },
-      "camera3": {
-        "parent": "/World",
-        "translation": [3.23, 7.326, 0.9],
-        "orientation": [0.845, 0.0, 0.422, 0.329],
-        "clipping_range": [0.005, 100.0],
-        "focal_length": 1.8
-      }
-    }
-  }
+    "/home/zyserver/work/my_project/InternUtopia"
+  ]
 }

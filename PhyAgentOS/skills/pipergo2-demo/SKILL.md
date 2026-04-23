@@ -6,11 +6,12 @@ metadata: {"PhyAgentOS":{"always":true},"nanobot":{"emoji":"🧪"}}
 
 # PiperGo2 Demo Skill
 
-This skill is a strict demo router for three sequential intents:
+This skill is a strict demo router for these sequential intents:
 
 1. `open simulation`
 2. `go to desk`
-3. `pick up the red cube and return to the starting position`
+3. `pick up the red cube and return to the starting position` (rule-based pick)
+4. `deploy a VLA to pick up the red cube and return to the starting position` (SmolVLA closed-loop pick)
 
 ## Preconditions
 
@@ -52,6 +53,27 @@ When user input semantically means picking the red cube then driving back to the
   - `reasoning`: short reason
 
 Post-pick navigation to **robot_home** is driven by driver-config `pick_place_defaults.navigate_after_pick_xy` (not a second tool call).
+
+### D) VLA Pick Up Red Cube And Return To Start
+
+When user input semantically means using a **VLA / SmolVLA / learned policy** to pick the red cube and drive
+back to spawn (examples: `deploy a vla to pick up the red cube and return to the starting position`,
+`use the vla to pick the red cube and go home`, `run the vla pick`, `vla pick and return`, `让 vla 抓红方块再回来`,
+`用 vla 模型抓红色方块然后回到起点`):
+
+- call `execute_robot_action` **once** with:
+  - `action_type`: `run_vla_pick_and_return`
+  - `parameters`: `{}`
+  - `reasoning`: short reason
+
+Do **NOT** emit a separate `navigate_to_named` for the approach point or the home. The handler is
+**self-contained**: it scoots to the cube approach pose from wherever the robot currently is, runs the SmolVLA
+closed-loop pick, force-closes the gripper, then drives home while holding the arm pose. A prior "go to desk"
+is **not** required — the Critic must accept this action even when `robot_xy` is still at spawn / `robot_home`.
+
+Distinguish D (VLA) from C (rule-based):
+- If the phrasing mentions `vla`, `smolvla`, `policy`, `learned`, `deploy a model`, `神经网络抓` → route to D.
+- Otherwise (no VLA keyword) → route to C.
 
 ## Demo Safety Rules
 

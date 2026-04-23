@@ -23,6 +23,7 @@ DRIVER_REGISTRY: dict[str, str] = {
     "simulation":  "hal.drivers.simulation_driver.SimulationDriver",
     "go2_edu":     "hal.drivers.go2_driver.Go2Driver",
     "xlerobot_2wheels_remote": "hal.drivers.xlerobot_2wheels_remote_driver.XLerobot2WheelsRemoteDriver",
+    "pipergo2_manipulation": "hal.drivers.pipergo2_manipulation_driver.PiperGo2ManipulationDriver",
     # Future drivers — uncomment when implemented:
     # "desktop_pet": "hal.drivers.desktop_pet_driver.DesktopPetDriver",
     # "dobot_nova5": "hal.drivers.dobot_driver.DobotDriver",

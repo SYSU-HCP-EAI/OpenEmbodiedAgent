@@ -35,10 +35,23 @@ class PiperGo2ManipulationDriver(BaseDriver):
         self._scene_asset_path = str(kwargs.get("scene_asset_path", "")).strip()
         self._robot_start = tuple(kwargs.get("robot_start", (0.0, 0.0, 0.55)))
         self._arm_mass_scale = float(kwargs.get("arm_mass_scale", 1.0))
+        # Optional override for robot USD. Without this, InternUtopia's
+        # create_pipergo2_robot_cfg() falls back to a hard-coded author path
+        # (/home/zyserver/work/go2/urdf/pipergo2/pipergo2.usd) that doesn't
+        # exist in containerized deployments, leaving /World/env_0/robots/
+        # pipergo2 empty and crashing PhysX articulation init later with:
+        #     AttributeError: 'NoneType' object has no attribute
+        #     'is_homogeneous'
+        self._robot_usd_path = str(kwargs.get("robot_usd_path", "")).strip()
         self._objects_spec = kwargs.get("objects", [])
         self._api_kwargs = dict(kwargs.get("api_kwargs", {}))
-        if gui:
-            self._api_kwargs.setdefault("force_gui", True)
+        self._api_kwargs["force_gui"] = bool(gui)
+        self._api_kwargs.pop("headless", None)
+        # Optional isaac_env block. Watchdog usually pops this out before
+        # constructing the driver (because it must bootstrap BEFORE driver
+        # import), but we still accept it here as a fallback for callers that
+        # instantiate the driver directly (tests, notebooks, etc.).
+        self._isaac_env_cfg = kwargs.get("isaac_env") or None
 
         self._waypoints: dict[str, list[float]] = self._normalize_waypoints(kwargs.get("waypoints", {}))
         self._waypoint_aliases: dict[str, str] = self._normalize_aliases(kwargs.get("waypoint_aliases", {}))
@@ -69,6 +82,13 @@ class PiperGo2ManipulationDriver(BaseDriver):
         self._camera_target_z_offset = float(kwargs.get("camera_target_z_offset", -0.4))
         self._camera_target_min_z = float(kwargs.get("camera_target_min_z", 0.2))
         self._eef_live_marker_enabled = bool(kwargs.get("eef_live_marker_enabled", False))
+
+        # VLA closed-loop pick config (optional). Loaded lazily on first
+        # run_vla_pick_and_return so watchdog startup stays cheap when VLA
+        # is not requested. Contains ckpt_path / task_text / cameras /
+        # thresholds — see examples/pipergo2_manipulation_driver.json.
+        self._vla_cfg: dict[str, Any] = dict(kwargs.get("vla", {}) or {})
+        self._vla_session: dict[str, Any] | None = None
 
     @staticmethod
     def _normalize_pythonpath(raw: Any) -> list[str]:
@@ -132,6 +152,7 @@ class PiperGo2ManipulationDriver(BaseDriver):
             "navigate_to_named": self._navigate_to_named,
             "describe_visible_scene": self._describe_visible_scene,
             "run_pick_place": self._run_pick_place,
+            "run_vla_pick_and_return": self._run_vla_pick_and_return,
         }
         handler = handlers.get(action_type)
         if handler is None:
@@ -139,11 +160,35 @@ class PiperGo2ManipulationDriver(BaseDriver):
         try:
             return handler(params or {})
         except Exception as exc:  # pragma: no cover - runtime dependency bridge
+            import sys
+            import traceback
+            # Full traceback to stderr so the watchdog terminal shows the real
+            # failure site (ACTION.md only gets str(exc), which loses context
+            # for things like "NoneType has no attribute 'is_homogeneous'").
+            print(
+                f"[pipergo2] action {action_type!r} failed:",
+                file=sys.stderr,
+                flush=True,
+            )
+            traceback.print_exc()
             return f"Error: {type(exc).__name__}: {exc}"
 
     def get_scene(self) -> dict[str, dict]:
         scene = dict(self._last_scene)
-        robot_xy = [float(self._robot_start[0]), float(self._robot_start[1])]
+        # Prefer the live pose from the most recent observation; fall back
+        # to robot_start so the scene snapshot is still populated before
+        # the first env.step. Without this the Critic sees a stale robot_xy
+        # and incorrectly rejects actions that rely on "am I near X".
+        live_xy: tuple[float, float] | None = None
+        try:
+            robot_obs = self._extract_robot_obs(self._last_obs)
+            if robot_obs:
+                live_xy = self._xy_from_robot_position(robot_obs.get("position"))
+        except Exception:
+            live_xy = None
+        if live_xy is None:
+            live_xy = (float(self._robot_start[0]), float(self._robot_start[1]))
+        robot_xy = [float(live_xy[0]), float(live_xy[1])]
         navigable = sorted(set(self._waypoints.keys()) | set(self._waypoint_aliases.keys()))
         scene["manipulation_runtime"] = {
             "location": "sim",
@@ -201,6 +246,16 @@ class PiperGo2ManipulationDriver(BaseDriver):
         if self._api is not None:
             return "Manipulation API already started."
 
+        # Fallback bootstrap for callers that bypassed the watchdog (direct
+        # driver instantiation). Idempotent: a no-op if the watchdog already
+        # bootstrapped, or if gui is False and no isaac_env is configured.
+        if self._gui and self._isaac_env_cfg is not None:
+            try:
+                from hal.simulation.isaac_bootstrap import bootstrap_isaac_env
+                bootstrap_isaac_env(self._isaac_env_cfg, want_gui=True)
+            except Exception as exc:  # don't block the action path on bootstrap
+                print(f"[pipergo2] WARNING: isaac_env bootstrap skipped: {exc}")
+
         scene_asset_path = str(params.get("scene_asset_path", self._scene_asset_path)).strip()
         if not scene_asset_path:
             return "Error: missing scene_asset_path in driver config or action params."
@@ -209,6 +264,7 @@ class PiperGo2ManipulationDriver(BaseDriver):
 
         robot_start = params.get("robot_start", list(self._robot_start))
         arm_mass_scale = float(params.get("arm_mass_scale", self._arm_mass_scale))
+        robot_usd_path = str(params.get("robot_usd_path", self._robot_usd_path)).strip()
         objects_spec = params.get("objects", self._objects_spec)
         api_kwargs = dict(self._api_kwargs)
         api_kwargs.update(params.get("api_kwargs", {}))
@@ -217,6 +273,7 @@ class PiperGo2ManipulationDriver(BaseDriver):
             scene_asset_path=scene_asset_path,
             robot_start=robot_start,
             arm_mass_scale=arm_mass_scale,
+            robot_usd_path=robot_usd_path,
             objects_spec=objects_spec,
             api_kwargs=api_kwargs,
         )
@@ -230,12 +287,42 @@ class PiperGo2ManipulationDriver(BaseDriver):
 
         rb = dict(self._room_bootstrap)
         rb.update(params.get("room_bootstrap") or {})
+        boot_msg = ""
         if rb.get("enabled", True) and not params.get("skip_room_bootstrap"):
             boot_msg = self._room_bootstrap_sequence(rb)
-            self._rebuild_scene_narration()
-            return f"Manipulation API started. {boot_msg}"
         self._rebuild_scene_narration()
+
+        vla_msg = self._maybe_preheat_vla_session()
+        tail = " ".join(m for m in (boot_msg, vla_msg) if m)
+        if tail:
+            return f"Manipulation API started. {tail}"
         return "Manipulation API started."
+
+    def _maybe_preheat_vla_session(self) -> str:
+        """Attach VLA cameras + ArticulationView at start-up so the reference
+        script's time-ordering is preserved: cameras go up while the robot is
+        still parked at home with the arm in its default pose, and the
+        60-step warmup is a pure static hold.
+
+        SmolVLA itself is NOT loaded here — that happens lazily on the first
+        ``run_vla_pick_and_return`` dispatch, so the watchdog can start cheap
+        and the GPU stays free until the user explicitly asks for a deploy.
+
+        Config: set ``vla.attach_on_start`` to ``false`` (or leave ``vla``
+        empty) to skip the camera preheat too.
+        """
+        if not isinstance(self._vla_cfg, dict) or not self._vla_cfg:
+            return ""
+        if not self._vla_cfg.get("attach_on_start", True):
+            return ""
+        if not self._vla_cfg.get("cameras"):
+            return ""
+        hold_xy = (float(self._robot_start[0]), float(self._robot_start[1]))
+        err = self._ensure_vla_cameras(self._vla_cfg, hold_xy)
+        if err:
+            print(f"[pipergo2] WARNING: VLA camera preheat skipped: {err}", flush=True)
+            return f"vla_cam_preheat_skipped:{err}"
+        return "vla_cam_preheat:ok"
 
     def _disable_api_eef_live_marker(self) -> None:
         if self._api is None:
@@ -288,6 +375,13 @@ class PiperGo2ManipulationDriver(BaseDriver):
                     steps.append(f"mass:{name}")
                 except Exception:
                     pass
+        sticky = rb.get("sticky_material")
+        if isinstance(sticky, dict) and sticky.get("targets"):
+            try:
+                bound = self._apply_sticky_material(sticky)
+                steps.append(f"sticky:{bound}")
+            except Exception as exc:
+                steps.append(f"sticky_skipped:{exc}")
         n_prev = int(rb.get("scene_preview_steps", 0))
         for _ in range(max(0, n_prev)):
             with self._env_lock:
@@ -428,6 +522,53 @@ class PiperGo2ManipulationDriver(BaseDriver):
             except Exception:
                 pass
 
+    def _apply_sticky_material(self, cfg: dict[str, Any]) -> int:
+        # PhysX default μ=0.5 is too slippery for the Piper parallel-jaw
+        # gripper (kp=80) to actually clamp the 5cm cube against gravity.
+        # Bind a high-friction PhysicsMaterial to cube + finger meshes so
+        # the VLA grasp holds instead of sliding back 3-4mm per tick.
+        from pxr import Sdf, Usd, UsdPhysics, UsdShade
+
+        stage = self._api._env.runner._world.stage
+        path = str(cfg.get("path", "/World/PhysicsMaterials/StickyGrip"))
+        static_f = float(cfg.get("static_friction", 2.0))
+        dynamic_f = float(cfg.get("dynamic_friction", 2.0))
+        restitution = float(cfg.get("restitution", 0.0))
+        targets = cfg.get("targets") or []
+
+        scope_path = path.rsplit("/", 1)[0]
+        if scope_path and not stage.GetPrimAtPath(scope_path).IsValid():
+            stage.DefinePrim(scope_path, "Scope")
+        mat_prim = stage.GetPrimAtPath(path)
+        if not mat_prim or not mat_prim.IsValid():
+            UsdShade.Material.Define(stage, Sdf.Path(path))
+            mat_prim = stage.GetPrimAtPath(path)
+        physx = UsdPhysics.MaterialAPI.Apply(mat_prim)
+        physx.CreateStaticFrictionAttr().Set(static_f)
+        physx.CreateDynamicFrictionAttr().Set(dynamic_f)
+        physx.CreateRestitutionAttr().Set(restitution)
+        material = UsdShade.Material(mat_prim)
+
+        mesh_types = {"Mesh", "Cube", "Sphere", "Cylinder", "Capsule"}
+        total = 0
+        for t in targets:
+            root = stage.GetPrimAtPath(str(t))
+            if not root or not root.IsValid():
+                continue
+            for prim in Usd.PrimRange(root):
+                if prim.GetTypeName() not in mesh_types:
+                    continue
+                try:
+                    UsdShade.MaterialBindingAPI(prim).Bind(
+                        material,
+                        bindingStrength=UsdShade.Tokens.weakerThanDescendants,
+                        materialPurpose="physics",
+                    )
+                    total += 1
+                except Exception:
+                    pass
+        return total
+
     def _stabilize_robot(self, target_xy: tuple[float, float], settle_steps: int) -> None:
         action_name = self._resolve_nav_action_name()
         idle_action = {action_name: [(float(target_xy[0]), float(target_xy[1]), 0.0)]}
@@ -545,11 +686,17 @@ class PiperGo2ManipulationDriver(BaseDriver):
         max_steps: int,
         threshold: float,
         action_name_override: str | None = None,
+        arm_target: list[float] | None = None,
+        arm_action_name: str = "arm_joint_controller",
     ) -> str:
         if self._env is None:
             return "Error: API not started. Dispatch action_type='start' first."
         action_name = str(action_name_override or self._resolve_nav_action_name())
-        goal_action = {action_name: [(float(xy[0]), float(xy[1]), 0.0)]}
+        goal_action: dict[str, Any] = {action_name: [(float(xy[0]), float(xy[1]), 0.0)]}
+        if arm_target is not None:
+            # Forward a fixed arm pose alongside nav so the gripper keeps
+            # biting a grabbed object while the base drives home.
+            goal_action[arm_action_name] = [list(arm_target)]
         dist = 9999.0
         stable_finished = 0
         for _ in range(max_steps):
@@ -747,6 +894,7 @@ class PiperGo2ManipulationDriver(BaseDriver):
         arm_mass_scale: float,
         objects_spec: Any,
         api_kwargs: dict[str, Any],
+        robot_usd_path: str = "",
     ):
         pythonpath = api_kwargs.pop("pythonpath", None)
         if pythonpath:
@@ -769,6 +917,11 @@ class PiperGo2ManipulationDriver(BaseDriver):
         else:
             rs = tuple(rs)
         robot_cfg = create_pipergo2_robot_cfg(position=rs, arm_mass_scale=arm_mass_scale)
+        if robot_usd_path:
+            # Override the hard-coded default usd_path baked into
+            # InternUtopia's create_pipergo2_robot_cfg(). Without this the
+            # robot prim ends up empty and PhysX articulation init fails.
+            robot_cfg.usd_path = robot_usd_path
         objects = []
         if isinstance(objects_spec, list):
             for item in objects_spec:
@@ -797,6 +950,351 @@ class PiperGo2ManipulationDriver(BaseDriver):
             objects=objects,
             headless=headless,
             **api_kwargs,
+        )
+
+    # ────────────────────────────────────────────────────────────────────
+    # VLA closed-loop pick (ported from test_isaacsim_with_vla_pick.py)
+    # ────────────────────────────────────────────────────────────────────
+
+    def _resolve_approach_xy(
+        self, pick_prim_path: str, offset: float
+    ) -> tuple[float, float] | None:
+        """Approach XY = cube XY shifted back along +X by ``offset``.
+
+        Uses the cube position from driver-config ``objects`` first, then
+        falls back to ``pick_place.pick_target.position``.
+        """
+        for obj in (self._objects_spec or []):
+            if not isinstance(obj, dict):
+                continue
+            if obj.get("prim_path") == pick_prim_path:
+                pos = obj.get("position")
+                if pos and len(pos) >= 2:
+                    return (float(pos[0]) - float(offset), float(pos[1]))
+        pt = self._pick_target_raw or {}
+        pos = pt.get("position")
+        if pos and len(pos) >= 2:
+            return (float(pos[0]) - float(offset), float(pos[1]))
+        return None
+
+    def _ensure_vla_cameras(
+        self,
+        cfg: dict[str, Any],
+        hold_xy: tuple[float, float],
+    ) -> str | None:
+        """Attach the 3 training cameras + ArticulationView + run the 60-
+        step warmup. Cheap enough to call at ``enter_simulation`` so the
+        cameras go up while the robot is still at home with the arm in its
+        default pose — same time-ordering as ``test_isaacsim_with_vla_pick``.
+
+        Does NOT load SmolVLA (that happens lazily in
+        ``_ensure_vla_controller`` the first time ``run_vla_pick_and_return``
+        is dispatched). Idempotent: a no-op once ``cameras`` is populated.
+        """
+        if self._vla_session is not None and self._vla_session.get("cameras"):
+            return None
+        if self._api is None or self._env is None:
+            return "Error: API not started. Dispatch action_type='enter_simulation' first."
+
+        try:
+            from hal.simulation import vla_pick as _vla
+        except Exception as exc:
+            return f"Error: could not import hal.simulation.vla_pick: {exc}"
+        import numpy as _np
+
+        robot_prim_path = str(cfg.get("robot_prim_path", "/World/env_0/robots/pipergo2"))
+        mounts = dict(cfg.get("cameras") or {})
+        if not mounts:
+            return "Error: vla.cameras not configured (need camera1/2/3)"
+
+        cam_resolution = tuple(cfg.get("cam_resolution", [640, 400]))
+        warmup_steps = int(cfg.get("cam_warmup_steps", 60))
+        sim_hz = int(cfg.get("sim_hz", 240))
+        control_hz = int(cfg.get("control_hz", 10))
+
+        # ArticulationView (needed for per-tick joint reads).
+        robot_view, joint_indices = _vla.build_articulation_view(robot_prim_path)
+        if robot_view is None:
+            return "Error: could not initialize ArticulationView for VLA."
+
+        # USD stage (for cube Z lookup + camera parent validation).
+        stage = None
+        try:
+            stage = self._env.runner._world.stage  # type: ignore[attr-defined]
+        except Exception:
+            stage = None
+        if stage is None:
+            try:
+                import omni  # type: ignore
+                stage = omni.usd.get_context().get_stage()
+            except Exception:
+                return "Error: could not obtain USD stage for VLA camera setup."
+
+        action_name = self._resolve_nav_action_name()
+        warmup_hold_action = {
+            action_name: [(float(hold_xy[0]), float(hold_xy[1]), 0.0)]
+        }
+
+        cameras, flip_set = _vla.attach_cameras(
+            stage=stage,
+            env=self._env,
+            env_lock=self._env_lock,
+            hold_action=warmup_hold_action,
+            mounts=mounts,
+            resolution=cam_resolution,
+            warmup_steps=warmup_steps,
+        )
+        if not cameras:
+            return "Error: no VLA cameras could be attached (see [vla-pick] log)."
+
+        # Session-owned hold_action ref so run-time code can swap it to the
+        # approach XY without rebuilding the controller's read_images closure.
+        live_hold = {"action": dict(warmup_hold_action)}
+
+        # Stash numpy here so the closure built in _ensure_vla_controller
+        # doesn't need to re-import np later.
+        self._vla_session = {
+            "controller": None,
+            "robot_view": robot_view,
+            "joint_indices": joint_indices,
+            "cameras": cameras,
+            "flip_set": flip_set,
+            "stage": stage,
+            "sim_steps_per_action": max(1, sim_hz // max(1, control_hz)),
+            "arm_action_name": str(cfg.get("arm_action_name", "arm_joint_controller")),
+            "live_hold": live_hold,
+            "_np": _np,
+        }
+        return None
+
+    def _ensure_vla_controller(self, cfg: dict[str, Any]) -> str | None:
+        """Lazy-load SmolVLA. Call this only when a VLA action is actually
+        being dispatched so startup stays cheap and GPU stays free for other
+        drivers until the user asks for a deploy.
+
+        Requires that ``_ensure_vla_cameras`` has already populated session
+        with cameras + robot_view + live_hold.
+        """
+        session = self._vla_session
+        if session is None or not session.get("cameras"):
+            return (
+                "Error: VLA cameras not initialized; call _ensure_vla_cameras "
+                "(or enter_simulation with vla.attach_on_start=true) first."
+            )
+        if session.get("controller") is not None:
+            return None
+
+        try:
+            from hal.simulation import vla_pick as _vla
+        except Exception as exc:
+            return f"Error: could not import hal.simulation.vla_pick: {exc}"
+
+        ckpt_path = str(cfg.get("ckpt_path", "")).strip()
+        if not ckpt_path:
+            return "Error: vla.ckpt_path not configured"
+        if not Path(ckpt_path).exists():
+            return f"Error: vla ckpt path not found: {ckpt_path}"
+
+        task_text = str(cfg.get("task_text", "pick up the red cube"))
+        n_action_steps = int(cfg.get("n_action_steps", 2))
+        max_delta_arm = float(cfg.get("max_per_tick_delta_arm", 0.45))
+        max_delta_gripper = float(cfg.get("max_per_tick_delta_gripper", 0.06))
+        training_max = float(cfg.get("vla_gripper_training_max", 0.28))
+        piper_max = float(cfg.get("piper_gripper_width_max", 0.07))
+        gripper_scale = float(cfg.get("gripper_scale", piper_max / training_max))
+        gripper_bias = float(cfg.get("gripper_bias", 0.0))
+        state_gripper_scale = float(cfg.get("state_gripper_scale", training_max / piper_max))
+        joint_limits = cfg.get("joint_limits") or _vla.DEFAULT_PIPER_JOINT_LIMITS
+
+        robot_view = session["robot_view"]
+        joint_indices = session["joint_indices"]
+        cameras = session["cameras"]
+        flip_set = session["flip_set"]
+        live_hold = session["live_hold"]
+        _np = session["_np"]
+
+        def _read_state7():
+            return _vla.read_piper_state7(robot_view, joint_indices)
+
+        def _read_images():
+            out: dict[str, Any] = {}
+            for name, cam in cameras.items():
+                rgb = _vla.grab_rgb(
+                    cam, self._env, self._env_lock, live_hold["action"]
+                )
+                if rgb is None or not rgb.any():
+                    return None
+                if name in flip_set:
+                    rgb = _np.ascontiguousarray(_np.fliplr(rgb))
+                out[name] = rgb
+            return out
+
+        controller = _vla.VLAController(
+            ckpt_path=ckpt_path,
+            task_text=task_text,
+            gripper_scale=gripper_scale,
+            gripper_bias=gripper_bias,
+            state_gripper_scale=state_gripper_scale,
+            joint_limits=joint_limits,
+            max_delta_arm=max_delta_arm,
+            max_delta_gripper=max_delta_gripper,
+            read_state7=_read_state7,
+            read_images=_read_images,
+        )
+        controller.set_n_action_steps(n_action_steps)
+        session["controller"] = controller
+        return None
+
+    def _run_vla_pick_and_return(self, params: dict[str, Any]) -> str:
+        """Approach → closed-loop VLA pick → return-home (arm holding grip).
+
+        Preconditions: caller has already issued ``enter_simulation`` and
+        navigated to the desk (or equivalent staging point). The approach
+        offset from the cube is handled here so the base ends up in the
+        exact training-camera pose.
+        """
+        if self._api is None or self._env is None:
+            return "Error: API not started. Dispatch action_type='enter_simulation' first."
+
+        cfg = dict(self._vla_cfg)
+        for k, v in (params or {}).items():
+            if k == "action_type":
+                continue
+            cfg[k] = v
+
+        pick_target_prim_path = str(cfg.get("pick_target_prim_path", "/World/pick_cube"))
+        pick_nav_offset = float(cfg.get("pick_nav_offset", 0.41))
+        approach_xy = self._resolve_approach_xy(pick_target_prim_path, pick_nav_offset)
+        if approach_xy is None:
+            return (
+                f"Error: could not resolve pick_target position for "
+                f"prim_path={pick_target_prim_path!r}; "
+                f"add the cube to driver-config 'objects' or set pick_place.pick_target.position."
+            )
+
+        home_xy_cfg = cfg.get("home_xy")
+        if home_xy_cfg and len(home_xy_cfg) >= 2:
+            home_xy = (float(home_xy_cfg[0]), float(home_xy_cfg[1]))
+        else:
+            home_xy = (float(self._robot_start[0]), float(self._robot_start[1]))
+
+        # Cameras are normally preheated at enter_simulation (robot still at
+        # home, arm in default pose). If the user started the sim with
+        # vla.attach_on_start=false, fall back to attaching them here with
+        # the base at its CURRENT XY so the 60-step warmup hold is a static
+        # hold instead of pulling the base somewhere else mid-warmup.
+        live_xy: tuple[float, float] | None = None
+        try:
+            robot_obs = self._extract_robot_obs(self._last_obs)
+            if robot_obs:
+                live_xy = self._xy_from_robot_position(robot_obs.get("position"))
+        except Exception:
+            live_xy = None
+        warmup_xy = live_xy or (
+            float(self._robot_start[0]),
+            float(self._robot_start[1]),
+        )
+        err = self._ensure_vla_cameras(cfg, warmup_xy)
+        if err:
+            return err
+        # SmolVLA load is gated on the deploy command (this handler), not on
+        # simulation start — keeps watchdog boot cheap and the GPU free.
+        err = self._ensure_vla_controller(cfg)
+        if err:
+            return err
+        session = self._vla_session
+        assert session is not None
+
+        from hal.simulation import vla_pick as _vla
+
+        # Step A.2: approach the cube (same offset the rule-based path used).
+        print(
+            f"[pipergo2] vla approach_xy={approach_xy} "
+            f"(offset={pick_nav_offset}m from {pick_target_prim_path})",
+            flush=True,
+        )
+        approach_msg = self._navigate_xy(
+            [approach_xy[0], approach_xy[1]],
+            max_steps=int(cfg.get("approach_max_steps", self._navigation_max_steps)),
+            threshold=float(cfg.get("approach_threshold", self._navigation_threshold)),
+        )
+        if approach_msg.startswith("navigate failed") or approach_msg.startswith("Error"):
+            return f"Error: approach nav before VLA pick failed: {approach_msg}"
+
+        # Step B: closed-loop VLA pick.
+        max_ticks = int(cfg.get("max_ticks", 30))
+        lift_threshold = float(cfg.get("cube_lift_threshold", 0.07))
+        close_ramp = int(cfg.get("close_gripper_ramp_ticks", 8))
+        close_hold = int(cfg.get("close_gripper_hold_sim_steps", 60))
+        max_delta_gripper = float(cfg.get("max_per_tick_delta_gripper", 0.06))
+
+        action_name = self._resolve_nav_action_name()
+        arm_action_name = str(session["arm_action_name"])
+        hold_action_pick = {action_name: [(float(approach_xy[0]), float(approach_xy[1]), 0.0)]}
+        # Swap the session's live hold_action so grab_rgb() retries tick the
+        # sim with approach_xy (base already here) instead of whatever XY we
+        # used at camera attach time (e.g. robot home during preheat).
+        live_hold = session.get("live_hold")
+        if isinstance(live_hold, dict):
+            live_hold["action"] = dict(hold_action_pick)
+
+        def _read_arm8():
+            return _vla.read_piper_arm8(session["robot_view"], session["joint_indices"])
+
+        def _read_cube_z():
+            return _vla.read_cube_world_z(self._env, session["stage"], pick_target_prim_path)
+
+        dump_root = cfg.get("dump_root", "/tmp/paos_pipergo2_test_logs/paos")
+        dump_every = int(cfg.get("dump_every", 1))
+        dump_root_str: str | None = None
+        if dump_root:
+            import os as _os
+            import time as _time
+
+            run_tag = _time.strftime("%Y%m%d_%H%M%S")
+            dump_root_str = _os.path.join(str(dump_root), f"pick_{run_tag}")
+
+        print("[pipergo2] vla: starting closed-loop pick", flush=True)
+        result = _vla.execute_pick(
+            controller=session["controller"],
+            env=self._env,
+            env_lock=self._env_lock,
+            nav_action_name=action_name,
+            arm_action_name=arm_action_name,
+            hold_action=hold_action_pick,
+            read_arm8=_read_arm8,
+            read_cube_z=_read_cube_z,
+            hold_xy=approach_xy,
+            max_ticks=max_ticks,
+            lift_threshold=lift_threshold,
+            sim_steps_per_action=int(session["sim_steps_per_action"]),
+            close_gripper_ramp_ticks=close_ramp,
+            close_gripper_hold_sim_steps=close_hold,
+            max_per_tick_delta_gripper=max_delta_gripper,
+            dump_root=dump_root_str,
+            dump_every=dump_every,
+        )
+
+        # Step C: return home. Forward the closed-gripper 8-D pose so the
+        # fingers keep squeezing the cube during the base drive.
+        home_arm = result.get("final_arm_8d")
+        home_msg = self._navigate_xy(
+            [home_xy[0], home_xy[1]],
+            max_steps=int(cfg.get("home_max_steps", self._navigation_max_steps)),
+            threshold=float(cfg.get("home_threshold", self._navigation_threshold)),
+            arm_target=home_arm,
+            arm_action_name=arm_action_name,
+        )
+
+        init_z = result.get("initial_cube_z")
+        fin_z = result.get("final_cube_z")
+        dz_str = "n/a"
+        if init_z is not None and fin_z is not None:
+            dz_str = f"{float(fin_z) - float(init_z):+.3f}m"
+        prefix = "vla pick SUCCESS" if result.get("success") else "Error: vla pick FAILED"
+        return (
+            f"{prefix} ticks={result.get('ticks_used')} Δz={dz_str} "
+            f"terminate={result.get('terminate')}; home_nav={home_msg}"
         )
 
     @staticmethod

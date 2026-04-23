@@ -129,8 +129,31 @@ class EmbodiedActionTool(Tool):
         )
         critic_result = response.content.strip()
 
-        if critic_result == "VALID":
+        # Critic verdict parsing. Models are chatty and rarely emit exactly
+        # "VALID" / "INVALID: <reason>" — they often append justification (e.g.
+        # "VALID\n\nThe action is safe because ..."). Prior strict equality
+        # check forced every such reply into the rejection branch, and the
+        # rejection message then begins with the word "VALID", which confuses
+        # the Planner LLM on the next turn.
+        #
+        # Rules (in order):
+        #   1. explicit "INVALID:" anywhere -> reject (use text after it as reason)
+        #   2. first non-empty line starts with "VALID" (case-insensitive) -> accept
+        #   3. otherwise -> reject with the raw text as reason (conservative)
+        verdict = critic_result
+        upper = verdict.upper()
+        if "INVALID:" in upper:
+            idx = upper.index("INVALID:")
+            reason = verdict[idx + len("INVALID:"):].strip() or verdict
+            return self._reject_action(action_type, parameters, reasoning, reason, lessons_file)
+
+        first_line = next(
+            (line.strip() for line in verdict.splitlines() if line.strip()),
+            "",
+        )
+        if first_line.upper().startswith("VALID"):
             return self._accept_action(action_type, parameters, action_file)
+
         return self._reject_action(action_type, parameters, reasoning, critic_result, lessons_file)
 
     def _resolve_environment_file(self, robot_id: str | None) -> Path:

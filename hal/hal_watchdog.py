@@ -236,7 +236,16 @@ def main() -> None:
         help="Workspace directory (single mode only; fleet mode prefers --robot-id)",
     )
     parser.add_argument("--robot-id", default=None, help="Robot instance id in fleet mode")
-    parser.add_argument("--gui", action="store_true", help="Open 3-D viewer")
+    parser.add_argument("--gui", action="store_true", help="Open 3-D viewer (local X display)")
+    parser.add_argument(
+        "--vnc",
+        action="store_true",
+        help=(
+            "Open 3-D viewer over Xvfb/VNC. Auto-bootstraps Isaac Sim env "
+            "(DISPLAY, CARB/EXP paths, setup_python_env.sh, PYTHONPATH) from "
+            "the 'isaac_env' block of --driver-config. Mutually exclusive with --gui."
+        ),
+    )
     parser.add_argument(
         "--interval", type=float, default=1.0, help="Poll interval (seconds)",
     )
@@ -247,6 +256,10 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    if args.gui and args.vnc:
+        print("Error: --gui and --vnc are mutually exclusive", file=sys.stderr)
+        sys.exit(2)
+
     workspace = Path(args.workspace).expanduser().resolve() if args.workspace else None
     driver_config_path = Path(args.driver_config).expanduser().resolve() if args.driver_config else None
     try:
@@ -254,6 +267,17 @@ def main() -> None:
     except (FileNotFoundError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
+
+    # Pull the isaac_env block out so it is never forwarded as a driver kwarg.
+    isaac_env_cfg = driver_kwargs.pop("isaac_env", None) if isinstance(driver_kwargs, dict) else None
+    if args.vnc:
+        from hal.simulation.isaac_bootstrap import bootstrap_isaac_env
+        bootstrap_isaac_env(isaac_env_cfg, want_gui=True)
+
+    # Either --gui (local X) or --vnc (Xvfb-backed) asks the driver/API to open
+    # a viewport; the driver layer does not need to distinguish them.
+    gui_effective = bool(args.gui or args.vnc)
+
     robot_workspace, env_file, resolved_driver, registry = _resolve_watchdog_topology(
         workspace,
         args.driver,
@@ -268,7 +292,7 @@ def main() -> None:
     watch_loop(
         robot_workspace,
         driver_name=resolved_driver,
-        gui=args.gui,
+        gui=gui_effective,
         poll_interval=args.interval,
         driver_kwargs=driver_kwargs,
         env_file=env_file,
