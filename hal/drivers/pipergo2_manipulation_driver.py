@@ -1058,12 +1058,18 @@ class PiperGo2ManipulationDriver(BaseDriver):
         return None
 
     def _run_vla_pick_and_return(self, params: dict[str, Any]) -> str:
-        """Approach → closed-loop VLA pick → return-home (arm holding grip).
+        """Approach → closed-loop VLA pick (stops after gripper squeeze).
 
-        Preconditions: caller has already issued ``enter_simulation`` and
-        navigated to the desk (or equivalent staging point). The approach
-        offset from the cube is handled here so the base ends up in the
-        exact training-camera pose.
+        The base parks at the training-camera approach pose, runs the
+        SmolVLA closed-loop pick, force-closes the gripper, and stops
+        there. The robot does NOT drive back home — the arm keeps the
+        cube held in the post-pick pose for inspection / downstream
+        skills.
+
+        Preconditions: caller has already issued ``enter_simulation``.
+        Approach offset from the cube is handled here so the base ends
+        up in the exact training-camera pose regardless of where it
+        currently is.
         """
         if self._api is None or self._env is None:
             return "Error: API not started. Dispatch action_type='enter_simulation' first."
@@ -1083,12 +1089,6 @@ class PiperGo2ManipulationDriver(BaseDriver):
                 f"prim_path={pick_target_prim_path!r}; "
                 f"add the cube to driver-config 'objects' or set pick_place.pick_target.position."
             )
-
-        home_xy_cfg = cfg.get("home_xy")
-        if home_xy_cfg and len(home_xy_cfg) >= 2:
-            home_xy = (float(home_xy_cfg[0]), float(home_xy_cfg[1]))
-        else:
-            home_xy = (float(self._robot_start[0]), float(self._robot_start[1]))
 
         # Cameras are normally preheated at enter_simulation (robot still at
         # home, arm in default pose). If the user started the sim with
@@ -1187,17 +1187,6 @@ class PiperGo2ManipulationDriver(BaseDriver):
             dump_every=dump_every,
         )
 
-        # Step C: return home. Forward the closed-gripper 8-D pose so the
-        # fingers keep squeezing the cube during the base drive.
-        home_arm = result.get("final_arm_8d")
-        home_msg = self._navigate_xy(
-            [home_xy[0], home_xy[1]],
-            max_steps=int(cfg.get("home_max_steps", self._navigation_max_steps)),
-            threshold=float(cfg.get("home_threshold", self._navigation_threshold)),
-            arm_target=home_arm,
-            arm_action_name=arm_action_name,
-        )
-
         init_z = result.get("initial_cube_z")
         fin_z = result.get("final_cube_z")
         dz_str = "n/a"
@@ -1206,7 +1195,7 @@ class PiperGo2ManipulationDriver(BaseDriver):
         prefix = "vla pick SUCCESS" if result.get("success") else "Error: vla pick FAILED"
         return (
             f"{prefix} ticks={result.get('ticks_used')} Δz={dz_str} "
-            f"terminate={result.get('terminate')}; home_nav={home_msg}"
+            f"terminate={result.get('terminate')}"
         )
 
     @staticmethod

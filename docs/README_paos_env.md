@@ -99,11 +99,13 @@ paos agent -m "pick up the red cube and return to the starting position"
 ```
 
 Alternatively, you can deploy a **VLA (Vision-Language-Action) model** to
-run the same pick-and-place task end-to-end. The example below is the
-reference command using our fine-tuned `smolvla-piper` model:
+run the pick task end-to-end. The robot drives to the cube's approach
+pose, the VLA closes the loop on the grasp, the gripper is force-closed,
+and the robot **stops there** holding the cube (no auto-return to the
+starting position). The example below is the reference command using `smolvla-piper` model:
 
 ```bash
-paos agent -m "deploy a VLA to pick up the red cube and return to the starting position"
+paos agent -m "deploy a VLA to pick up the red cube"
 ```
 
 Users are free to plug in their own VLA checkpoint by editing the `vla`
