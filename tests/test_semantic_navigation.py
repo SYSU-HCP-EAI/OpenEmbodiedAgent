@@ -129,6 +129,32 @@ def test_semantic_navigation_reports_missing_target(tmp_path: Path) -> None:
     assert "target class 'sofa' not found" in result
 
 
+def test_semantic_navigation_rejects_stale_watchdog_heartbeat(tmp_path: Path) -> None:
+    _write_workspace_files(tmp_path)
+    env = load_environment_doc(tmp_path / "ENVIRONMENT.md")
+    env["active_watchdog"] = {
+        "driver": "g1_navigation",
+        "workspace": str(tmp_path),
+        "robot_id": "go2_edu_001",
+        "updated_at": "2020-01-01T00:00:00Z",
+    }
+    save_environment_doc(tmp_path / "ENVIRONMENT.md", env)
+
+    action_tool = EmbodiedActionTool(workspace=tmp_path, provider=_FakeProvider(), model="fake")
+    tool = SemanticNavigationTool(workspace=tmp_path, action_tool=action_tool)
+
+    result = asyncio.run(
+        tool.execute(
+            robot_id="go2_edu_001",
+            target_class="fridge",
+            reasoning="Need to inspect the fridge area.",
+        )
+    )
+
+    assert "watchdog heartbeat is stale" in result
+    assert not (tmp_path / "ACTION.md").exists()
+
+
 def test_environment_writer_preserves_existing_objects(tmp_path: Path) -> None:
     _write_workspace_files(tmp_path)
     writer = EnvironmentWriter(workspace=tmp_path)

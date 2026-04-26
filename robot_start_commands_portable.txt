@@ -1,0 +1,54 @@
+Portable robot startup commands for another computer
+
+How to adapt on a new machine:
+1. Replace /your/new/path/PhyAgentOS with the actual PhyAgentOS repository path.
+2. Replace /your/python/env/bin/python with the actual python path of the target conda or venv.
+3. If paos is installed in the same environment, the paos binary is assumed to be at ${PAOS_PYTHON%/python}/paos.
+4. The JSON config files may still contain absolute asset paths and may also need updating.
+
+Optional environment variables:
+export PAOS_REPO=/your/new/path/PhyAgentOS
+export PAOS_PYTHON=/your/python/env/bin/python
+
+G1 watchdog:
+cd "$PAOS_REPO" && "$PAOS_PYTHON" -m hal.hal_watchdog --vnc --interval 0.05 --driver g1_navigation --driver-config examples/g1_navigation_driver.json
+
+G1 open simulation:
+cd "$PAOS_REPO" && "${PAOS_PYTHON%/python}/paos" agent -m "open simulation for g1"
+
+PiperGo2 watchdog:
+cd "$PAOS_REPO" && "$PAOS_PYTHON" -m hal.hal_watchdog --vnc --interval 0.05 --driver pipergo2_manipulation --driver-config examples/pipergo2_manipulation_driver.json
+
+PiperGo2 open simulation:
+cd "$PAOS_REPO" && "${PAOS_PYTHON%/python}/paos" agent -m "open simulation for pipergo2"
+
+XLerobot watchdog:
+cd "$PAOS_REPO" && "$PAOS_PYTHON" -m hal.hal_watchdog --vnc --interval 0.05 --driver xlerobot_sim --driver-config examples/xlerobot_sim_driver.json
+
+XLerobot open simulation:
+cd "$PAOS_REPO" && "${PAOS_PYTHON%/python}/paos" agent -m "open simulation for xlerobot"
+
+Simpler variant if the target machine already ran: conda activate paos
+
+G1 watchdog:
+cd /your/new/path/PhyAgentOS && python -m hal.hal_watchdog --vnc --interval 0.05 --driver g1_navigation --driver-config examples/g1_navigation_driver.json
+
+G1 open simulation:
+cd /your/new/path/PhyAgentOS && paos agent -m "open simulation for g1"
+
+PiperGo2 watchdog:
+cd /your/new/path/PhyAgentOS && python -m hal.hal_watchdog --vnc --interval 0.05 --driver pipergo2_manipulation --driver-config examples/pipergo2_manipulation_driver.json
+
+PiperGo2 open simulation:
+cd /your/new/path/PhyAgentOS && paos agent -m "open simulation for pipergo2"
+
+XLerobot watchdog:
+cd /your/new/path/PhyAgentOS && python -m hal.hal_watchdog --vnc --interval 0.05 --driver xlerobot_sim --driver-config examples/xlerobot_sim_driver.json
+
+XLerobot open simulation:
+cd /your/new/path/PhyAgentOS && paos agent -m "open simulation for xlerobot"
+
+Config files that may need absolute path updates on the new machine:
+/your/new/path/PhyAgentOS/examples/g1_navigation_driver.json
+/your/new/path/PhyAgentOS/examples/pipergo2_manipulation_driver.json
+/your/new/path/PhyAgentOS/examples/xlerobot_sim_driver.json

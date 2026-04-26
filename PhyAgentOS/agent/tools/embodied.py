@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+from datetime import datetime, timezone
 import json
 import logging
 import re
@@ -24,13 +26,10 @@ from PhyAgentOS.utils.action_queue import (
     parse_action_markdown,
     pending_action_type,
 )
+from hal.simulation.scene_io import load_environment_doc
 
 if TYPE_CHECKING:
     from PhyAgentOS.embodiment_registry import EmbodimentRegistry
-
-# LLMs often put HAL fields next to action_type instead of inside `parameters`.
-_TOOL_RESERVED_KEYS = frozenset({"action_type", "parameters", "reasoning"})
-_ENV_JSON_BLOCK_RE = re.compile(r"```json\s*\n(.*?)\n```", re.DOTALL)
 
 
 class EmbodiedActionTool(Tool):
@@ -43,19 +42,8 @@ class EmbodiedActionTool(Tool):
     @property
     def description(self) -> str:
         return (
-            "Execute a physical action on the robot or simulation. "
-            "Most actions are validated by a Critic before execution; "
-            "`start`/`enter_simulation` with no scene overrides bypass the Critic and rely on "
-            "the HAL driver that was started with `--driver-config`. "
-            "Requires a running HAL watchdog for the target driver; the watchdog copies "
-            "EMBODIED.md from the driver profile into the workspace. "
-            "For PiperGo2 manipulation sim, typical action_type values include: "
-            "`enter_simulation` or `start` (same meaning; parameters may be `{}` when the "
-            "watchdog was started with `--driver-config` — scene path/objects are already loaded). "
-            "`navigate_to_named` (parameters: waypoint_key or target, e.g. desk, staging_table). "
-            "`describe_visible_scene`, `run_pick_place`, `close`. "
-            "Reference JSON for humans: workspace file `configs/pipergo2_manipulation_driver.json` "
-            "(not the repo-relative `examples/` path)."
+            "Execute a physical action on the robot. "
+            "The action will be validated by a Critic before execution."
         )
 
     @property
@@ -66,22 +54,14 @@ class EmbodiedActionTool(Tool):
                 "action_type": {
                     "type": "string",
                     "description": (
-                        "The type of action to execute. Generic HAL examples: "
-                        "'move_to', 'pick_up', 'put_down', 'semantic_navigate', 'connect_robot'. "
-                        "PiperGo2 manipulation sim: 'enter_simulation'|'start', 'navigate_to_named', "
-                        "'navigate_to_waypoint', 'describe_visible_scene', 'run_pick_place', 'close', 'api_call'."
+                        "The type of action to execute "
+                        "(e.g., 'point_to', 'move_to', 'pick_up', "
+                        "'semantic_navigate', 'localize', 'connect_robot')."
                     ),
                 },
                 "parameters": {
                     "type": "object",
-                    "description": (
-                        "Action-specific parameters; use {} when optional. "
-                        "For manipulation sim `start`/`enter_simulation`, {} is valid if HAL "
-                        "watchdog was started with `--driver-config` (driver already holds scene JSON). "
-                        "Include robot_id in fleet mode. "
-                        "If the model places keys like waypoint_key at the top level by mistake, "
-                        "they are folded into this object automatically."
-                    ),
+                    "description": "The parameters for the action. Include robot_id in fleet mode.",
                 },
                 "reasoning": {
                     "type": "string",
@@ -103,23 +83,6 @@ class EmbodiedActionTool(Tool):
         self.model = model
         self.registry = registry
 
-    def cast_params(self, params: dict[str, Any]) -> dict[str, Any]:
-        """Normalize LLM output: missing `parameters`, and fold stray top-level HAL keys."""
-        if not isinstance(params, dict):
-            return super().cast_params({})
-        merged = dict(params)
-        if merged.get("parameters") is None:
-            merged["parameters"] = {}
-        inner: dict[str, Any] = dict(merged.get("parameters") or {})
-        for key in list(merged.keys()):
-            if key in _TOOL_RESERVED_KEYS:
-                continue
-            if key not in inner:
-                inner[key] = merged[key]
-            del merged[key]
-        merged["parameters"] = inner
-        return super().cast_params(merged)
-
     async def execute(
         self,
         action_type: str,
@@ -127,12 +90,17 @@ class EmbodiedActionTool(Tool):
         reasoning: str,
     ) -> str:
         """Execute the action after Critic validation."""
-        parameters = dict(parameters or {})
         robot_id = parameters.get("robot_id")
         if self.registry and self.registry.is_fleet and not robot_id:
-            if EmbodiedActionTool._fleet_broadcast_action_allowed(action_type, parameters):
-                return self._accept_action_broadcast(action_type, parameters)
-            return "Error: robot_id is required for embodied actions in fleet mode."
+            robot_id = self._resolve_default_robot_id()
+            if robot_id:
+                parameters = dict(parameters)
+                parameters["robot_id"] = robot_id
+            else:
+                return (
+                    "Error: robot_id is required for embodied actions in fleet mode and "
+                    "could not be auto-resolved from active watchdog context."
+                )
 
         try:
             embodied_file = self._resolve_embodied_file(robot_id)
@@ -145,44 +113,24 @@ class EmbodiedActionTool(Tool):
         if not embodied_file.exists():
             return f"Error: {embodied_file.name} not found for the target robot. Cannot validate action."
 
+        # Driver-atomic helper action for Franka; rely on HAL runtime handling
+        # rather than LLM critic decomposition.
+        if action_type == "grasp_and_place_aside":
+            dispatch_msg, action_id = self._accept_action(action_type, parameters, action_file)
+            return await self._maybe_wait_for_action_result(
+                action_type=action_type,
+                action_file=action_file,
+                action_id=action_id,
+                fallback_message=dispatch_msg,
+            )
+
         embodied_content = embodied_file.read_text(encoding="utf-8")
         environment_content = environment_file.read_text(encoding="utf-8") if environment_file.exists() else ""
-        critic_environment_content = self._critic_environment_scope(environment_content, robot_id)
         params_json = json.dumps(parameters, ensure_ascii=False)
 
-        # LLM Critic often mis-reads HAL warm-up: `start` / `enter_simulation` with no
-        # scene overrides is valid when the watchdog was started with --driver-config.
-        if action_type in ("start", "enter_simulation") and self._start_params_deferred_to_driver(
-            parameters
-        ):
-            logger.info(
-                "Critic bypass (driver-config warm-up): action_type={} parameters={}",
-                action_type,
-                parameters,
-            )
-            return self._accept_action(action_type, dict(parameters or {}), action_file)
-
-        # Fleet: many instances share one ENVIRONMENT.md; it reflects whichever HAL last wrote,
-        # so the LLM Critic mis-reads "wrong robot" and blocks valid nav. Only skip when params
-        # are plain waypoint navigation (no scene overrides).
-        if EmbodiedActionTool._fleet_navigation_critic_bypass(
-            action_type, parameters, robot_id, self.registry
-        ):
-            logger.info(
-                "Critic bypass (fleet shared ENVIRONMENT): action_type={} parameters={}",
-                action_type,
-                parameters,
-            )
-            return self._accept_action(action_type, dict(parameters or {}), action_file)
-        if EmbodiedActionTool._fleet_manipulation_critic_bypass(
-            action_type, parameters, robot_id, self.registry
-        ):
-            logger.info(
-                "Critic bypass (fleet shared ENVIRONMENT manipulation): action_type={} parameters={}",
-                action_type,
-                parameters,
-            )
-            return self._accept_action(action_type, dict(parameters or {}), action_file)
+        capability_error = self._guard_action_supported(action_type, embodied_content)
+        if capability_error:
+            return capability_error
 
         critic_prompt = (
             "You are the Critic Agent for a robot.\n"
@@ -191,14 +139,11 @@ class EmbodiedActionTool(Tool):
             "# Robot Capabilities (EMBODIED.md)\n"
             f"{embodied_content}\n\n"
             "# Current Environment State (ENVIRONMENT.md)\n"
-            f"{critic_environment_content}\n\n"
+            f"{environment_content}\n\n"
             "# Proposed Action\n"
             f"Action Type: {action_type}\n"
             f"Parameters: {params_json}\n"
             f"Reasoning: {reasoning}\n\n"
-            "If ENVIRONMENT contains scene session metadata (for example `scene_sessions` "
-            "or per-robot `scene_id`), scope your judgement to the requested `robot_id` "
-            "and its scene context instead of treating unrelated robot runtime as conflicts.\n"
             f"{self._critic_guidance(action_type)}\n"
             "If it is safe and valid, respond with exactly 'VALID'.\n"
             "If it is unsafe, out of bounds, or invalid, respond with 'INVALID: <reason>'.\n"
@@ -233,8 +178,21 @@ class EmbodiedActionTool(Tool):
             (line.strip() for line in verdict.splitlines() if line.strip()),
             "",
         )
-        if first_line.upper().startswith("VALID"):
-            return self._accept_action(action_type, parameters, action_file)
+        # Allow common markdown chatty forms like "**VALID**" or "VALID.".
+        has_valid_marker = bool(
+            re.search(r"(^|\n)\s*(?:\*\*)?VALID(?:\*\*)?(?:[\s\.:!]|$)", verdict, flags=re.IGNORECASE)
+        )
+        if first_line.upper().startswith("VALID") or has_valid_marker:
+            guard_error = self._validate_navigation_watchdog_freshness(action_type, environment_file)
+            if guard_error:
+                return guard_error
+            dispatch_msg, action_id = self._accept_action(action_type, parameters, action_file)
+            return await self._maybe_wait_for_action_result(
+                action_type=action_type,
+                action_file=action_file,
+                action_id=action_id,
+                fallback_message=dispatch_msg,
+            )
 
         return self._reject_action(action_type, parameters, reasoning, critic_result, lessons_file)
 
@@ -242,67 +200,6 @@ class EmbodiedActionTool(Tool):
         if self.registry:
             return self.registry.resolve_environment_path(robot_id=robot_id, default_workspace=self.workspace)
         return self.workspace / "ENVIRONMENT.md"
-
-    @staticmethod
-    def _extract_environment_doc(environment_content: str) -> dict[str, Any] | None:
-        """
-        Parse ENVIRONMENT.md content and return embedded JSON document.
-
-        ENVIRONMENT is usually Markdown with a fenced json block; for robustness
-        we also accept plain JSON payloads.
-        """
-        content = (environment_content or "").strip()
-        if not content:
-            return None
-        m = _ENV_JSON_BLOCK_RE.search(content)
-        if m:
-            try:
-                doc = json.loads(m.group(1))
-                return doc if isinstance(doc, dict) else None
-            except json.JSONDecodeError:
-                return None
-        try:
-            doc = json.loads(content)
-            return doc if isinstance(doc, dict) else None
-        except json.JSONDecodeError:
-            return None
-
-    @staticmethod
-    def _critic_environment_scope(environment_content: str, robot_id: str | None) -> str:
-        """
-        Build robot-scoped environment context for Critic in fleet mode.
-
-        Why:
-        - Shared ENVIRONMENT may contain mixed runtime snapshots from different
-          robots/drivers. Critic should prioritize the target robot state.
-        - Keep backward compatibility: if parsing fails, return original content.
-        """
-        if not robot_id:
-            return environment_content
-        doc = EmbodiedActionTool._extract_environment_doc(environment_content)
-        if not doc:
-            return environment_content
-
-        robots = doc.get("robots")
-        robot_state = robots.get(robot_id) if isinstance(robots, dict) else None
-        scene_id = robot_state.get("scene_id") if isinstance(robot_state, dict) else None
-        sessions = doc.get("scene_sessions") if isinstance(doc.get("scene_sessions"), dict) else {}
-        scoped: dict[str, Any] = {
-            "schema_version": doc.get("schema_version", "PhyAgentOS.environment.v1"),
-            "target_robot_id": robot_id,
-            "target_robot_state": robot_state if isinstance(robot_state, dict) else {},
-            "target_scene_id": scene_id,
-            "target_scene_session": sessions.get(scene_id, {}) if scene_id else {},
-            # Keep fallback context for legacy drivers that still publish runtime
-            # under objects/manipulation_runtime.
-            "objects": doc.get("objects", {}),
-            "scene_graph": doc.get("scene_graph", {}),
-            "updated_at": doc.get("updated_at"),
-        }
-        try:
-            return json.dumps(scoped, ensure_ascii=False, indent=2)
-        except TypeError:
-            return environment_content
 
     def _resolve_embodied_file(self, robot_id: str | None) -> Path:
         if self.registry and robot_id:
@@ -320,74 +217,126 @@ class EmbodiedActionTool(Tool):
         return self.workspace / "LESSONS.md"
 
     @staticmethod
-    def _fleet_broadcast_action_allowed(action_type: str, parameters: dict[str, Any]) -> bool:
-        """
-        Allow safe fleet-wide broadcast when user omits robot_id.
+    def _parse_utc_timestamp(raw: str) -> datetime | None:
+        text = str(raw or "").strip()
+        if not text:
+            return None
+        try:
+            if text.endswith("Z"):
+                text = text[:-1] + "+00:00"
+            return datetime.fromisoformat(text)
+        except ValueError:
+            return None
 
-        Current scope is intentionally narrow: lifecycle actions only.
-        """
-        if action_type not in ("start", "enter_simulation", "close"):
-            return False
-        # For start/enter_simulation we only broadcast when params do not carry
-        # per-robot overrides; each watchdog should rely on its own driver-config.
-        if action_type in ("start", "enter_simulation"):
-            return EmbodiedActionTool._start_params_deferred_to_driver(parameters)
-        return True
+    def _validate_navigation_watchdog_freshness(self, action_type: str, environment_file: Path) -> str | None:
+        nav_actions = {"semantic_navigate", "target_navigation", "navigate_to_named", "navigate_to_waypoint"}
+        if action_type not in nav_actions:
+            return None
 
-    def _accept_action_broadcast(self, action_type: str, parameters: dict[str, Any]) -> str:
-        """
-        Dispatch one lifecycle action to all enabled fleet robots.
+        env = load_environment_doc(environment_file)
+        active = env.get("active_watchdog") if isinstance(env, dict) else None
+        if not isinstance(active, dict):
+            return None
 
-        This helps demo workflows where operators use one high-level command
-        (e.g. "enter simulation") and expect all robots in the shared fleet
-        scene to receive it without manually repeating robot_id.
-        """
-        if self.registry is None:
-            return "Error: broadcast requires fleet registry."
-        targets = self.registry.instances(enabled_only=True)
-        if not targets:
-            return "Error: no enabled robots found for fleet broadcast."
-        ok: list[str] = []
-        failed: list[str] = []
-        for inst in targets:
-            rid = inst.robot_id
-            action_file = self.registry.resolve_action_path(robot_id=rid, default_workspace=self.workspace)
-            params = dict(parameters or {})
-            params["robot_id"] = rid
-            result = self._accept_action(action_type, params, action_file)
-            if result.startswith("Action '"):
-                ok.append(rid)
-            else:
-                failed.append(f"{rid}: {result}")
-        if failed:
+        updated_at = self._parse_utc_timestamp(str(active.get("updated_at", "")))
+        if updated_at is None:
+            return None
+
+        age_s = (datetime.now(timezone.utc) - updated_at.astimezone(timezone.utc)).total_seconds()
+        # If heartbeat is stale, the watchdog is likely not alive; dispatching nav
+        # actions would leave ACTION.md pending and produce "running" ghost states.
+        if age_s > 30.0:
             return (
-                f"Fleet broadcast partial success for '{action_type}'. "
-                f"ok={ok}; failed={failed}"
+                "Error: navigation action not dispatched because watchdog heartbeat is stale. "
+                "Please restart watchdog and retry navigation."
             )
-        return f"Fleet broadcast dispatched '{action_type}' to robots: {ok}"
+        return None
+
+    def _resolve_default_robot_id(self) -> str | None:
+        if not self.registry or not self.registry.is_fleet:
+            return None
+
+        env_path = self.registry.resolve_environment_path(robot_id=None, default_workspace=self.workspace)
+        env = load_environment_doc(env_path)
+
+        active = env.get("active_watchdog") if isinstance(env, dict) else None
+        if isinstance(active, dict):
+            candidate = str(active.get("robot_id", "")).strip()
+            if candidate:
+                instance = self.registry.get_instance(candidate)
+                if instance and instance.enabled:
+                    return candidate
+
+        enabled = [instance.robot_id for instance in self.registry.instances(enabled_only=True)]
+        if len(enabled) == 1:
+            return enabled[0]
+        return None
+
+    async def _maybe_wait_for_action_result(
+        self,
+        *,
+        action_type: str,
+        action_file: Path,
+        action_id: str | None,
+        fallback_message: str,
+    ) -> str:
+        """Wait briefly for watchdog result for read-style actions."""
+        if action_type not in {"describe_visible_scene", "grasp_and_place_aside"} or not action_id:
+            return fallback_message
+
+        # Watchdog may be busy stepping simulation; allow longer wait for
+        # read-style actions so chat can return the actual result.
+        timeout_s = 60.0
+        interval_s = 0.4
+        loops = max(1, int(timeout_s / interval_s))
+        for _ in range(loops):
+            document = self._load_action_document(action_file)
+            if isinstance(document, dict):
+                actions = document.get("actions")
+                if isinstance(actions, list):
+                    for item in actions:
+                        if not isinstance(item, dict):
+                            continue
+                        if str(item.get("id", "")) != action_id:
+                            continue
+                        status = str(item.get("status", "")).strip().lower()
+                        if status == "pending":
+                            break
+                        result = str(item.get("result", "")).strip()
+                        if result:
+                            return result
+                        return f"Action '{action_type}' finished with status={status}."
+            await asyncio.sleep(interval_s)
+        return fallback_message
 
     @staticmethod
-    def _accept_action(action_type: str, parameters: dict[str, Any], action_file: Path) -> str:
-        """Write validated action to ACTION.md."""
+    def _accept_action(action_type: str, parameters: dict[str, Any], action_file: Path) -> tuple[str, str | None]:
+        """Write validated action to ACTION.md and return dispatch message + action id."""
         document = EmbodiedActionTool._load_action_document(action_file)
         if document is None:
             return (
                 "Error: ACTION.md contains unreadable content. "
                 "Please repair it before dispatching another action."
-            )
+            ), None
         existing_action = pending_action_type(document)
         if existing_action is not None:
             return (
                 f"Error: ACTION.md already contains pending action '{existing_action}'. "
                 "Wait for the watchdog to consume it before dispatching another action."
-            )
+            ), None
         action_data = append_action(document, action_type=action_type, parameters=parameters)
+        action_id = None
+        actions = action_data.get("actions")
+        if isinstance(actions, list) and actions:
+            last = actions[-1]
+            if isinstance(last, dict):
+                action_id = str(last.get("id", "")).strip() or None
         action_file.parent.mkdir(parents=True, exist_ok=True)
         action_content = dump_action_document(action_data)
         action_file.write_text(action_content, encoding="utf-8")
 
         logger.info("Action validated and written to {}: {}", action_file, action_type)
-        return f"Action '{action_type}' validated and dispatched to hardware."
+        return f"Action '{action_type}' validated and dispatched to hardware.", action_id
 
     @staticmethod
     def _load_action_document(action_file: Path) -> dict[str, Any] | None:
@@ -402,81 +351,7 @@ class EmbodiedActionTool(Tool):
         return normalize_action_document(payload)
 
     @staticmethod
-    def _fleet_navigation_critic_bypass(
-        action_type: str,
-        parameters: dict[str, Any],
-        robot_id: str | None,
-        registry: EmbodimentRegistry | None,
-    ) -> bool:
-        if registry is None or not registry.is_fleet or not robot_id:
-            return False
-        if action_type not in ("navigate_to_named", "navigate_to_waypoint"):
-            return False
-        allowed = frozenset(
-            {"robot_id", "waypoint_key", "target", "waypoint_xy", "max_steps", "threshold"}
-        )
-        for key in parameters:
-            if key not in allowed:
-                return False
-        return True
-
-    @staticmethod
-    def _fleet_manipulation_critic_bypass(
-        action_type: str,
-        parameters: dict[str, Any],
-        robot_id: str | None,
-        registry: EmbodimentRegistry | None,
-    ) -> bool:
-        if registry is None or not registry.is_fleet or not robot_id:
-            return False
-        if action_type not in ("grasp", "pick", "place", "release"):
-            return False
-        # Shared ENVIRONMENT in fleet mode is often written by a different robot watchdog.
-        # Allow standard manipulation commands through when only safe driver-facing keys exist.
-        allowed = frozenset({"robot_id", "target", "output_dir", "dump_name"})
-        for key in parameters:
-            if key not in allowed:
-                return False
-        target = parameters.get("target")
-        if target is None:
-            return False
-        if not isinstance(target, (str, dict)):
-            return False
-        return True
-
-    @staticmethod
-    def _start_params_deferred_to_driver(parameters: dict[str, Any] | None) -> bool:
-        """True when action does not try to override scene loaded by HAL driver-config."""
-        p = parameters or {}
-        override_keys = (
-            "scene_asset_path",
-            "objects",
-            "robot_start",
-            "arm_mass_scale",
-            "api_kwargs",
-        )
-        for key in override_keys:
-            val = p.get(key)
-            if val is None:
-                continue
-            if key == "api_kwargs" and isinstance(val, dict) and len(val) == 0:
-                continue
-            if isinstance(val, str) and not val.strip():
-                continue
-            if isinstance(val, list) and len(val) == 0:
-                continue
-            return False
-        return True
-
-    @staticmethod
     def _critic_guidance(action_type: str) -> str:
-        if action_type in ("start", "enter_simulation"):
-            return (
-                "For start/enter_simulation on the PiperGo2 manipulation driver: empty parameters {} "
-                "are VALID when the robot profile states that the HAL watchdog loads the full "
-                "driver JSON via --driver-config (scene path, objects, waypoints already injected). "
-                "Do not require scene_asset_path in the action if that contract is documented in EMBODIED.md."
-            )
         if action_type == "target_navigation":
             return (
                 "When evaluating target navigation, do not require the target to already exist in the scene graph. "
@@ -489,6 +364,52 @@ class EmbodiedActionTool(Tool):
             "support, safe approach distance, connection availability, and whether current nav state suggests the "
             "robot can accept the task."
         )
+
+    @staticmethod
+    def _guard_action_supported(action_type: str, embodied_content: str) -> str | None:
+        action = str(action_type or "").strip()
+        if not action:
+            return None
+
+        unsupported_section_match = re.search(
+            r"^Not supported(?: yet)?:\s*\n(?P<body>(?:\s*-.*\n?)+)",
+            embodied_content,
+            flags=re.IGNORECASE | re.MULTILINE,
+        )
+        unsupported_section = unsupported_section_match.group("body") if unsupported_section_match else ""
+        if not unsupported_section:
+            return None
+
+        escaped = re.escape(action)
+        disabled_pattern = re.compile(
+            rf"^\s*-\s*`{escaped}`\s*\((?P<reason>[^)]*disabled[^)]*)\)",
+            flags=re.IGNORECASE | re.MULTILINE,
+        )
+        unsupported_pattern = re.compile(
+            rf"^\s*-\s*`{escaped}`(?:\s|$)",
+            flags=re.IGNORECASE | re.MULTILINE,
+        )
+
+        disabled_match = disabled_pattern.search(unsupported_section)
+        if disabled_match:
+            reason = disabled_match.group("reason").strip()
+            message = f"Error: action '{action}' is {reason} in the current robot profile."
+            if action in {"navigate_to_named", "navigate_to_waypoint"}:
+                return (
+                    f"{message} XLerobot is currently manipulation-only because direct waypoint writes can "
+                    "destabilize the robot and wash out the head camera. Use arm/head/gripper actions instead, "
+                    "or switch to a robot with a stable base controller."
+                )
+            return message
+
+        unsupported_match = unsupported_pattern.search(unsupported_section)
+        if unsupported_match:
+            return (
+                f"Error: action '{action}' is not supported by the current robot profile. "
+                "Please use a supported action instead."
+            )
+
+        return None
 
     @staticmethod
     def _reject_action(

@@ -16,8 +16,9 @@ import time
 from pathlib import Path
 from typing import Any
 
+from PIL import Image
+
 from hal.base_driver import BaseDriver
-from hal.simulation.isaac_scene_bootstrap import apply_lighting_for_mode, focus_viewport_on_robot
 
 _PROFILES_DIR = Path(__file__).resolve().parent.parent / "profiles"
 
@@ -25,8 +26,9 @@ _PROFILES_DIR = Path(__file__).resolve().parent.parent / "profiles"
 class PiperGo2ManipulationDriver(BaseDriver):
     """Bridge ACTION.md calls to PiperGo2ManipulationAPI methods."""
 
-    def __init__(self, gui: bool = False, **kwargs: Any) -> None:
+    def __init__(self, gui: bool = False, *, robot_id: str | None = None, **kwargs: Any) -> None:
         self._gui = gui
+        self.robot_id = str(robot_id or kwargs.get("robot_id") or "pipergo2_manip_001").strip() or "pipergo2_manip_001"
         self._api = None
         self._env = None
         self._env_lock = threading.RLock()
@@ -83,6 +85,22 @@ class PiperGo2ManipulationDriver(BaseDriver):
         self._camera_target_z_offset = float(kwargs.get("camera_target_z_offset", -0.4))
         self._camera_target_min_z = float(kwargs.get("camera_target_min_z", 0.2))
         self._eef_live_marker_enabled = bool(kwargs.get("eef_live_marker_enabled", False))
+        self._robot_cameras_cfg: dict[str, Any] = dict(kwargs.get("robot_cameras", {}) or {})
+        robot_camera_resolution = kwargs.get("robot_camera_resolution", [640, 400])
+        if not isinstance(robot_camera_resolution, (list, tuple)) or len(robot_camera_resolution) < 2:
+            robot_camera_resolution = [640, 400]
+        self._robot_camera_resolution = (int(robot_camera_resolution[0]), int(robot_camera_resolution[1]))
+        self._robot_camera_warmup_steps = int(kwargs.get("robot_camera_warmup_steps", 0))
+        self._robot_camera_debug_dump_dir = str(kwargs.get("robot_camera_debug_dump_dir", "")).strip()
+        self._robot_camera_session: dict[str, Any] | None = None
+        self._robot_camera_side_view_enabled = bool(kwargs.get("robot_camera_side_view_enabled", True))
+        self._robot_camera_side_view_name = str(kwargs.get("robot_camera_side_view_name", "")).strip()
+        self._robot_camera_side_view_title = str(kwargs.get("robot_camera_side_view_title", "Robot Camera")).strip()
+        side_view_size = kwargs.get("robot_camera_side_view_size", [560, 320])
+        if not isinstance(side_view_size, (list, tuple)) or len(side_view_size) < 2:
+            side_view_size = [560, 320]
+        self._robot_camera_side_view_size = (int(side_view_size[0]), int(side_view_size[1]))
+        self._robot_camera_side_view_session: dict[str, Any] | None = None
 
         # VLA closed-loop pick config (optional). Loaded lazily on first
         # run_vla_pick_and_return so watchdog startup stays cheap when VLA
@@ -175,7 +193,14 @@ class PiperGo2ManipulationDriver(BaseDriver):
             return f"Error: {type(exc).__name__}: {exc}"
 
     def get_scene(self) -> dict[str, dict]:
-        scene = dict(self._last_scene)
+        configured_keys = self._configured_scene_object_keys()
+        scene = {
+            key: dict(value)
+            for key, value in dict(self._last_scene).items()
+            if key != "manipulation_runtime" and isinstance(value, dict) and key in configured_keys
+        }
+        scene.update(self._build_live_scene_objects())
+        self._rebuild_scene_narration()
         # Prefer the live pose from the most recent observation; fall back
         # to robot_start so the scene snapshot is still populated before
         # the first env.step. Without this the Critic sees a stale robot_xy
@@ -202,30 +227,439 @@ class PiperGo2ManipulationDriver(BaseDriver):
             "table_summary_cn": self._scene_narration_cn,
             "last_pick_place_cn": self._last_pick_place_summary,
             "last_obs": self._obs_brief(self._last_obs),
+            "robot_cameras": self._robot_camera_snapshot(),
         }
         return scene
 
     def get_runtime_state(self) -> dict[str, Any]:
-        nodes: list[dict[str, Any]] = []
-        for vo in self._visible_objects:
-            ok = vo.get("object_key")
-            if not ok:
-                continue
-            nodes.append(
-                {
-                    "id": f"obj_{ok}",
-                    "class": vo.get("shape_cn", "object"),
-                    "object_key": ok,
-                    "color_label_cn": vo.get("color_label_cn", ""),
-                    "role": vo.get("role", ""),
-                }
-            )
+        nodes, edges = self._build_visible_scene_graph()
+        robot_xy = None
+        robot_obs = self._extract_robot_obs(self._last_obs)
+        if isinstance(robot_obs, dict):
+            robot_xy = self._xy_from_robot_position(robot_obs.get("position"))
+        robot_state = {
+            "connection_state": {
+                "status": "connected" if self._api is not None else "idle",
+                "transport": "isaac-sim",
+                "last_error": None,
+            },
+            "robot_pose": self._robot_pose_snapshot(robot_xy),
+            "nav_state": {
+                "mode": "manipulation",
+                "status": "running" if self._api is not None else "idle",
+                "target_ref": {"kind": "node", "id": "surface_table", "label": "table"},
+            },
+        }
+        camera_channels = self._robot_camera_snapshot()
+        if camera_channels:
+            robot_state["cameras"] = camera_channels
         return {
+            "robots": {
+                self.robot_id: robot_state
+            },
             "scene_graph": {
                 "nodes": nodes,
-                "edges": [],
+                "edges": edges,
             }
         }
+
+    def _build_visible_scene_graph(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        nodes: list[dict[str, Any]] = [
+            {
+                "id": "surface_table",
+                "class": "table",
+                "object_key": "staging_table",
+                "role": "surface",
+            }
+        ]
+        edges: list[dict[str, Any]] = []
+        pedestal_target_id: str | None = None
+        for snap in self._visible_object_snapshots():
+            ok = str(snap.get("object_key", "")).strip()
+            if not ok:
+                continue
+            node = {
+                "id": f"obj_{ok}",
+                "class": snap.get("shape_cn", "object"),
+                "object_key": ok,
+                "color_label_cn": snap.get("color_label_cn", ""),
+                "role": snap.get("role", ""),
+                "location": snap.get("location", "unknown"),
+            }
+            pos = snap.get("position")
+            if isinstance(pos, dict):
+                node["center"] = {
+                    "x": float(pos.get("x", 0.0)),
+                    "y": float(pos.get("y", 0.0)),
+                    "z": float(pos.get("z", 0.0)),
+                }
+            nodes.append(node)
+            if node["role"] == "place_surface":
+                pedestal_target_id = node["id"]
+            if node["role"] in {"primary_pick", "clutter"} and node["location"] == "table":
+                edges.append(
+                    {
+                        "source": node["id"],
+                        "relation": "ON",
+                        "target": "surface_table",
+                        "confidence": 0.9,
+                    }
+                )
+            elif node["role"] in {"primary_pick", "clutter"} and node["location"] == "pedestal" and pedestal_target_id:
+                edges.append(
+                    {
+                        "source": node["id"],
+                        "relation": "ON",
+                        "target": pedestal_target_id,
+                        "confidence": 0.9,
+                    }
+                )
+        return nodes, edges
+
+    def _build_live_scene_objects(self) -> dict[str, dict[str, Any]]:
+        scene: dict[str, dict[str, Any]] = {}
+        for snap in self._visible_object_snapshots():
+            object_key = str(snap.get("object_key", "")).strip()
+            if not object_key:
+                continue
+            entry = scene.get(object_key, {})
+            if not isinstance(entry, dict):
+                entry = {}
+            position = snap.get("position") or {}
+            entry.update(
+                {
+                    "type": str(snap.get("kind") or snap.get("shape_cn") or "object"),
+                    "shape": str(snap.get("shape_cn") or "object"),
+                    "color_label_cn": str(snap.get("color_label_cn") or "").strip(),
+                    "role": str(snap.get("role") or "").strip(),
+                    "location": str(snap.get("location") or "unknown").strip(),
+                    "position": {
+                        "x": float(position.get("x", 0.0)),
+                        "y": float(position.get("y", 0.0)),
+                        "z": float(position.get("z", 0.0)),
+                    },
+                }
+            )
+            if snap.get("prim_path"):
+                entry["prim_path"] = snap["prim_path"]
+            if snap.get("scale") is not None:
+                entry["scale"] = list(snap["scale"])
+            if snap.get("color") is not None:
+                entry["color"] = list(snap["color"])
+            scene[object_key] = entry
+        return scene
+
+    def _object_positions_by_name(self) -> dict[str, tuple[float, float, float]]:
+        out: dict[str, tuple[float, float, float]] = {}
+        if not isinstance(self._objects_spec, list):
+            return out
+        for item in self._objects_spec:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name", "")).strip()
+            position = item.get("position")
+            if not name or not isinstance(position, (list, tuple)) or len(position) < 3:
+                continue
+            out[name] = (float(position[0]), float(position[1]), float(position[2]))
+        return out
+
+    def _configured_scene_object_keys(self) -> set[str]:
+        names: set[str] = set()
+        if isinstance(self._objects_spec, list):
+            for item in self._objects_spec:
+                if not isinstance(item, dict):
+                    continue
+                name = str(item.get("name", "")).strip()
+                if name:
+                    names.add(name)
+        for visible in self._visible_objects:
+            if not isinstance(visible, dict):
+                continue
+            object_key = str(visible.get("object_key", "")).strip()
+            if object_key:
+                names.add(object_key)
+        return names
+
+    def _object_specs_by_name(self) -> dict[str, dict[str, Any]]:
+        out: dict[str, dict[str, Any]] = {}
+        if not isinstance(self._objects_spec, list):
+            return out
+        for item in self._objects_spec:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name", "")).strip()
+            if not name:
+                continue
+            out[name] = dict(item)
+        return out
+
+    def _visible_object_snapshots(self) -> list[dict[str, Any]]:
+        specs = self._object_specs_by_name()
+        positions = self._live_object_positions_by_name()
+        out: list[dict[str, Any]] = []
+        for visible in self._visible_objects:
+            if not isinstance(visible, dict):
+                continue
+            object_key = str(visible.get("object_key", "")).strip()
+            if not object_key:
+                continue
+            spec = specs.get(object_key, {})
+            initial_pos = self._coerce_xyz(spec.get("position"))
+            current_pos = positions.get(object_key) or initial_pos
+            snapshot = dict(visible)
+            snapshot["kind"] = spec.get("kind")
+            snapshot["prim_path"] = spec.get("prim_path")
+            snapshot["scale"] = spec.get("scale")
+            snapshot["color"] = spec.get("color")
+            if current_pos is not None:
+                snapshot["position"] = {"x": float(current_pos[0]), "y": float(current_pos[1]), "z": float(current_pos[2])}
+            snapshot["location"] = self._infer_object_location(
+                role=str(visible.get("role", "")).strip(),
+                current_pos=current_pos,
+                initial_pos=initial_pos,
+                pedestal_pos=positions.get("place_pedestal") or self._coerce_xyz(specs.get("place_pedestal", {}).get("position")),
+            )
+            out.append(snapshot)
+        return out
+
+    def _snapshot_for_object(self, object_key: str) -> dict[str, Any] | None:
+        key = str(object_key or "").strip()
+        if not key:
+            return None
+        for snapshot in self._visible_object_snapshots():
+            if str(snapshot.get("object_key", "")).strip() == key:
+                return snapshot
+        return None
+
+    def _object_name_for_prim_path(self, prim_path: str) -> str | None:
+        target = str(prim_path or "").strip()
+        if not target:
+            return None
+        for name, spec in self._object_specs_by_name().items():
+            if str(spec.get("prim_path", "")).strip() == target:
+                return name
+        return None
+
+    @staticmethod
+    def _pick_unavailable_message(object_key: str, snapshot: dict[str, Any] | None) -> str | None:
+        if not isinstance(snapshot, dict):
+            return None
+        location = str(snapshot.get("location", "unknown")).strip() or "unknown"
+        if location == "table":
+            return None
+        return (
+            f"Error: target {object_key!r} is not on the table anymore "
+            f"(current_location={location}). Reset the scene or place it back first."
+        )
+
+    def _live_grasp_target(self, raw_target: dict[str, Any], object_key: str | None) -> dict[str, Any]:
+        target = self._tupleize_grasp_dict(raw_target)
+        key = str(object_key or "").strip()
+        if not key:
+            return target
+        snapshot = self._snapshot_for_object(key)
+        position_dict = snapshot.get("position") if isinstance(snapshot, dict) else None
+        live_pos = self._coerce_xyz(position_dict)
+        base_pos = self._coerce_xyz(target.get("position"))
+        if live_pos is None or base_pos is None:
+            return target
+
+        dx = live_pos[0] - base_pos[0]
+        dy = live_pos[1] - base_pos[1]
+        dz = live_pos[2] - base_pos[2]
+
+        def _shift_xyz(vec: Any) -> tuple[float, float, float] | Any:
+            xyz = self._coerce_xyz(vec)
+            if xyz is None:
+                return vec
+            return (float(xyz[0] + dx), float(xyz[1] + dy), float(xyz[2] + dz))
+
+        target["position"] = _shift_xyz(target.get("position"))
+        if "pre_position" in target:
+            target["pre_position"] = _shift_xyz(target.get("pre_position"))
+        if "post_position" in target:
+            target["post_position"] = _shift_xyz(target.get("post_position"))
+        return target
+
+    def _live_object_positions_by_name(self) -> dict[str, tuple[float, float, float]]:
+        out = self._object_positions_by_name()
+        runner = getattr(self._env, "runner", None)
+        if runner is None:
+            return out
+        specs = self._object_specs_by_name()
+        names = set(out.keys())
+        names.update(str(item.get("object_key", "")).strip() for item in self._visible_objects if isinstance(item, dict))
+        for name in names:
+            if not name:
+                continue
+            try:
+                obj = runner.get_obj(str(name))
+                pose = obj.get_pose()
+            except Exception:
+                continue
+            if not isinstance(pose, (list, tuple)) or not pose:
+                continue
+            position = self._coerce_xyz(pose[0])
+            if position is None:
+                continue
+            spec = specs.get(str(name), {})
+            initial = self._coerce_xyz(spec.get("position"))
+            kind = str(spec.get("kind", "")).strip().lower()
+            if not self._position_is_reliable(position, initial=initial, kind=kind):
+                continue
+            out[str(name)] = position
+        return out
+
+    @staticmethod
+    def _position_is_reliable(
+        position: tuple[float, float, float],
+        *,
+        initial: tuple[float, float, float] | None,
+        kind: str,
+    ) -> bool:
+        x, y, z = position
+        if not all(math.isfinite(value) for value in (x, y, z)):
+            return False
+        # Guard against invalid stage/prim poses occasionally reported for
+        # non-physical VisualCuboid objects (e.g. z ~= -592), which would
+        # otherwise look like the object left the scene at t=0.
+        if z < -5.0 or z > 20.0:
+            return False
+        if initial is None:
+            return True
+        xy_dist = math.hypot(x - initial[0], y - initial[1])
+        z_dist = abs(z - initial[2])
+        if kind == "visual_cube":
+            return xy_dist <= 0.75 and z_dist <= 0.75
+        return xy_dist <= 50.0 and z_dist <= 20.0
+
+    @staticmethod
+    def _coerce_xyz(position: Any) -> tuple[float, float, float] | None:
+        if position is None:
+            return None
+        try:
+            if hasattr(position, "tolist"):
+                position = position.tolist()
+            if isinstance(position, dict):
+                return (float(position["x"]), float(position["y"]), float(position["z"]))
+            if isinstance(position, (list, tuple)) and len(position) >= 3:
+                return (float(position[0]), float(position[1]), float(position[2]))
+        except (KeyError, TypeError, ValueError):
+            return None
+        return None
+
+    @staticmethod
+    def _infer_object_location(
+        *,
+        role: str,
+        current_pos: tuple[float, float, float] | None,
+        initial_pos: tuple[float, float, float] | None,
+        pedestal_pos: tuple[float, float, float] | None,
+    ) -> str:
+        if role == "place_surface":
+            return "pedestal"
+        if current_pos is None:
+            return "unknown"
+        if pedestal_pos is not None:
+            pedestal_xy_dist = math.hypot(current_pos[0] - pedestal_pos[0], current_pos[1] - pedestal_pos[1])
+            if pedestal_xy_dist <= 0.22:
+                return "pedestal"
+        if initial_pos is None:
+            return "unknown"
+        xy_dist = math.hypot(current_pos[0] - initial_pos[0], current_pos[1] - initial_pos[1])
+        z_dist = abs(current_pos[2] - initial_pos[2])
+        if xy_dist <= 0.25 and z_dist <= 0.10:
+            return "table"
+        if current_pos[2] >= initial_pos[2] + 0.08:
+            return "lifted"
+        return "moved"
+
+    def _robot_pose_snapshot(self, robot_xy: tuple[float, float] | None) -> dict[str, Any]:
+        if robot_xy is None:
+            return {
+                "frame": "map",
+                "x": float(self._robot_start[0]),
+                "y": float(self._robot_start[1]),
+                "z": float(self._robot_start[2]),
+            }
+        return {
+            "frame": "map",
+            "x": float(robot_xy[0]),
+            "y": float(robot_xy[1]),
+            "z": float(self._robot_start[2]),
+        }
+
+    @staticmethod
+    def _camera_prim_path(parent: str, camera_name: str, prefix: str = "paos_") -> str:
+        parent_path = str(parent or "").rstrip("/")
+        if not parent_path:
+            return ""
+        return f"{parent_path}/{prefix}{camera_name}"
+
+    def _robot_camera_snapshot(self) -> dict[str, dict[str, Any]]:
+        if not isinstance(self._robot_cameras_cfg, dict) or not self._robot_cameras_cfg:
+            return {}
+        session = self._robot_camera_session or {}
+        attached = set((session.get("cameras") or {}).keys())
+        flip_set = set(session.get("flip_set") or [])
+        debug_dump_paths = dict(session.get("debug_dump_paths") or {})
+        out: dict[str, dict[str, Any]] = {}
+        for camera_name, mount in sorted(self._robot_cameras_cfg.items()):
+            if not isinstance(mount, dict):
+                continue
+            parent = str(mount.get("parent") or "").strip()
+            if not parent:
+                continue
+            entry: dict[str, Any] = {
+                "status": "attached" if camera_name in attached else "configured",
+                "parent": parent,
+                "prim_path": self._camera_prim_path(parent, str(camera_name)),
+                "resolution": [int(self._robot_camera_resolution[0]), int(self._robot_camera_resolution[1])],
+            }
+            purpose = str(mount.get("purpose") or "").strip()
+            if purpose:
+                entry["purpose"] = purpose
+            if bool(mount.get("flip_horizontal", False)) or camera_name in flip_set:
+                entry["flip_horizontal"] = True
+            dump_path = str(debug_dump_paths.get(camera_name, "")).strip()
+            if dump_path:
+                entry["debug_dump_path"] = dump_path
+            out[str(camera_name)] = entry
+        return out
+
+    def _dump_robot_camera_debug_frames(
+        self,
+        *,
+        cameras: dict[str, Any],
+        flip_set: set[str],
+        hold_action: dict[str, Any],
+    ) -> dict[str, str]:
+        dump_dir = Path(self._robot_camera_debug_dump_dir).expanduser() if self._robot_camera_debug_dump_dir else None
+        if dump_dir is None:
+            return {}
+        dump_dir.mkdir(parents=True, exist_ok=True)
+
+        try:
+            from hal.simulation import vla_pick as _camera_utils
+            import numpy as _np
+        except Exception as exc:
+            print(f"[pipergo2] WARNING: robot camera debug dump skipped: {exc}", flush=True)
+            return {}
+
+        out: dict[str, str] = {}
+        for camera_name, cam in cameras.items():
+            try:
+                rgb = _camera_utils.grab_rgb(cam, self._env, self._env_lock, hold_action)
+                if rgb is None or not rgb.any():
+                    continue
+                if camera_name in flip_set:
+                    rgb = _np.ascontiguousarray(_np.fliplr(rgb))
+                path = dump_dir / f"{camera_name}.png"
+                Image.fromarray(rgb.astype("uint8"), mode="RGB").save(path)
+                out[camera_name] = str(path)
+            except Exception as exc:
+                print(f"[pipergo2] WARNING: robot camera debug dump failed for {camera_name}: {exc}", flush=True)
+        return out
 
     def health_check(self) -> bool:
         """Keep simulator UI responsive even when ACTION.md is idle."""
@@ -293,11 +727,165 @@ class PiperGo2ManipulationDriver(BaseDriver):
             boot_msg = self._room_bootstrap_sequence(rb)
         self._rebuild_scene_narration()
 
+        robot_camera_msg = self._maybe_attach_robot_cameras()
         vla_msg = self._maybe_preheat_vla_session()
-        tail = " ".join(m for m in (boot_msg, vla_msg) if m)
+        tail = " ".join(m for m in (boot_msg, robot_camera_msg, vla_msg) if m)
         if tail:
             return f"Manipulation API started. {tail}"
         return "Manipulation API started."
+
+    def _maybe_attach_robot_cameras(self) -> str:
+        if not isinstance(self._robot_cameras_cfg, dict) or not self._robot_cameras_cfg:
+            return ""
+        if self._robot_camera_session is not None and self._robot_camera_session.get("cameras"):
+            return ""
+        if self._api is None or self._env is None:
+            return "robot_cameras_skipped:api_not_started"
+
+        try:
+            from hal.simulation import vla_pick as _camera_utils
+        except Exception as exc:
+            print(f"[pipergo2] WARNING: robot camera attach skipped: {exc}", flush=True)
+            return f"robot_cameras_skipped:{exc}"
+
+        stage = None
+        try:
+            stage = self._env.runner._world.stage  # type: ignore[attr-defined]
+        except Exception:
+            stage = None
+        if stage is None:
+            try:
+                import omni  # type: ignore
+
+                stage = omni.usd.get_context().get_stage()
+            except Exception as exc:
+                print(f"[pipergo2] WARNING: robot camera stage lookup failed: {exc}", flush=True)
+                return f"robot_cameras_skipped:{exc}"
+        if stage is None:
+            return "robot_cameras_skipped:no_stage"
+
+        action_name = self._resolve_nav_action_name()
+        hold_xy = (float(self._robot_start[0]), float(self._robot_start[1]))
+        hold_action = {action_name: [(hold_xy[0], hold_xy[1], 0.0)]}
+        cameras, flip_set = _camera_utils.attach_cameras(
+            stage=stage,
+            env=self._env,
+            env_lock=self._env_lock,
+            hold_action=hold_action,
+            mounts=self._robot_cameras_cfg,
+            resolution=self._robot_camera_resolution,
+            warmup_steps=max(0, self._robot_camera_warmup_steps),
+            prim_name_prefix="paos_",
+            camera_name_prefix="paos_",
+        )
+        if not cameras:
+            return "robot_cameras_skipped:none_attached"
+
+        self._robot_camera_session = {
+            "cameras": cameras,
+            "flip_set": flip_set,
+            "debug_dump_paths": self._dump_robot_camera_debug_frames(
+                cameras=cameras,
+                flip_set=flip_set,
+                hold_action=hold_action,
+            ),
+        }
+        side_view_msg = self._ensure_robot_camera_side_view(cameras)
+        base_msg = "robot_cameras:" + ",".join(sorted(cameras))
+        if side_view_msg:
+            return f"{base_msg} {side_view_msg}".strip()
+        return base_msg
+
+    def _ensure_robot_camera_side_view(self, cameras: dict[str, Any]) -> str:
+        if not self._robot_camera_side_view_enabled:
+            return ""
+        if not isinstance(cameras, dict) or not cameras:
+            return "robot_camera_side_view_skipped:no_cameras"
+        if self._robot_camera_side_view_session is not None:
+            return ""
+
+        preferred = self._robot_camera_side_view_name
+        camera_name = preferred if preferred in cameras else sorted(cameras.keys())[0]
+        mount = self._robot_cameras_cfg.get(camera_name, {}) if isinstance(self._robot_cameras_cfg, dict) else {}
+        if not isinstance(mount, dict):
+            mount = {}
+        parent = str(mount.get("parent", "")).strip()
+        if not parent:
+            return "robot_camera_side_view_skipped:no_parent"
+        camera_prim_path = self._camera_prim_path(parent, str(camera_name))
+
+        viewport_window = None
+        viewport_api = None
+        try:
+            import omni.kit.viewport.utility as vp_utils  # type: ignore
+            import omni.ui as ui  # type: ignore
+
+            create_viewport_window = getattr(vp_utils, "create_viewport_window", None)
+            if callable(create_viewport_window):
+                viewport_window = create_viewport_window(
+                    self._robot_camera_side_view_title,
+                    width=int(self._robot_camera_side_view_size[0]),
+                    height=int(self._robot_camera_side_view_size[1]),
+                )
+
+            if viewport_window is None:
+                # Isaac builds differ: fall back to command-based creation.
+                try:
+                    import omni.kit.commands as _kit_commands  # type: ignore
+
+                    _kit_commands.execute(
+                        "CreateViewportWindow",
+                        title=self._robot_camera_side_view_title,
+                        width=int(self._robot_camera_side_view_size[0]),
+                        height=int(self._robot_camera_side_view_size[1]),
+                    )
+                except Exception:
+                    pass
+                viewport_window = ui.Workspace.get_window(self._robot_camera_side_view_title)
+
+            if viewport_window is None:
+                # Reuse if an existing window with that title already exists.
+                viewport_window = ui.Workspace.get_window(self._robot_camera_side_view_title)
+
+            if viewport_window is not None:
+                viewport_api = getattr(viewport_window, "viewport_api", None)
+        except Exception as exc:
+            return f"robot_camera_side_view_skipped:{exc}"
+
+        if viewport_window is None:
+            return "robot_camera_side_view_skipped:no_viewport_window"
+        if viewport_api is None or not hasattr(viewport_api, "set_active_camera"):
+            return "robot_camera_side_view_skipped:no_viewport_api"
+
+        try:
+            viewport_api.set_active_camera(camera_prim_path)
+        except Exception as exc:
+            return f"robot_camera_side_view_skipped:{exc}"
+
+        # Keep camera viewport as a floating PiP window; docking is often
+        # overridden by workspace layouts across Isaac versions.
+        try:
+            if viewport_window is not None:
+                w = int(self._robot_camera_side_view_size[0])
+                h = int(self._robot_camera_side_view_size[1])
+                if hasattr(viewport_window, "width"):
+                    viewport_window.width = w
+                if hasattr(viewport_window, "height"):
+                    viewport_window.height = h
+                # Default to right-bottom style placement; can be tuned later.
+                if hasattr(viewport_window, "position_x"):
+                    viewport_window.position_x = 800
+                if hasattr(viewport_window, "position_y"):
+                    viewport_window.position_y = 500
+        except Exception:
+            pass
+
+        self._robot_camera_side_view_session = {
+            "camera_name": str(camera_name),
+            "camera_prim_path": str(camera_prim_path),
+            "window": viewport_window,
+        }
+        return f"robot_camera_side_view:{camera_name}"
 
     def _maybe_preheat_vla_session(self) -> str:
         """Attach VLA cameras + ArticulationView at start-up so the reference
@@ -314,7 +902,7 @@ class PiperGo2ManipulationDriver(BaseDriver):
         """
         if not isinstance(self._vla_cfg, dict) or not self._vla_cfg:
             return ""
-        if not self._vla_cfg.get("attach_on_start", True):
+        if not self._vla_cfg.get("attach_on_start", False):
             return ""
         if not self._vla_cfg.get("cameras"):
             return ""
@@ -351,19 +939,13 @@ class PiperGo2ManipulationDriver(BaseDriver):
         steps: list[str] = []
         if rb.get("apply_room_lighting", True):
             try:
-                mode = str(rb.get("lighting", self._room_lighting)).strip()
-                steps.extend(apply_lighting_for_mode(self._api, mode))
+                if self._apply_room_lighting():
+                    steps.append("lighting:grey_studio")
             except Exception as exc:
                 steps.append(f"lighting_skipped:{exc}")
         if rb.get("focus_view_on_robot", True):
             try:
-                focus_viewport_on_robot(
-                    (float(self._robot_start[0]), float(self._robot_start[1])),
-                    float(self._robot_start[2]),
-                    camera_eye_offset=self._camera_eye_offset,
-                    camera_target_z_offset=self._camera_target_z_offset,
-                    camera_target_min_z=self._camera_target_min_z,
-                )
+                self._focus_view_xy(self._robot_start[:2], float(self._robot_start[2]))
                 steps.append("viewport_focus")
             except Exception as exc:
                 steps.append(f"viewport_focus_skipped:{exc}")
@@ -413,6 +995,101 @@ class PiperGo2ManipulationDriver(BaseDriver):
                 )
                 steps.append(f"micro_navigate:{micro_msg}")
         return "bootstrap[" + ",".join(steps) + "]"
+
+    def _focus_view_xy(self, robot_xy: tuple[float, ...], robot_z: float) -> None:
+        try:
+            from isaacsim.core.utils.viewports import set_camera_view
+        except ImportError:
+            try:
+                from omni.isaac.core.utils.viewports import set_camera_view
+            except ImportError:
+                return
+        eye = [
+            float(robot_xy[0]) + float(self._camera_eye_offset[0]),
+            float(robot_xy[1]) + float(self._camera_eye_offset[1]),
+            float(robot_z) + float(self._camera_eye_offset[2]),
+        ]
+        target = [
+            float(robot_xy[0]),
+            float(robot_xy[1]),
+            max(float(robot_z) + float(self._camera_target_z_offset), float(self._camera_target_min_z)),
+        ]
+        set_camera_view(
+            eye=eye,
+            target=target,
+            camera_prim_path="/OmniverseKit_Persp",
+        )
+
+    def _apply_room_lighting(self) -> bool:
+        """Best-effort switch to Grey Studio style environment lighting."""
+        lighting = self._room_lighting.replace("-", "_").replace(" ", "_")
+        if lighting not in {"grey_studio", "gray_studio"}:
+            return False
+        # Avoid omni.kit.commands here because some Isaac builds log hard errors
+        # when these commands are unregistered (even if wrapped in try/except).
+        try:
+            from omni.kit.app import get_app  # type: ignore
+            settings = get_app().get_settings()
+            for key, value in (
+                ("/rtx/environment/visible", True),
+                ("/rtx/environment/mode", "Studio"),
+                ("/rtx/environment/lightRig", "Grey Studio"),
+                ("/rtx/environment/lightRigName", "Grey Studio"),
+                ("/rtx/sceneDb/ambientLightIntensity", 0.35),
+            ):
+                try:
+                    settings.set(key, value)
+                except Exception:
+                    pass
+            try:
+                stage = self._api._env.runner._world.stage if self._api and self._env else None
+                if stage is not None:
+                    for path in ("/Environment/DomeLight", "/World/DomeLight"):
+                        prim = stage.GetPrimAtPath(path)
+                        if prim and prim.IsValid():
+                            attr = prim.GetAttribute("inputs:color")
+                            if attr:
+                                attr.Set((0.72, 0.74, 0.78))
+                            iattr = prim.GetAttribute("inputs:intensity")
+                            if iattr:
+                                iattr.Set(1800.0)
+                            break
+            except Exception:
+                pass
+            self._ensure_default_dome_light()
+            return True
+        except Exception:
+            return self._ensure_default_dome_light()
+
+    def _ensure_default_dome_light(self) -> bool:
+        if self._api is None or self._env is None:
+            return False
+        try:
+            from pxr import Sdf, UsdLux
+
+            stage = self._api._env.runner._world.stage
+            if stage is None:
+                return False
+
+            target_path = None
+            for path in ("/Environment/DomeLight", "/World/DomeLight", "/World/PAOS_DefaultDomeLight"):
+                prim = stage.GetPrimAtPath(path)
+                if prim and prim.IsValid():
+                    target_path = path
+                    break
+            if target_path is None:
+                target_path = "/World/PAOS_DefaultDomeLight"
+                UsdLux.DomeLight.Define(stage, Sdf.Path(target_path))
+            dome = UsdLux.DomeLight(stage.GetPrimAtPath(target_path))
+
+            dome.CreateIntensityAttr(1800.0)
+            dome.CreateExposureAttr(0.0)
+            dome.CreateColorAttr((0.72, 0.74, 0.78))
+            if not dome.GetTextureFileAttr().HasAuthoredValue():
+                dome.CreateTextureFileAttr("")
+            return True
+        except Exception:
+            return False
 
     def _collision_patch_merom_scene(self) -> None:
         from pxr import PhysxSchema, Usd, UsdPhysics
@@ -499,6 +1176,14 @@ class PiperGo2ManipulationDriver(BaseDriver):
         finally:
             self._api = None
             self._env = None
+            side_view = self._robot_camera_side_view_session or {}
+            window = side_view.get("window") if isinstance(side_view, dict) else None
+            try:
+                if window is not None and hasattr(window, "destroy"):
+                    window.destroy()
+            except Exception:
+                pass
+            self._robot_camera_side_view_session = None
         return "Manipulation API closed."
 
     def _step_env(self, params: dict[str, Any]) -> str:
@@ -640,26 +1325,42 @@ class PiperGo2ManipulationDriver(BaseDriver):
         self._scene_narration_cn = self._build_table_narration_cn()
 
     def _build_table_narration_cn(self) -> str:
-        if not self._visible_objects:
+        snapshots = self._visible_object_snapshots()
+        if not snapshots:
             return "No visible_objects configured; please define them in driver-config."
-        cubes = [vo for vo in self._visible_objects if "cube" in str(vo.get("shape_cn", "")).lower()]
-        others = [vo for vo in self._visible_objects if vo not in cubes]
+        table_items = [item for item in snapshots if item.get("location") == "table"]
+        moved_items = [
+            item
+            for item in snapshots
+            if item.get("role") != "place_surface" and item.get("location") in {"moved", "lifted", "pedestal"}
+        ]
         parts: list[str] = []
-        if cubes:
-            colors = [str(vo.get("color_label_cn", "")).strip() for vo in cubes if vo.get("color_label_cn")]
-            uq = []
-            for c in colors:
-                if c and c not in uq:
-                    uq.append(c)
-            if uq:
-                parts.append(f"multiple cubes with colors including {', '.join(uq)}")
-            else:
-                parts.append(f"{len(cubes)} cubes on the table")
-        for vo in others:
-            shape = vo.get("shape_cn", "object")
-            col = vo.get("color_label_cn", "")
-            parts.append(f"{col} {shape}".strip() if col else f"{shape}")
-        return "I can see: " + "; ".join(parts) + "."
+        if table_items:
+            table_desc = ", ".join(self._describe_snapshot(item) for item in table_items)
+            parts.append(f"桌面上现在有：{table_desc}")
+        else:
+            parts.append("桌面上现在没有可见方块")
+        if moved_items:
+            moved_desc = ", ".join(self._describe_snapshot(item) for item in moved_items)
+            parts.append(f"已离开桌面的物体：{moved_desc}")
+        return "；".join(parts) + "。"
+
+    @staticmethod
+    def _describe_snapshot(item: dict[str, Any]) -> str:
+        color = str(item.get("color_label_cn", "")).strip()
+        shape = str(item.get("shape_cn", "object")).strip()
+        location = str(item.get("location", "unknown")).strip()
+        position = item.get("position") or {}
+        pos_text = ""
+        if isinstance(position, dict):
+            try:
+                pos_text = f"({float(position.get('x', 0.0)):.2f}, {float(position.get('y', 0.0)):.2f}, {float(position.get('z', 0.0)):.2f})"
+            except (TypeError, ValueError):
+                pos_text = ""
+        label = f"{color} {shape}".strip() if color else shape
+        if pos_text:
+            return f"{label}@{pos_text}[{location}]"
+        return f"{label}[{location}]"
 
     def _describe_visible_scene(self, _params: dict[str, Any]) -> str:
         self._rebuild_scene_narration()
@@ -683,7 +1384,16 @@ class PiperGo2ManipulationDriver(BaseDriver):
             if not matched:
                 return f"Error: pick hint {hint!r} does not match configured primary pick keywords {keywords}."
 
-        pick_target = self._tupleize_grasp_dict(self._pick_target_raw)
+        pick_object_key = str(
+            params.get("target_object_key")
+            or ((self._pick_target_raw.get("metadata") or {}).get("object_name"))
+            or primary
+        ).strip()
+        unavailable = self._pick_unavailable_message(pick_object_key, self._snapshot_for_object(pick_object_key))
+        if unavailable:
+            return unavailable
+
+        pick_target = self._live_grasp_target(self._pick_target_raw, pick_object_key)
         place_target = self._tupleize_grasp_dict(self._place_target_raw)
         if not pick_target or not pick_target.get("position"):
             return "Error: pick_place.pick_target missing in driver-config."
@@ -873,9 +1583,15 @@ class PiperGo2ManipulationDriver(BaseDriver):
     ) -> tuple[float, float] | None:
         """Approach XY = cube XY shifted back along +X by ``offset``.
 
-        Uses the cube position from driver-config ``objects`` first, then
-        falls back to ``pick_place.pick_target.position``.
+        Uses the live cube pose first, then falls back to driver-config
+        ``objects`` and finally ``pick_place.pick_target.position``.
         """
+        live_name = self._object_name_for_prim_path(pick_prim_path)
+        if live_name:
+            snapshot = self._snapshot_for_object(live_name)
+            live_pos = self._coerce_xyz(snapshot.get("position") if isinstance(snapshot, dict) else None)
+            if live_pos is not None:
+                return (float(live_pos[0]) - float(offset), float(live_pos[1]))
         for obj in (self._objects_spec or []):
             if not isinstance(obj, dict):
                 continue
@@ -1058,18 +1774,12 @@ class PiperGo2ManipulationDriver(BaseDriver):
         return None
 
     def _run_vla_pick_and_return(self, params: dict[str, Any]) -> str:
-        """Approach → closed-loop VLA pick (stops after gripper squeeze).
+        """Approach → closed-loop VLA pick → return-home (arm holding grip).
 
-        The base parks at the training-camera approach pose, runs the
-        SmolVLA closed-loop pick, force-closes the gripper, and stops
-        there. The robot does NOT drive back home — the arm keeps the
-        cube held in the post-pick pose for inspection / downstream
-        skills.
-
-        Preconditions: caller has already issued ``enter_simulation``.
-        Approach offset from the cube is handled here so the base ends
-        up in the exact training-camera pose regardless of where it
-        currently is.
+        Preconditions: caller has already issued ``enter_simulation`` and
+        navigated to the desk (or equivalent staging point). The approach
+        offset from the cube is handled here so the base ends up in the
+        exact training-camera pose.
         """
         if self._api is None or self._env is None:
             return "Error: API not started. Dispatch action_type='enter_simulation' first."
@@ -1081,6 +1791,14 @@ class PiperGo2ManipulationDriver(BaseDriver):
             cfg[k] = v
 
         pick_target_prim_path = str(cfg.get("pick_target_prim_path", "/World/pick_cube"))
+        pick_object_key = str(
+            cfg.get("target_object_key")
+            or self._object_name_for_prim_path(pick_target_prim_path)
+            or "pick_cube"
+        ).strip()
+        unavailable = self._pick_unavailable_message(pick_object_key, self._snapshot_for_object(pick_object_key))
+        if unavailable:
+            return unavailable
         pick_nav_offset = float(cfg.get("pick_nav_offset", 0.41))
         approach_xy = self._resolve_approach_xy(pick_target_prim_path, pick_nav_offset)
         if approach_xy is None:
@@ -1089,6 +1807,12 @@ class PiperGo2ManipulationDriver(BaseDriver):
                 f"prim_path={pick_target_prim_path!r}; "
                 f"add the cube to driver-config 'objects' or set pick_place.pick_target.position."
             )
+
+        home_xy_cfg = cfg.get("home_xy")
+        if home_xy_cfg and len(home_xy_cfg) >= 2:
+            home_xy = (float(home_xy_cfg[0]), float(home_xy_cfg[1]))
+        else:
+            home_xy = (float(self._robot_start[0]), float(self._robot_start[1]))
 
         # Cameras are normally preheated at enter_simulation (robot still at
         # home, arm in default pose). If the user started the sim with
@@ -1187,6 +1911,17 @@ class PiperGo2ManipulationDriver(BaseDriver):
             dump_every=dump_every,
         )
 
+        # Step C: return home. Forward the closed-gripper 8-D pose so the
+        # fingers keep squeezing the cube during the base drive.
+        home_arm = result.get("final_arm_8d")
+        home_msg = self._navigate_xy(
+            [home_xy[0], home_xy[1]],
+            max_steps=int(cfg.get("home_max_steps", self._navigation_max_steps)),
+            threshold=float(cfg.get("home_threshold", self._navigation_threshold)),
+            arm_target=home_arm,
+            arm_action_name=arm_action_name,
+        )
+
         init_z = result.get("initial_cube_z")
         fin_z = result.get("final_cube_z")
         dz_str = "n/a"
@@ -1195,7 +1930,7 @@ class PiperGo2ManipulationDriver(BaseDriver):
         prefix = "vla pick SUCCESS" if result.get("success") else "Error: vla pick FAILED"
         return (
             f"{prefix} ticks={result.get('ticks_used')} Δz={dz_str} "
-            f"terminate={result.get('terminate')}"
+            f"terminate={result.get('terminate')}; home_nav={home_msg}"
         )
 
     @staticmethod

@@ -3,6 +3,7 @@
   "_参考": "InternUtopia/internutopia/demo/test3_multi_robot_debug.py 中的 Franka 设置",
 
   "scene_asset_path": "examples/merom_scene_baked.usd",
+  "robot_usd_path": "examples/robots/franka/franka.usd",
 
   "robot_position": [3.46261, 8.0, 0.41172],
 
@@ -12,6 +13,22 @@
   "camera_eye_offset": [2.5, 2.5, 2.0],
   "camera_target_z_offset": 0.0,
   "camera_target_min_z": 0.2,
+  "robot_camera_resolution": [640, 400],
+  "robot_camera_warmup_steps": 8,
+  "robot_camera_side_view_enabled": true,
+  "robot_camera_side_view_title": "Franka Camera",
+  "robot_camera_side_view_size": [560, 320],
+  "robot_camera_side_view_position": [800, 500],
+  "robot_cameras": {
+    "table_overlook": {
+      "parent": "/World",
+      "translation": [5.2, 6.8, 2.2],
+      "orientation": [0.65, -0.27, 0.65, -0.27],
+      "clipping_range": [0.05, 100.0],
+      "focal_length": 2.4,
+      "purpose": "table_top_overview"
+    }
+  },
   "room_bootstrap": {
     "enabled": true,
     "lighting": "grey_studio",
@@ -19,9 +36,9 @@
     "focus_camera": true
   },
 
-  "pause_steps": 45,
-  "gripper_settle_steps": 30,
-  "arm_waypoint_count": 8,
+  "pause_steps": 90,
+  "gripper_settle_steps": 60,
+  "arm_waypoint_count": 16,
 
   "grasp_targets": {
     "cube": {
@@ -62,9 +79,9 @@
 
   "api_kwargs": {
     "force_gui": true,
-    "pause_steps": 45,
-    "arm_waypoint_count": 8,
-    "gripper_settle_steps": 30
+    "pause_steps": 90,
+    "arm_waypoint_count": 16,
+    "gripper_settle_steps": 60
   },
 
   "output_dir": "/tmp/paos_franka_sim_logs",
@@ -75,9 +92,7 @@
   "idle_steps_per_cycle": 1,
   "idle_step_interval_s": 0.033,
 
-  "pythonpath": [
-    "/home/zyserver/work/my_project/InternUtopia"
-  ],
+  "pythonpath": ["/home/zyserver/work/my_project/InternUtopia"],
 
   "_multi_robot_note": "此配置用于多机器人协同场景，scene_asset_path 和 objects 与 test3_multi_robot_debug.py 保持一致"
 }
