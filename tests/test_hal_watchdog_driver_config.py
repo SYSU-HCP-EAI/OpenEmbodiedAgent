@@ -91,3 +91,141 @@ def test_watch_loop_passes_driver_config_to_selected_driver(tmp_path: Path) -> N
         "target_navigation_backend": "real",
         "ssh_host": "192.168.86.17",
     }
+
+
+def test_watch_loop_injects_robot_id_for_fleet_driver(tmp_path: Path) -> None:
+    env_file = tmp_path / "ENVIRONMENT.md"
+    env_file.write_text(
+        "# Environment State\n\n```json\n{\"schema_version\":\"oea.environment.v1\",\"scene_graph\":{\"nodes\":[],\"edges\":[]},\"robots\":{},\"objects\":{}}\n```\n",
+        encoding="utf-8",
+    )
+
+    workspace = tmp_path / "pipergo2_manip_001"
+    workspace.mkdir()
+    captured: dict[str, object] = {}
+
+    class _DummyDriver:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return None
+
+        def get_profile_path(self):
+            return tmp_path / "missing.md"
+
+        def is_connected(self):
+            return True
+
+        def connect(self):
+            return True
+
+        def load_scene(self, _scene):
+            return None
+
+        def health_check(self):
+            return True
+
+        def get_scene(self):
+            return {}
+
+        def get_runtime_state(self):
+            return {}
+
+    class _FleetRegistry:
+        is_fleet = True
+
+        def write_robot_index(self):
+            return None
+
+    def _fake_load_driver(name: str, **kwargs):
+        captured["driver_name"] = name
+        captured["driver_kwargs"] = kwargs
+        return _DummyDriver()
+
+    with patch("hal.drivers.load_driver", side_effect=_fake_load_driver):
+        with patch("hal.hal_watchdog._poll_once", side_effect=KeyboardInterrupt):
+            watch_loop(
+                workspace,
+                driver_name="pipergo2_manipulation",
+                gui=False,
+                poll_interval=0.01,
+                driver_kwargs={},
+                env_file=env_file,
+                registry=_FleetRegistry(),
+            )
+
+    assert captured["driver_name"] == "pipergo2_manipulation"
+    assert captured["driver_kwargs"] == {
+        "gui": False,
+        "robot_id": "pipergo2_manip_001",
+    }
+
+
+def test_watch_loop_injects_robot_id_for_g1_navigation_driver(tmp_path: Path) -> None:
+    env_file = tmp_path / "ENVIRONMENT.md"
+    env_file.write_text(
+        "# Environment State\n\n```json\n{\"schema_version\":\"oea.environment.v1\",\"scene_graph\":{\"nodes\":[],\"edges\":[]},\"robots\":{},\"objects\":{}}\n```\n",
+        encoding="utf-8",
+    )
+
+    workspace = tmp_path / "g1_001"
+    workspace.mkdir()
+    captured: dict[str, object] = {}
+
+    class _DummyDriver:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return None
+
+        def get_profile_path(self):
+            return tmp_path / "missing.md"
+
+        def is_connected(self):
+            return True
+
+        def connect(self):
+            return True
+
+        def load_scene(self, _scene):
+            return None
+
+        def health_check(self):
+            return True
+
+        def get_scene(self):
+            return {}
+
+        def get_runtime_state(self):
+            return {}
+
+    class _FleetRegistry:
+        is_fleet = True
+
+        def write_robot_index(self):
+            return None
+
+    def _fake_load_driver(name: str, **kwargs):
+        captured["driver_name"] = name
+        captured["driver_kwargs"] = kwargs
+        return _DummyDriver()
+
+    with patch("hal.drivers.load_driver", side_effect=_fake_load_driver):
+        with patch("hal.hal_watchdog._poll_once", side_effect=KeyboardInterrupt):
+            watch_loop(
+                workspace,
+                driver_name="g1_navigation",
+                gui=False,
+                poll_interval=0.01,
+                driver_kwargs={},
+                env_file=env_file,
+                registry=_FleetRegistry(),
+            )
+
+    assert captured["driver_name"] == "g1_navigation"
+    assert captured["driver_kwargs"] == {
+        "gui": False,
+        "robot_id": "g1_001",
+    }

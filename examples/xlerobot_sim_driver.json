@@ -1,0 +1,104 @@
+{
+  "robot_id": "xlerobot_001",
+  "scene_asset_path": "examples/merom_scene_baked.usd",
+  "robot_usd_path": "/data/wanghanting/codes/InternUtopia/internutopia/demo/urdf/xlerobot/xlerobot/xlerobot.usd",
+  "robot_start": [0.58, 7.50704, 0.8],
+  "robot_start_orientation": [1.0, 0.0, 0.0, 0.0],
+  "startup_settle_steps": 24,
+  "startup_upright_enabled": true,
+  "startup_upright_min_head_height": 0.9,
+  "startup_upright_retry_settle_steps": 32,
+  "pythonpath": [
+    "/home/zyserver/work/my_project/InternUtopia"
+  ],
+  "isaac_env": {
+    "display": ":99",
+    "novnc_port": 31315,
+    "env": {
+      "ISAAC_PATH": "/isaac-sim",
+      "CARB_APP_PATH": "/isaac-sim/kit",
+      "EXP_PATH": "/isaac-sim/apps"
+    },
+    "setup_python_env": "/isaac-sim/setup_python_env.sh"
+  },
+  "waypoints": {
+    "robot_home": [0.58, 7.50704],
+    "staging_table": [2.74, 7.68]
+  },
+  "waypoint_aliases": {
+    "desk": "staging_table",
+    "table": "staging_table",
+    "home": "robot_home"
+  },
+  "room_lighting": "grey_studio",
+  "camera_eye_offset": [2.8, 2.8, 2.2],
+  "camera_target_z_offset": 0.1,
+  "camera_target_min_z": 0.4,
+  "robot_camera_resolution": [640, 400],
+  "robot_camera_warmup_steps": 8,
+  "robot_camera_debug_dump_dir": "/tmp/paos_xlerobot_camera_debug",
+  "robot_cameras": {
+    "body_view": {
+      "parent": "/World/env_0/robots/xlerobot/head_tilt_link",
+      "translation": [0.18, 0.0, 0.08],
+      "orientation": [0.9813, 0.0, 0.192, 0.0],
+      "clipping_range": [0.05, 100.0],
+      "focal_length": 2.4,
+      "purpose": "robot_body_view"
+    }
+  },
+  "robot_camera_side_view_enabled": true,
+  "robot_camera_side_view_name": "body_view",
+  "robot_camera_side_view_title": "XLerobot Camera",
+  "robot_camera_side_view_size": [560, 320],
+  "experimental_navigation_enabled": false,
+  "visible_objects": [
+    {"label_cn": "red cube", "prim_path": "/World/pick_cube", "class": "cube", "color_label_cn": "red"},
+    {"label_cn": "blue cube", "prim_path": "/World/nearby_block_tall", "class": "cube", "color_label_cn": "blue"},
+    {"label_cn": "yellow cube", "prim_path": "/World/nearby_block_flat", "class": "cube", "color_label_cn": "yellow"},
+    {"label_cn": "green cube", "prim_path": "/World/nearby_block_small", "class": "cube", "color_label_cn": "green"},
+    {"label_cn": "gray pedestal", "prim_path": "/World/place_pedestal", "class": "pedestal", "color_label_cn": "gray"}
+  ],
+  "objects": [
+    {
+      "name": "pick_cube",
+      "kind": "dynamic_cube",
+      "prim_path": "/World/pick_cube",
+      "position": [3.42839, 7.67599, 0.41597],
+      "scale": [0.04, 0.04, 0.04],
+      "color": [0.85, 0.2, 0.2]
+    },
+    {
+      "name": "nearby_block_tall",
+      "kind": "dynamic_cube",
+      "prim_path": "/World/nearby_block_tall",
+      "position": [3.56871, 7.72974, 0.42098],
+      "scale": [0.05, 0.05, 0.05],
+      "color": [0.2, 0.55, 0.9]
+    },
+    {
+      "name": "nearby_block_flat",
+      "kind": "visual_cube",
+      "prim_path": "/World/nearby_block_flat",
+      "position": [3.402, 7.744, 0.41172],
+      "scale": [0.08, 0.05, 0.03],
+      "color": [0.95, 0.78, 0.18]
+    },
+    {
+      "name": "nearby_block_small",
+      "kind": "visual_cube",
+      "prim_path": "/World/nearby_block_small",
+      "position": [3.56, 7.594, 0.41172],
+      "scale": [0.035, 0.035, 0.05],
+      "color": [0.28, 0.82, 0.46]
+    },
+    {
+      "name": "place_pedestal",
+      "kind": "dynamic_cube",
+      "prim_path": "/World/place_pedestal",
+      "position": [1.04209, 7.05388, 0.15927],
+      "scale": [0.14, 0.14, 0.32],
+      "color": [0.42, 0.42, 0.46]
+    }
+  ]
+}

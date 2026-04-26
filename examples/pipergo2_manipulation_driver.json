@@ -9,11 +9,11 @@
     },
     "setup_python_env": "/isaac-sim/setup_python_env.sh",
     "extra_pythonpath": [
-      "/data/wangyuanlei/InternUtopia"
+      "/home/zyserver/work/my_project/InternUtopia"
     ]
   },
-  "scene_asset_path": "/data/wangyuanlei/InternUtopia/internutopia/demo/merom_scene_baked.usd",
-  "robot_usd_path": "/data/wangyuanlei/InternUtopia/internutopia/demo/urdf/pipergo2/pipergo2.usd",
+  "scene_asset_path": "examples/merom_scene_baked.usd",
+  "robot_usd_path": "examples/robots/pipergo2.usd",
   "robot_start": [
     0.58,
     7.50704,
@@ -34,6 +34,37 @@
   ],
   "camera_target_z_offset": 0.0,
   "camera_target_min_z": 0.2,
+  "robot_camera_resolution": [
+    640,
+    400
+  ],
+  "robot_camera_warmup_steps": 8,
+  "robot_camera_debug_dump_dir": "/tmp/paos_robot_camera_debug",
+  "robot_camera_side_view_enabled": true,
+  "robot_camera_side_view_title": "PiperGo2 Camera",
+  "robot_camera_side_view_size": [560, 320],
+  "robot_cameras": {
+    "dog_view": {
+      "parent": "/World/env_0/robots/pipergo2/Head_upper",
+      "translation": [
+        0.3,
+        0.0,
+        0.33
+      ],
+      "orientation": [
+        0.9813,
+        0.0,
+        0.192,
+        0.0
+      ],
+      "clipping_range": [
+        0.05,
+        100.0
+      ],
+      "focal_length": 2.4,
+      "purpose": "robot_body_view"
+    }
+  },
   "waypoints": {
     "staging_table": [
       2.74051,
@@ -111,13 +142,13 @@
       ]
     },
     {
-      "kind": "visual_cube",
+      "kind": "dynamic_cube",
       "name": "nearby_block_flat",
       "prim_path": "/World/nearby_block_flat",
       "position": [
         3.402,
         7.744,
-        0.41172
+        0.41672
       ],
       "scale": [
         0.08,
@@ -131,13 +162,13 @@
       ]
     },
     {
-      "kind": "visual_cube",
+      "kind": "dynamic_cube",
       "name": "nearby_block_small",
       "prim_path": "/World/nearby_block_small",
       "position": [
         3.56,
         7.594,
-        0.41172
+        0.42172
       ],
       "scale": [
         0.035,
@@ -272,6 +303,8 @@
     "set_masses": {
       "pick_cube": 0.02,
       "nearby_block_tall": 0.02,
+      "nearby_block_flat": 0.02,
+      "nearby_block_small": 0.02,
       "place_pedestal": 100.0
     },
     "sticky_material": {
@@ -302,7 +335,7 @@
     ]
   },
   "pythonpath": [
-    "/data/wangyuanlei/InternUtopia"
+    "/home/zyserver/work/my_project/InternUtopia"
   ],
   "vla": {
     "ckpt_path": "/data/wangyuanlei/vla",
@@ -325,7 +358,7 @@
     "arm_action_name": "arm_joint_controller",
     "cam_resolution": [640, 400],
     "cam_warmup_steps": 60,
-    "attach_on_start": true,
+    "attach_on_start": false,
     "dump_root": "/tmp/paos_pipergo2_test_logs/paos",
     "dump_every": 1,
     "cameras": {

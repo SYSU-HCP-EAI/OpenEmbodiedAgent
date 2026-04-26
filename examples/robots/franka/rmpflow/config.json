@@ -1,0 +1,10 @@
+{
+    "end_effector_frame_name": "right_gripper",
+    "maximum_substep_size" : 0.00334,
+    "ignore_robot_state_updates" : false,
+    "relative_asset_paths": {
+        "robot_description_path" : "robot_descriptor.yaml",
+        "urdf_path": "../lula_franka_gen.urdf",
+        "rmpflow_config_path" : "franka_rmpflow_common.yaml"
+    }
+}

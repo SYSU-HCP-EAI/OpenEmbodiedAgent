@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
+from datetime import datetime, timezone
 import json
 import logging
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -23,6 +26,7 @@ from PhyAgentOS.utils.action_queue import (
     parse_action_markdown,
     pending_action_type,
 )
+from hal.simulation.scene_io import load_environment_doc
 
 if TYPE_CHECKING:
     from PhyAgentOS.embodiment_registry import EmbodimentRegistry
@@ -88,7 +92,15 @@ class EmbodiedActionTool(Tool):
         """Execute the action after Critic validation."""
         robot_id = parameters.get("robot_id")
         if self.registry and self.registry.is_fleet and not robot_id:
-            return "Error: robot_id is required for embodied actions in fleet mode."
+            robot_id = self._resolve_default_robot_id()
+            if robot_id:
+                parameters = dict(parameters)
+                parameters["robot_id"] = robot_id
+            else:
+                return (
+                    "Error: robot_id is required for embodied actions in fleet mode and "
+                    "could not be auto-resolved from active watchdog context."
+                )
 
         try:
             embodied_file = self._resolve_embodied_file(robot_id)
@@ -101,9 +113,24 @@ class EmbodiedActionTool(Tool):
         if not embodied_file.exists():
             return f"Error: {embodied_file.name} not found for the target robot. Cannot validate action."
 
+        # Driver-atomic helper action for Franka; rely on HAL runtime handling
+        # rather than LLM critic decomposition.
+        if action_type == "grasp_and_place_aside":
+            dispatch_msg, action_id = self._accept_action(action_type, parameters, action_file)
+            return await self._maybe_wait_for_action_result(
+                action_type=action_type,
+                action_file=action_file,
+                action_id=action_id,
+                fallback_message=dispatch_msg,
+            )
+
         embodied_content = embodied_file.read_text(encoding="utf-8")
         environment_content = environment_file.read_text(encoding="utf-8") if environment_file.exists() else ""
         params_json = json.dumps(parameters, ensure_ascii=False)
+
+        capability_error = self._guard_action_supported(action_type, embodied_content)
+        if capability_error:
+            return capability_error
 
         critic_prompt = (
             "You are the Critic Agent for a robot.\n"
@@ -151,8 +178,21 @@ class EmbodiedActionTool(Tool):
             (line.strip() for line in verdict.splitlines() if line.strip()),
             "",
         )
-        if first_line.upper().startswith("VALID"):
-            return self._accept_action(action_type, parameters, action_file)
+        # Allow common markdown chatty forms like "**VALID**" or "VALID.".
+        has_valid_marker = bool(
+            re.search(r"(^|\n)\s*(?:\*\*)?VALID(?:\*\*)?(?:[\s\.:!]|$)", verdict, flags=re.IGNORECASE)
+        )
+        if first_line.upper().startswith("VALID") or has_valid_marker:
+            guard_error = self._validate_navigation_watchdog_freshness(action_type, environment_file)
+            if guard_error:
+                return guard_error
+            dispatch_msg, action_id = self._accept_action(action_type, parameters, action_file)
+            return await self._maybe_wait_for_action_result(
+                action_type=action_type,
+                action_file=action_file,
+                action_id=action_id,
+                fallback_message=dispatch_msg,
+            )
 
         return self._reject_action(action_type, parameters, reasoning, critic_result, lessons_file)
 
@@ -177,27 +217,126 @@ class EmbodiedActionTool(Tool):
         return self.workspace / "LESSONS.md"
 
     @staticmethod
-    def _accept_action(action_type: str, parameters: dict[str, Any], action_file: Path) -> str:
-        """Write validated action to ACTION.md."""
+    def _parse_utc_timestamp(raw: str) -> datetime | None:
+        text = str(raw or "").strip()
+        if not text:
+            return None
+        try:
+            if text.endswith("Z"):
+                text = text[:-1] + "+00:00"
+            return datetime.fromisoformat(text)
+        except ValueError:
+            return None
+
+    def _validate_navigation_watchdog_freshness(self, action_type: str, environment_file: Path) -> str | None:
+        nav_actions = {"semantic_navigate", "target_navigation", "navigate_to_named", "navigate_to_waypoint"}
+        if action_type not in nav_actions:
+            return None
+
+        env = load_environment_doc(environment_file)
+        active = env.get("active_watchdog") if isinstance(env, dict) else None
+        if not isinstance(active, dict):
+            return None
+
+        updated_at = self._parse_utc_timestamp(str(active.get("updated_at", "")))
+        if updated_at is None:
+            return None
+
+        age_s = (datetime.now(timezone.utc) - updated_at.astimezone(timezone.utc)).total_seconds()
+        # If heartbeat is stale, the watchdog is likely not alive; dispatching nav
+        # actions would leave ACTION.md pending and produce "running" ghost states.
+        if age_s > 30.0:
+            return (
+                "Error: navigation action not dispatched because watchdog heartbeat is stale. "
+                "Please restart watchdog and retry navigation."
+            )
+        return None
+
+    def _resolve_default_robot_id(self) -> str | None:
+        if not self.registry or not self.registry.is_fleet:
+            return None
+
+        env_path = self.registry.resolve_environment_path(robot_id=None, default_workspace=self.workspace)
+        env = load_environment_doc(env_path)
+
+        active = env.get("active_watchdog") if isinstance(env, dict) else None
+        if isinstance(active, dict):
+            candidate = str(active.get("robot_id", "")).strip()
+            if candidate:
+                instance = self.registry.get_instance(candidate)
+                if instance and instance.enabled:
+                    return candidate
+
+        enabled = [instance.robot_id for instance in self.registry.instances(enabled_only=True)]
+        if len(enabled) == 1:
+            return enabled[0]
+        return None
+
+    async def _maybe_wait_for_action_result(
+        self,
+        *,
+        action_type: str,
+        action_file: Path,
+        action_id: str | None,
+        fallback_message: str,
+    ) -> str:
+        """Wait briefly for watchdog result for read-style actions."""
+        if action_type not in {"describe_visible_scene", "grasp_and_place_aside"} or not action_id:
+            return fallback_message
+
+        # Watchdog may be busy stepping simulation; allow longer wait for
+        # read-style actions so chat can return the actual result.
+        timeout_s = 60.0
+        interval_s = 0.4
+        loops = max(1, int(timeout_s / interval_s))
+        for _ in range(loops):
+            document = self._load_action_document(action_file)
+            if isinstance(document, dict):
+                actions = document.get("actions")
+                if isinstance(actions, list):
+                    for item in actions:
+                        if not isinstance(item, dict):
+                            continue
+                        if str(item.get("id", "")) != action_id:
+                            continue
+                        status = str(item.get("status", "")).strip().lower()
+                        if status == "pending":
+                            break
+                        result = str(item.get("result", "")).strip()
+                        if result:
+                            return result
+                        return f"Action '{action_type}' finished with status={status}."
+            await asyncio.sleep(interval_s)
+        return fallback_message
+
+    @staticmethod
+    def _accept_action(action_type: str, parameters: dict[str, Any], action_file: Path) -> tuple[str, str | None]:
+        """Write validated action to ACTION.md and return dispatch message + action id."""
         document = EmbodiedActionTool._load_action_document(action_file)
         if document is None:
             return (
                 "Error: ACTION.md contains unreadable content. "
                 "Please repair it before dispatching another action."
-            )
+            ), None
         existing_action = pending_action_type(document)
         if existing_action is not None:
             return (
                 f"Error: ACTION.md already contains pending action '{existing_action}'. "
                 "Wait for the watchdog to consume it before dispatching another action."
-            )
+            ), None
         action_data = append_action(document, action_type=action_type, parameters=parameters)
+        action_id = None
+        actions = action_data.get("actions")
+        if isinstance(actions, list) and actions:
+            last = actions[-1]
+            if isinstance(last, dict):
+                action_id = str(last.get("id", "")).strip() or None
         action_file.parent.mkdir(parents=True, exist_ok=True)
         action_content = dump_action_document(action_data)
         action_file.write_text(action_content, encoding="utf-8")
 
         logger.info("Action validated and written to {}: {}", action_file, action_type)
-        return f"Action '{action_type}' validated and dispatched to hardware."
+        return f"Action '{action_type}' validated and dispatched to hardware.", action_id
 
     @staticmethod
     def _load_action_document(action_file: Path) -> dict[str, Any] | None:
@@ -225,6 +364,52 @@ class EmbodiedActionTool(Tool):
             "support, safe approach distance, connection availability, and whether current nav state suggests the "
             "robot can accept the task."
         )
+
+    @staticmethod
+    def _guard_action_supported(action_type: str, embodied_content: str) -> str | None:
+        action = str(action_type or "").strip()
+        if not action:
+            return None
+
+        unsupported_section_match = re.search(
+            r"^Not supported(?: yet)?:\s*\n(?P<body>(?:\s*-.*\n?)+)",
+            embodied_content,
+            flags=re.IGNORECASE | re.MULTILINE,
+        )
+        unsupported_section = unsupported_section_match.group("body") if unsupported_section_match else ""
+        if not unsupported_section:
+            return None
+
+        escaped = re.escape(action)
+        disabled_pattern = re.compile(
+            rf"^\s*-\s*`{escaped}`\s*\((?P<reason>[^)]*disabled[^)]*)\)",
+            flags=re.IGNORECASE | re.MULTILINE,
+        )
+        unsupported_pattern = re.compile(
+            rf"^\s*-\s*`{escaped}`(?:\s|$)",
+            flags=re.IGNORECASE | re.MULTILINE,
+        )
+
+        disabled_match = disabled_pattern.search(unsupported_section)
+        if disabled_match:
+            reason = disabled_match.group("reason").strip()
+            message = f"Error: action '{action}' is {reason} in the current robot profile."
+            if action in {"navigate_to_named", "navigate_to_waypoint"}:
+                return (
+                    f"{message} XLerobot is currently manipulation-only because direct waypoint writes can "
+                    "destabilize the robot and wash out the head camera. Use arm/head/gripper actions instead, "
+                    "or switch to a robot with a stable base controller."
+                )
+            return message
+
+        unsupported_match = unsupported_pattern.search(unsupported_section)
+        if unsupported_match:
+            return (
+                f"Error: action '{action}' is not supported by the current robot profile. "
+                "Please use a supported action instead."
+            )
+
+        return None
 
     @staticmethod
     def _reject_action(

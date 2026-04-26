@@ -21,6 +21,7 @@ from PhyAgentOS.agent.tools.cron import CronTool
 from PhyAgentOS.agent.tools.agent import AgentModeTool
 from PhyAgentOS.agent.tools.image import ImageTool
 from PhyAgentOS.agent.tools.embodied import EmbodiedActionTool
+from PhyAgentOS.agent.tools.embodied_question import EmbodiedQuestionTool
 from PhyAgentOS.agent.tools.filesystem import EditFileTool, ListDirTool, ReadFileTool, WriteFileTool
 from PhyAgentOS.agent.tools.message import MessageTool
 from PhyAgentOS.agent.tools.registry import ToolRegistry
@@ -155,6 +156,7 @@ class AgentLoop:
             registry=self.embodiment_registry,
         )
         self.tools.register(action_tool)
+        self.tools.register(EmbodiedQuestionTool(workspace=self.workspace, registry=self.embodiment_registry))
         self.tools.register(SceneGraphQueryTool(workspace=self.workspace))
         self.tools.register(SemanticNavigationTool(
             workspace=self.workspace,
@@ -166,6 +168,120 @@ class AgentLoop:
             action_tool=action_tool,
             registry=self.embodiment_registry,
         ))
+
+    @staticmethod
+    def _infer_named_waypoint_from_text(text: str) -> str | None:
+        lowered = (text or "").strip().lower()
+        if not lowered:
+            return None
+
+        nav_verb = (
+            "move", "go", "navigate", "walk", "head", "reach",
+            "移动", "去", "导航", "前往", "走到", "回",
+        )
+        has_nav_intent = any(token in lowered for token in nav_verb)
+        if not has_nav_intent:
+            return None
+
+        if any(token in lowered for token in ("table", "desk", "桌", "桌子")):
+            return "table"
+        if any(token in lowered for token in ("home", "start", "起点", "原点", "回家")):
+            return "home"
+        return None
+
+    async def _maybe_dispatch_navigation_fastpath(self, text: str) -> str | None:
+        waypoint_key = self._infer_named_waypoint_from_text(text)
+        if waypoint_key is None:
+            return None
+        if not self.tools.get("execute_robot_action"):
+            return None
+        robot_id = self._infer_robot_id_from_text(text)
+        params: dict[str, Any] = {"waypoint_key": waypoint_key}
+        if robot_id:
+            params["robot_id"] = robot_id
+
+        result = await self.tools.execute(
+            "execute_robot_action",
+            {
+                "action_type": "navigate_to_named",
+                "parameters": params,
+                "reasoning": "Direct navigation fastpath for explicit user movement intent.",
+            },
+        )
+        if isinstance(result, str):
+            if result.startswith("Error:"):
+                return result
+            return (
+                f"Navigation command dispatched (waypoint={waypoint_key}"
+                + (f", robot_id={robot_id}" if robot_id else "")
+                + "). "
+                f"{result}"
+            )
+        return str(result)
+
+    def _infer_robot_id_from_text(self, text: str) -> str | None:
+        """Best-effort robot id inference for fastpath commands in fleet mode."""
+        registry = self.embodiment_registry
+        if registry is None or not registry.is_fleet:
+            return None
+
+        lowered = (text or "").strip().lower()
+        if not lowered:
+            return None
+
+        matches: list[str] = []
+        for instance in registry.instances(enabled_only=True):
+            rid = str(instance.robot_id).strip()
+            if not rid:
+                continue
+            rid_l = rid.lower()
+            aliases = {
+                rid_l,
+                rid_l.replace("_", ""),
+                rid_l.split("_", 1)[0],
+            }
+            if rid_l.startswith("pipergo2"):
+                aliases.update({"pipergo2", "piper", "dog"})
+            if rid_l.startswith("franka"):
+                aliases.add("franka")
+            if rid_l.startswith("g1"):
+                aliases.add("g1")
+            if any(alias and alias in lowered for alias in aliases):
+                matches.append(rid)
+
+        if len(matches) == 1:
+            return matches[0]
+        return None
+
+    async def _maybe_dispatch_franka_pick_place_fastpath(self, text: str) -> str | None:
+        lowered = (text or "").strip().lower()
+        if not lowered or "franka" not in lowered:
+            return None
+        has_grasp = any(tok in lowered for tok in ("grasp", "pick", "抓", "拿"))
+        has_place = any(tok in lowered for tok in ("put", "place", "aside", "放", "旁边"))
+        has_cube = any(tok in lowered for tok in ("cube", "方块", "立方体"))
+        if not (has_grasp and has_place and has_cube):
+            return None
+        if not self.tools.get("execute_robot_action"):
+            return None
+
+        robot_id = self._infer_robot_id_from_text(text)
+        params: dict[str, Any] = {}
+        if robot_id:
+            params["robot_id"] = robot_id
+        result = await self.tools.execute(
+            "execute_robot_action",
+            {
+                "action_type": "grasp_and_place_aside",
+                "parameters": params,
+                "reasoning": (
+                    "Direct Franka pick-and-place fastpath for explicit blue cube manipulation intent."
+                ),
+            },
+        )
+        if isinstance(result, str):
+            return result
+        return str(result)
 
     async def _connect_mcp(self) -> None:
         """Connect to configured MCP servers (one-time, lazy)."""
@@ -440,6 +556,28 @@ class AgentLoop:
                 channel=msg.channel, chat_id=msg.chat_id, content="\n".join(lines),
             )
         await self.memory_consolidator.maybe_consolidate_by_tokens(session)
+
+        franka_fastpath_result = await self._maybe_dispatch_franka_pick_place_fastpath(msg.content)
+        if franka_fastpath_result is not None:
+            self.sessions.save(session)
+            logger.info("Franka pick-place fastpath response: {}", franka_fastpath_result[:200])
+            return OutboundMessage(
+                channel=msg.channel,
+                chat_id=msg.chat_id,
+                content=franka_fastpath_result,
+                metadata=msg.metadata or {},
+            )
+
+        fastpath_result = await self._maybe_dispatch_navigation_fastpath(msg.content)
+        if fastpath_result is not None:
+            self.sessions.save(session)
+            logger.info("Navigation fastpath response: {}", fastpath_result[:200])
+            return OutboundMessage(
+                channel=msg.channel,
+                chat_id=msg.chat_id,
+                content=fastpath_result,
+                metadata=msg.metadata or {},
+            )
 
         self._set_tool_context(msg.channel, msg.chat_id, msg.metadata.get("message_id"))
         if message_tool := self.tools.get("message"):

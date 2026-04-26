@@ -1,0 +1,91 @@
+{
+  "isaac_env": {
+    "display": ":99",
+    "env": {
+      "ISAAC_PATH": "/isaac-sim",
+      "CARB_APP_PATH": "/isaac-sim/kit",
+      "EXP_PATH": "/isaac-sim/apps",
+      "INTERNUTOPIA_ASSETS_PATH": "/data/datasets/GRScenes"
+    },
+    "setup_python_env": "/isaac-sim/setup_python_env.sh",
+    "extra_pythonpath": [
+      "/home/zyserver/work/my_project/InternUtopia"
+    ]
+  },
+  "scene_asset_path": "examples/merom_scene_baked.usd",
+  "robot_usd_path": "examples/robots/g1_29dof_color.usd",
+  "robot_start": [
+    0.58,
+    7.50704,
+    0.8
+  ],
+  "navigation_action_name": null,
+  "navigation_max_steps": 1200,
+  "navigation_threshold": 0.15,
+  "idle_step_enabled": true,
+  "idle_steps_per_cycle": 1,
+  "idle_step_interval_s": 0.033,
+  "room_lighting": "grey_studio",
+  "camera_eye_offset": [
+    2.8,
+    2.8,
+    2.2
+  ],
+  "camera_target_z_offset": 0.1,
+  "camera_target_min_z": 0.4,
+  "robot_camera_resolution": [
+    640,
+    400
+  ],
+  "robot_camera_warmup_steps": 8,
+  "robot_camera_debug_dump_dir": "/tmp/paos_g1_camera_debug",
+  "robot_camera_side_view_enabled": true,
+  "robot_camera_side_view_title": "G1 Camera",
+  "robot_camera_side_view_size": [560, 320],
+  "robot_cameras": {
+    "body_view": {
+      "parent": "/World/env_0/robots/g1/pelvis",
+      "translation": [
+        0.18,
+        0.0,
+        0.72
+      ],
+      "orientation": [
+        0.9813,
+        0.0,
+        0.192,
+        0.0
+      ],
+      "clipping_range": [
+        0.05,
+        100.0
+      ],
+      "focal_length": 2.4,
+      "purpose": "robot_body_view"
+    }
+  },
+  "waypoints": {
+    "staging_table": [
+      2.74051,
+      7.67599
+    ],
+    "robot_home": [
+      0.58,
+      7.50704
+    ]
+  },
+  "waypoint_aliases": {
+    "desk": "staging_table",
+    "table": "staging_table",
+    "home": "robot_home"
+  },
+  "visible_objects": [],
+  "objects": [],
+  "pythonpath": [
+    "/home/zyserver/work/my_project/InternUtopia"
+  ],
+  "auto_enter_simulation_on_start": false,
+  "vla": {
+    "attach_on_start": false
+  }
+}

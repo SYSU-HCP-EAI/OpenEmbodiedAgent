@@ -20,6 +20,11 @@ class _FakeProvider:
         return _FakeResponse("VALID")
 
 
+class _FailProvider:
+    async def chat_with_retry(self, messages, model):  # noqa: ANN001
+        raise AssertionError("Provider should not be called for profile-disabled actions")
+
+
 def _fleet_config(tmp_path: Path) -> Config:
     return Config.model_validate(
         {
@@ -108,7 +113,7 @@ def test_embodied_action_tool_routes_action_to_robot_workspace(tmp_path: Path) -
     assert "go2_edu_001" in action_doc
 
 
-def test_embodied_action_tool_requires_robot_id_in_fleet_mode(tmp_path: Path) -> None:
+def test_embodied_action_tool_auto_resolves_single_enabled_robot_in_fleet_mode(tmp_path: Path) -> None:
     registry = EmbodimentRegistry(_fleet_config(tmp_path))
     registry.sync_layout()
     tool = EmbodiedActionTool(
@@ -126,7 +131,65 @@ def test_embodied_action_tool_requires_robot_id_in_fleet_mode(tmp_path: Path) ->
         )
     )
 
-    assert "robot_id is required" in result
+    assert "validated and dispatched" in result
+    action_doc = (tmp_path / "workspaces" / "go2_edu_001" / "ACTION.md").read_text(encoding="utf-8")
+    assert '"robot_id": "go2_edu_001"' in action_doc
+
+
+def test_embodied_action_tool_prefers_active_watchdog_robot_id(tmp_path: Path) -> None:
+    config = Config.model_validate(
+        {
+            "embodiments": {
+                "mode": "fleet",
+                "sharedWorkspace": str(tmp_path / "workspaces" / "shared"),
+                "instances": [
+                    {
+                        "robotId": "go2_edu_001",
+                        "driver": "go2_edu",
+                        "workspace": str(tmp_path / "workspaces" / "go2_edu_001"),
+                        "enabled": True,
+                    },
+                    {
+                        "robotId": "g1_001",
+                        "driver": "g1_navigation",
+                        "workspace": str(tmp_path / "workspaces" / "g1_001"),
+                        "enabled": True,
+                    },
+                ],
+            }
+        }
+    )
+    registry = EmbodimentRegistry(config)
+    registry.sync_layout()
+    shared = registry.resolve_agent_workspace()
+    env_file = shared / "ENVIRONMENT.md"
+    env_file.write_text(
+        "# Environment State\n\n```json\n"
+        "{\"schema_version\":\"PhyAgentOS.environment.v1\","
+        "\"active_watchdog\":{\"robot_id\":\"g1_001\",\"driver\":\"g1_navigation\"},"
+        "\"scene_graph\":{\"nodes\":[],\"edges\":[]},\"robots\":{},\"objects\":{}}"
+        "\n```\n",
+        encoding="utf-8",
+    )
+
+    tool = EmbodiedActionTool(
+        workspace=shared,
+        provider=_FakeProvider(),
+        model="fake",
+        registry=registry,
+    )
+
+    result = asyncio.run(
+        tool.execute(
+            action_type="enter_simulation",
+            parameters={},
+            reasoning="Open simulation for current watchdog target.",
+        )
+    )
+
+    assert "validated and dispatched" in result
+    action_doc = (tmp_path / "workspaces" / "g1_001" / "ACTION.md").read_text(encoding="utf-8")
+    assert '"robot_id": "g1_001"' in action_doc
 
 
 def test_embodied_action_tool_rejects_when_action_file_already_pending(tmp_path: Path) -> None:
@@ -212,6 +275,36 @@ def test_embodied_action_tool_rejects_invalid_action_file_content(tmp_path: Path
 
     assert "contains unreadable content" in result
     assert robot_action.read_text(encoding="utf-8") == "broken content"
+
+
+def test_embodied_action_tool_short_circuits_profile_disabled_navigation(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "EMBODIED.md").write_text(
+        "> Profile: xlerobot_sim | Driver: XLerobotSimDriver\n\n"
+        "Not supported yet:\n"
+        "- `navigate_to_named` (disabled by default)\n"
+        "- `navigate_to_waypoint` (disabled by default)\n",
+        encoding="utf-8",
+    )
+
+    tool = EmbodiedActionTool(
+        workspace=workspace,
+        provider=_FailProvider(),
+        model="fake",
+    )
+
+    result = asyncio.run(
+        tool.execute(
+            action_type="navigate_to_named",
+            parameters={"waypoint_key": "table"},
+            reasoning="Move the xlerobot to the table.",
+        )
+    )
+
+    assert "manipulation-only" in result
+    assert "head camera" in result
+    assert not (workspace / "LESSONS.md").exists()
 
 
 def test_registry_render_robot_index_reads_instance_specific_environment(tmp_path: Path) -> None:

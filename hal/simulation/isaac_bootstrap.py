@@ -44,6 +44,8 @@ from __future__ import annotations
 
 import os
 import shlex
+import shutil
+import socket
 import subprocess
 import sys
 from pathlib import Path
@@ -61,6 +63,47 @@ def _install_pythonpath_into_sys_path() -> None:
     for entry in os.environ.get("PYTHONPATH", "").split(os.pathsep):
         if entry and entry not in sys.path:
             sys.path.insert(0, entry)
+
+
+def _is_local_port_listening(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(0.3)
+        return sock.connect_ex(("127.0.0.1", int(port))) == 0
+
+
+def _ensure_novnc_websockify(cfg: dict[str, Any]) -> None:
+    if not bool(cfg.get("autostart_novnc", True)):
+        return
+
+    try:
+        port = int(cfg.get("novnc_port", 31315))
+    except (TypeError, ValueError):
+        _log("WARNING: invalid novnc_port in isaac_env; expected int")
+        return
+
+    if _is_local_port_listening(port):
+        _log(f"noVNC already listening on :{port}")
+        return
+
+    websockify_bin = shutil.which("websockify") or "/usr/bin/websockify"
+    if not Path(websockify_bin).exists():
+        _log("WARNING: websockify not found; skip noVNC autostart")
+        return
+
+    novnc_web = str(cfg.get("novnc_web", "/usr/share/novnc"))
+    novnc_target = str(cfg.get("novnc_target", "localhost:5900"))
+    cmd = [websockify_bin, "--web", novnc_web, str(port), novnc_target]
+    try:
+        subprocess.Popen(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            env=os.environ.copy(),
+            start_new_session=True,
+        )
+        _log(f"started noVNC websockify on :{port} -> {novnc_target}")
+    except Exception as exc:  # pragma: no cover - defensive runtime guard
+        _log(f"WARNING: failed to start noVNC websockify on :{port}: {exc}")
 
 
 def _source_setup_script(script_path: str) -> dict[str, str]:
@@ -117,6 +160,7 @@ def bootstrap_isaac_env(cfg: dict[str, Any] | None, *, want_gui: bool) -> None:
 
     if want_gui:
         os.environ.setdefault("DISPLAY", str(cfg.get("display", ":99")))
+        _ensure_novnc_websockify(cfg)
     else:
         os.environ.pop("DISPLAY", None)
 

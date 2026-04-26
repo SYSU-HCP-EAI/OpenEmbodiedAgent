@@ -1,5 +1,6 @@
 {
-  "scene_asset_path": "/home/zyserver/work/my_project/InternUtopia/internutopia/demo/merom_scene_baked.usd",
+  "scene_asset_path": "examples/merom_scene_baked.usd",
+  "robot_usd_path": "examples/robots/pipergo2.usd",
   "robot_start": [
     0.58,
     7.50704,
@@ -20,6 +21,34 @@
   ],
   "camera_target_z_offset": 0.0,
   "camera_target_min_z": 0.2,
+  "robot_camera_resolution": [
+    640,
+    400
+  ],
+  "robot_camera_warmup_steps": 8,
+  "robot_camera_debug_dump_dir": "/tmp/paos_robot_camera_debug",
+  "robot_cameras": {
+    "dog_view": {
+      "parent": "/World/env_0/robots/pipergo2/Head_upper",
+      "translation": [
+        0.3,
+        0.0,
+        0.33
+      ],
+      "orientation": [
+        0.9813,
+        0.0,
+        0.192,
+        0.0
+      ],
+      "clipping_range": [
+        0.05,
+        100.0
+      ],
+      "focal_length": 2.4,
+      "purpose": "robot_body_view"
+    }
+  },
   "waypoints": {
     "staging_table": [
       2.74051,

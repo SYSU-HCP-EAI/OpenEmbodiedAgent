@@ -76,8 +76,11 @@ Then run commands in order:
 ```bash
 paos agent -m "open simulation"
 paos agent -m "go to desk"
+paos agent -m "what is on the table"
 paos agent -m "pick up the red cube and return to the starting position"
 ```
+
+The table question is answered immediately from the current `ENVIRONMENT.md` scene graph / manipulation runtime state. In fleet mode, include the target `robot_id` in the tool call context.
 
 ## 6) Notes
 

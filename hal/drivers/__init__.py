@@ -22,6 +22,9 @@ from hal.plugins import activate_external_driver, list_external_drivers, resolve
 DRIVER_REGISTRY: dict[str, str] = {
     "simulation":  "hal.drivers.simulation_driver.SimulationDriver",
     "go2_edu":     "hal.drivers.go2_driver.Go2Driver",
+    "franka_simulation": "hal.drivers.franka_simulation_driver.FrankaSimulationDriver",
+    "g1_navigation": "hal.drivers.g1_navigation_driver.G1NavigationDriver",
+    "xlerobot_sim": "hal.drivers.xlerobot_sim_driver.XLerobotSimDriver",
     "xlerobot_2wheels_remote": "hal.drivers.xlerobot_2wheels_remote_driver.XLerobot2WheelsRemoteDriver",
     "pipergo2_manipulation": "hal.drivers.pipergo2_manipulation_driver.PiperGo2ManipulationDriver",
     # Future drivers — uncomment when implemented:

@@ -232,6 +232,8 @@ def attach_cameras(
     mounts: dict,
     resolution: tuple[int, int],
     warmup_steps: int = 60,
+    prim_name_prefix: str = "vla_",
+    camera_name_prefix: str | None = None,
 ) -> tuple[dict, set[str]]:
     """Attach Isaac Sim ``Camera`` prims per the ``mounts`` config.
 
@@ -243,8 +245,26 @@ def attach_cameras(
     except ImportError:
         from omni.isaac.sensor import Camera  # type: ignore
 
+    camera_name_prefix = prim_name_prefix if camera_name_prefix is None else str(camera_name_prefix)
     cameras: dict = {}
     flip_set: set[str] = set()
+
+    def _vec3(value: Any, default: tuple[float, float, float]) -> tuple[float, float, float]:
+        if not isinstance(value, (list, tuple)) or len(value) < 3:
+            return default
+        try:
+            return (float(value[0]), float(value[1]), float(value[2]))
+        except Exception:
+            return default
+
+    def _quat4(value: Any, default: tuple[float, float, float, float]) -> tuple[float, float, float, float]:
+        if not isinstance(value, (list, tuple)) or len(value) < 4:
+            return default
+        try:
+            return (float(value[0]), float(value[1]), float(value[2]), float(value[3]))
+        except Exception:
+            return default
+
     for cam_name, mount in mounts.items():
         parent = mount.get("parent")
         if not parent:
@@ -253,16 +273,21 @@ def attach_cameras(
         if not parent_prim.IsValid():
             _log(f"WARNING: camera parent not found: {parent} (skip {cam_name})")
             continue
-        prim_path = f"{parent}/vla_{cam_name}"
+        prim_path = f"{parent}/{prim_name_prefix}{cam_name}"
         if bool(mount.get("flip_horizontal", False)):
             flip_set.add(cam_name)
         try:
+            translation = _vec3(mount.get("translation"), (0.0, 0.0, 0.0))
+            orientation = _quat4(mount.get("orientation"), (1.0, 0.0, 0.0, 0.0))
             cam = Camera(
                 prim_path=prim_path,
-                name=f"vla_{cam_name}",
+                name=f"{camera_name_prefix}{cam_name}",
                 resolution=(int(resolution[0]), int(resolution[1])),
-                translation=np.array(mount["translation"], dtype=np.float32),
-                orientation=np.array(mount["orientation"], dtype=np.float32),
+                # Use plain Python tuples (not numpy dtypes) to avoid Isaac
+                # OG attribute write failures like:
+                # "Unable to write from unknown dtype, kind=f/i, size=0".
+                translation=translation,
+                orientation=orientation,
             )
             cam.set_focal_length(float(mount.get("focal_length", 2.4)))
             cam.initialize()
@@ -275,7 +300,24 @@ def attach_cameras(
             cameras[cam_name] = cam
             _log(f"attached {cam_name} @ {prim_path} clip={clip}")
         except Exception as exc:
-            _log(f"WARNING: failed to attach {cam_name}: {exc}")
+            # Fallback: create camera with minimal args first, then initialize.
+            try:
+                cam = Camera(
+                    prim_path=prim_path,
+                    name=f"{camera_name_prefix}{cam_name}",
+                    resolution=(int(resolution[0]), int(resolution[1])),
+                )
+                cam.initialize()
+                clip = mount.get("clipping_range")
+                if clip:
+                    try:
+                        cam.set_clipping_range(float(clip[0]), float(clip[1]))
+                    except Exception:
+                        pass
+                cameras[cam_name] = cam
+                _log(f"attached {cam_name} @ {prim_path} (fallback) clip={clip}")
+            except Exception as exc2:
+                _log(f"WARNING: failed to attach {cam_name}: {exc}; fallback failed: {exc2}")
 
     if cameras and warmup_steps > 0:
         _log(f"warming up cameras ({warmup_steps} env.step with hold_action)")
