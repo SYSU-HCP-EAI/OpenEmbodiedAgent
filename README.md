@@ -141,7 +141,7 @@ To auto-onboard a new robot into `PhyAgentOS-rekep-real-plugin` with the built-i
 
 [Simulation Guide](docs/README_paos_env.md): Built-in simulation and Isaac Sim 5.1 setup.
 
-[ReKep Real Plugin]([https://github.com/shawnmsw28/PhyAgentOS-unitree-g1-voice-plugin](https://github.com/baiyu858/PhyAgentOS-rekep-real-plugin)): an external HAL plugin that adds real-world ReKep execution capability through the rekep_real driver while keeping the PhyAgentOS core repository clean and lightweight.
+[ReKep Real Plugin](https://github.com/baiyu858/PhyAgentOS-rekep-real-plugin): an external HAL plugin that adds real-world ReKep execution capability through the rekep_real driver while keeping the PhyAgentOS core repository clean and lightweight.
 
 [Unitree G1 Voice Plugin](https://github.com/shawnmsw28/PhyAgentOS-unitree-g1-voice-plugin): A PhyAgentOS HAL plugin that turns the Unitree G1 into a voice + vision interactive robot, with a thin HTTP driver and two on-demand interactive runtimes.
 
