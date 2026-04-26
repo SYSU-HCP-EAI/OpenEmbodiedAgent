@@ -87,6 +87,7 @@ packages = ["PhyAgentOS"]
 include = [
     "PhyAgentOS/**/*.py",
     "PhyAgentOS/templates/**/*.md",
+    "PhyAgentOS/templates/**/*.json",
     "PhyAgentOS/skills/**/*.md",
     "PhyAgentOS/skills/**/*.sh",
 ]

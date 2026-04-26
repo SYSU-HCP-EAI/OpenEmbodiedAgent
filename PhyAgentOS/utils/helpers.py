@@ -206,6 +206,12 @@ def sync_workspace_templates(
     _write(None, workspace / "memory" / "HISTORY.md")
     (workspace / "skills").mkdir(exist_ok=True)
 
+    configs_tpl = tpl / "configs"
+    if configs_tpl.is_dir():
+        for item in configs_tpl.iterdir():
+            if item.suffix.lower() == ".json" and item.is_file():
+                _write(item, workspace / "configs" / item.name)
+
     if added and not silent:
         from rich.console import Console
         for name in added:

@@ -26,12 +26,6 @@
 
 PhyAgentOS 采用**万物皆 Markdown** (State-as-a-File)的协议矩阵，原生支持跨硬件平台的零代码迁移、基于沙盒的代码工具自生成，以及基于多智能体验证（Multi-Agent Critic）的安全纠偏机制。
 
-## 🔥最新消息
-
-*   [2026-4-14] 增加了对仿真环境的支持；具体的接口可以在网站文档中找到。
-*   [2026-4-1] 增加了对XleRobot的支持，支持部署、抓取和导航。
-*   [2026-3-31] PhyAgentOS正式发布，版本0.0.5
-
 ## ✨ 核心特性
 
 *   📝 **万物皆 Markdown (State-as-a-File)**: 软硬件通过读写本地 Markdown 文件（如 `ENVIRONMENT.md`、`ACTION.md`）进行通信，彻底解耦，极度透明。

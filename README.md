@@ -24,12 +24,6 @@
 
 PhyAgentOS utilizes a **"State-as-a-File"** protocol matrix, natively supporting zero-code migration across hardware platforms, sandbox-driven tool self-generation, and safety correction mechanisms based on Multi-Agent Critic verification.
 
-## 🔥News
-
-*   [2026-4-14] Added support for simulation environments; specific interfaces can be found in the website documentation.
-*   [2026-4-1] Added support for XleRobot, enabling deployment, grasping, and navigation.
-*   [2026-3-31] PhyAgentOS officially released, version 0.0.5
-
 ## ✨ Core Features
 
 *   📝 **State-as-a-File**: Software and hardware communicate by reading/writing local Markdown files (e.g., `ENVIRONMENT.md`, `ACTION.md`), ensuring complete decoupling and extreme transparency.

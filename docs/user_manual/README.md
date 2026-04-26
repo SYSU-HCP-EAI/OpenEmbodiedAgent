@@ -264,6 +264,7 @@ paos agent -m "看看桌面上有什么物体"
 | 内置仿真 | `simulation` | 可直接使用 | 最适合首次跑通 |
 | 内置移动机器人 | `go2_edu` | 需准备真实配置 | 适合导航、定位与目标导航相关实验 |
 | 内置远程底盘 | `xlerobot_2wheels_remote` | 需准备远程主机配置 | 通过 ZMQ 控制远程底盘 |
+| 内置机械臂 | `franka_research3` | 需准备 Control Box 配置 | 通过 pylibfranka 控制 FR3 机械臂 |
 | 外部插件 | `rekep_real` | 需先安装插件 | 适合真实机械臂 ReKep 运行 |
 
 ### 7.2 Go2 示例
@@ -292,7 +293,74 @@ python hal/hal_watchdog.py \
   --driver-config examples/xlerobot_2wheels_remote.driver.json
 ```
 
-### 7.4 ReKep 真实机器人插件
+### 7.4 Franka Research 3 机械臂示例
+
+Franka Research 3 (FR3) 支持两种驱动模式：
+
+#### 7.4.1 驱动选择
+
+| 驱动名 | 说明 | 适用场景 |
+|:-------|:-----|:---------|
+| `franka_research3` | 原始 pylibfranka 驱动 | 需要精确控制或实时 1kHz |
+| `franka_multi` | 多后端协商驱动 | 自动选择可用后端，更好的兼容性 |
+
+#### 7.4.2 网络架构
+
+```
+WorkStation PC --> Control Box (Shop Floor: 172.16.0.x) --> Robot Arm (内部网络)
+```
+
+#### 7.4.3 首次设置
+
+1. 网线连接 PC ↔ Control Box (Shop Floor 接口)
+2. PC 有线网络 IP 设为 `172.16.0.x`（如 `172.16.0.1`）
+3. 在 Control Box Desk 界面激活 FCI
+4. 安装后端驱动（见下节）
+
+#### 7.4.4 后端安装
+
+推荐同时安装两个后端，系统自动选择：
+
+🚨在安装之前请检查安装的库的版本与机器人系统的版本是否兼容
+
+```bash
+# pylibfranka (官方 Python 绑定)
+pip install pylibfranka
+
+# franky-control (备选高层库，更宽松的兼容性)
+pip install git+https://github.com/TimSchneider42/franky.git
+```
+
+#### 7.4.5 启动方式
+
+```bash
+# 多后端自动协商（推荐）
+python hal/hal_watchdog.py --driver franka_multi
+
+# 原始 pylibfranka 驱动
+python hal/hal_watchdog.py --driver franka_research3
+
+# 自定义配置
+python hal/hal_watchdog.py \
+  --driver franka_multi \
+  --driver-config examples/franka_research3.driver.json
+```
+
+#### 7.4.6 支持的动作
+
+`move_to`（笛卡尔位置）、`move_joints`（关节位置）、`grasp`、`move_gripper`、`stop` 等。
+
+#### 7.4.7 实时控制模式
+
+设置 `realtime_mode: true` 可启用 1 kHz 实时控制（需安装实时内核）。
+
+详细说明请参考：
+- [hal/profiles/franka_research3.md](../../hal/profiles/franka_research3.md)
+- [appendix/franka_compatibility.md](appendix/franka_compatibility.md) - 版本兼容性表格
+- [appendix/franka_capabilities.md](appendix/franka_capabilities.md) - 后端能力对比
+- [appendix/franka_version_guide.md](appendix/franka_version_guide.md) - 有关版本兼容的说明
+
+### 7.5 ReKep 真实机器人插件
 
 `rekep_real` 不是主仓库内置驱动，而是通过外部插件仓库接入。推荐流程如下：
 
