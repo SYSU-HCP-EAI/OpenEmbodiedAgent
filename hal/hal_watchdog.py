@@ -13,7 +13,6 @@ import json
 import shutil
 import sys
 import time
-import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -71,50 +70,19 @@ def load_driver_config(path: Path | None) -> dict[str, object]:
     return data
 
 
-def _to_jsonable(value):
-    """Recursively convert runtime payloads to JSON-serializable Python types."""
-    if value is None or isinstance(value, (str, int, float, bool)):
-        return value
-
-    if isinstance(value, dict):
-        return {str(k): _to_jsonable(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple, set)):
-        return [_to_jsonable(v) for v in value]
-
-    # numpy scalar support (np.float32 / np.int64 / ...)
-    item = getattr(value, "item", None)
-    if callable(item):
-        try:
-            return _to_jsonable(item())
-        except Exception:
-            pass
-
-    # numpy array / tensor-like support
-    tolist = getattr(value, "tolist", None)
-    if callable(tolist):
-        try:
-            return _to_jsonable(tolist())
-        except Exception:
-            pass
-
-    return str(value)
-
-
 def _save_scene(driver, path: Path, scene: dict[str, dict], registry=None) -> None:
     existing = load_environment_doc(path)
     runtime_state = {}
     runtime_getter = getattr(driver, "get_runtime_state", None)
     if callable(runtime_getter):
         runtime_state = runtime_getter() or {}
-    safe_scene = _to_jsonable(scene)
-    safe_runtime = _to_jsonable(runtime_state)
     updated = merge_environment_doc(
         existing,
-        objects=safe_scene,
-        robots=safe_runtime.get("robots"),
-        scene_graph=safe_runtime.get("scene_graph"),
-        map_data=safe_runtime.get("map"),
-        tf_data=safe_runtime.get("tf"),
+        objects=scene,
+        robots=runtime_state.get("robots"),
+        scene_graph=runtime_state.get("scene_graph"),
+        map_data=runtime_state.get("map"),
+        tf_data=runtime_state.get("tf"),
         updated_at=datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
     )
     save_environment_doc(path, updated)
@@ -203,11 +171,7 @@ def watch_loop(
         action_file = workspace / "ACTION.md"
         try:
             while True:
-                try:
-                    _poll_once(driver, action_file, env_file, registry=registry)
-                except Exception as exc:  # pragma: no cover - runtime safeguard
-                    _log(f"ERROR in poll loop: {type(exc).__name__}: {exc}")
-                    traceback.print_exc()
+                _poll_once(driver, action_file, env_file, registry=registry)
                 time.sleep(poll_interval)
         except KeyboardInterrupt:
             _log("Shutdown.")
@@ -319,8 +283,6 @@ def main() -> None:
         args.driver,
         args.robot_id,
     )
-    if args.robot_id:
-        driver_kwargs["robot_id"] = args.robot_id
 
     if not robot_workspace.exists():
         print(f"Error: workspace not found: {robot_workspace}", file=sys.stderr)
