@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>moveit_ctrl</name>
+  <version>0.0.0</version>
+  <description>The moveit_ctrl package</description>
+
+  <!-- Maintainer information -->
+  <maintainer email="tian@todo.todo">tian</maintainer>
+
+  <!-- License information -->
+  <license>TODO</license>
+
+  <!-- Build system dependency (catkin for ROS 1) -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Build dependencies -->
+  <build_depend>moveit_commander</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>moveit_ros_planning_interface</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>sensor_msgs</build_depend>  <!-- 添加 sensor_msgs 作为构建依赖 -->
+
+  <!-- Export build dependencies -->
+  <build_export_depend>moveit_commander</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
+
+  <!-- Runtime dependencies -->
+  <exec_depend>moveit_commander</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>moveit_ros_planning_interface</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>  <!-- 添加 sensor_msgs 作为执行依赖 -->
+  <exec_depend>message_runtime</exec_depend>
+  <exec_depend>rospy</exec_depend>
+
+  <!-- Testing dependencies (if needed) -->
+  <!-- <test_depend>gtest</test_depend> -->
+
+  <!-- Optional URLs (add if available) -->
+  <!-- <url type="website">http://wiki.ros.org/moveit_demo</url> -->
+
+  <!-- Export tag -->
+  <export>
+    <!-- Export additional information if needed -->
+  </export>
+</package>

@@ -1,0 +1,20 @@
+<package format="2">
+  <name>chomp_motion_planner</name>
+  <description>chomp_motion_planner</description>
+
+  <version>1.1.11</version>
+  <author email="gjones@willowgarage.com">Gil Jones</author>
+  <author email="mail@mrinal.net">Mrinal Kalakrishnan</author>
+
+  <maintainer email="chitt@live.in">Chittaranjan Srinivas Swaminathan</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+  <url>http://ros.org/wiki/chomp_motion_planner</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>moveit_core</build_depend>
+
+</package>

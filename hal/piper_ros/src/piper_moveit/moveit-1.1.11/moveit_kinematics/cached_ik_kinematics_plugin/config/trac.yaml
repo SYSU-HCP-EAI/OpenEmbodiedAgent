@@ -1,0 +1,30 @@
+arm:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+arm_left:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+arm_right:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+arm_with_torso:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+head:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+left_arm:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+left_arm_hand:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+left_gripper:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+left_leg:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+manipulator:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+right_arm:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+right_arm_hand:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+right_gripper:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+right_leg:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+torso:
+    kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin

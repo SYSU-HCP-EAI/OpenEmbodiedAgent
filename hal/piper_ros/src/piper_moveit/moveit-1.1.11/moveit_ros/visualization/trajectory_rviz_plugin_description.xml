@@ -1,0 +1,7 @@
+<library path="libmoveit_trajectory_rviz_plugin">
+  <class name="moveit_rviz_plugin/Trajectory" type="moveit_rviz_plugin::TrajectoryDisplay" base_class_type="rviz::Display">
+    <description>
+      Can animate solution trajectories
+    </description>
+  </class>
+</library>

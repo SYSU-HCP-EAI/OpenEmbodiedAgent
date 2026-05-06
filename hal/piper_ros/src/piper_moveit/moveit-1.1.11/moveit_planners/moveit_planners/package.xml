@@ -1,0 +1,28 @@
+<package format="2">
+  <name>moveit_planners</name>
+  <version>1.1.11</version>
+  <description>Metapacakge that installs all available planners for MoveIt</description>
+  <author email="isucan@google.com">Ioan Sucan</author>
+  <author email="sachinc@willowgarage.com">Sachin Chitta</author>
+
+  <maintainer email="dave@picknik.ai">Dave Coleman</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <exec_depend>chomp_motion_planner</exec_depend>
+  <exec_depend>moveit_planners_chomp</exec_depend>
+  <exec_depend>moveit_planners_ompl</exec_depend>
+  <exec_depend>pilz_industrial_motion_planner</exec_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+
+</package>

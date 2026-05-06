@@ -1,0 +1,4 @@
+<launch>
+  <test pkg="moveit_core" type="test_constraint_samplers" test-name="test_constraint_samplers"
+        time-limit="300" args=""/>
+</launch>

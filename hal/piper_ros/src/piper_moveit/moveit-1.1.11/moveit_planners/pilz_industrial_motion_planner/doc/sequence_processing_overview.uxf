@@ -1,0 +1,1130 @@
+<?xml version="1.0" encoding="UTF-8"?><diagram program="umlet" version="13.3">
+  <zoom_level>5</zoom_level>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>520</x>
+      <y>155</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;MotionPlanResponse&gt;&gt;
+Item_1 (Group_1)
+bg=cyan
+transparency=0
+group=8</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>520</x>
+      <y>190</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;MotionPlanResponse&gt;&gt;
+Item_2 (Group_1)
+bg=cyan
+transparency=0
+
+group=8</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>520</x>
+      <y>230</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>bg=yellow
+&lt;&lt;MotionPlanResponse&gt;&gt;
+Item_3 (Group_2)
+transparency=0
+group=8</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>520</x>
+      <y>270</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;MotionPlanResponse&gt;&gt;
+Item_4 (Group_2)
+bg=yellow
+transparency=0
+group=8</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>520</x>
+      <y>310</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;MotionPlanResponse&gt;&gt;
+Item_5 (Group_1)
+bg=cyan
+transparency=0
+group=8</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>520</x>
+      <y>365</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;MotionPlanResponse&gt;&gt;
+Item_N (Group_2)
+bg=yellow
+transparency=0
+group=8</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>510</x>
+      <y>125</y>
+      <w>125</w>
+      <h>275</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt; Vector&lt;MotionPlanResponse&gt; &gt;&gt;
+MySequence
+layer=-50
+bg=light_gray
+transparency=0
+
+group=8</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>855</x>
+      <y>155</y>
+      <w>110</w>
+      <h>65</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;RobotTrajectory&gt;&gt;
+Item_1 + Item_2  (Group_1)
+bg=cyan
+transparency=0
+group=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>855</x>
+      <y>230</y>
+      <w>110</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>bg=yellow
+transparency=0
+&lt;&lt;RobotTrajectory&gt;&gt;
+Item_3 + Item_4 (Group_2)
+group=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>855</x>
+      <y>310</y>
+      <w>110</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;RobotTrajectory&gt;&gt;
+Item_5  (Group_1)
+bg=cyan
+transparency=0
+group=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>855</x>
+      <y>365</y>
+      <w>110</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;RobotTrajectory&gt;&gt;
+Item_N  (Group_2)
+bg=yellow
+transparency=0
+group=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>850</x>
+      <y>125</y>
+      <w>125</w>
+      <h>275</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt; Vector&lt;RobotTrajectoryPtr&gt; &gt;&gt;
+MySequence
+layer=-50
+bg=light_gray
+transparency=0
+group=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>1240</x>
+      <y>205</y>
+      <w>110</w>
+      <h>65</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;RobotTrajectory&gt;&gt;
+Item_1 + Item_2  (Group_1)
+bg=cyan
+transparency=0
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>1240</x>
+      <y>280</y>
+      <w>110</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>bg=yellow
+&lt;&lt;RobotTrajectory&gt;&gt;
+Item_3 + Item_4 (Group_2)
+group=3
+transparency=0</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>1240</x>
+      <y>360</y>
+      <w>110</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;RobotTrajectory&gt;&gt;
+Item_5  (Group_1)
+bg=cyan
+transparency=0
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>1240</x>
+      <y>415</y>
+      <w>110</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;RobotTrajectory&gt;&gt;
+Item_N  (Group_2)
+bg=yellow
+group=3
+transparency=0</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1230</x>
+      <y>90</y>
+      <w>130</w>
+      <h>365</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;ExecutableMotionPlan&gt;&gt;
+MySequence
+layer=-100
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1235</x>
+      <y>180</y>
+      <w>120</w>
+      <h>270</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt; Vector&lt;&lt;ExecutableTrajectory&gt;&gt; &gt;&gt;
+plan_components_
+bg=light_gray
+transparency=0
+layer=-50
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1235</x>
+      <y>135</y>
+      <w>120</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>planning_scene_monoitor_
+
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1235</x>
+      <y>155</y>
+      <w>120</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>planning_scene_
+
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1235</x>
+      <y>115</y>
+      <w>120</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>error_code_
+
+group=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>1595</x>
+      <y>215</y>
+      <w>110</w>
+      <h>65</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;RobotTrajectory&gt;&gt;
+Item_1 + Item_2  (Group_1)
+bg=cyan
+transparency=0
+group=9</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>1595</x>
+      <y>290</y>
+      <w>110</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>bg=yellow
+&lt;&lt;RobotTrajectory&gt;&gt;
+Item_3 + Item_4 (Group_2)
+transparency=0
+group=9</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>1595</x>
+      <y>370</y>
+      <w>110</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;RobotTrajectory&gt;&gt;
+Item_5  (Group_1)
+bg=cyan
+transparency=0
+group=9</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>1595</x>
+      <y>425</y>
+      <w>110</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;RobotTrajectory&gt;&gt;
+Item_N  (Group_2)
+bg=yellow
+transparency=0
+group=9</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1590</x>
+      <y>190</y>
+      <w>120</w>
+      <h>270</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt; Vector&lt;&lt;:RobotTrajectory&gt;&gt; &gt;&gt;
+planning_trajectory
+bg=light_gray
+transparency=0
+layer=-50
+group=9</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1590</x>
+      <y>135</y>
+      <w>120</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>planning_time
+
+group=9</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1590</x>
+      <y>155</y>
+      <w>120</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt; Vector&lt;RobotState&gt; &gt;&gt;
+trajectory_start
+
+group=9</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1590</x>
+      <y>115</y>
+      <w>120</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>error_code
+
+group=9</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1585</x>
+      <y>80</y>
+      <w>130</w>
+      <h>385</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;MoveGroupSequenceResult&gt;&gt;
+MySequence
+layer=-100
+transparency=0
+group=9</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>1125</x>
+      <y>230</y>
+      <w>85</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>halign=left
+valign=top
+*Build*
+ExecutionMotionPlan</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>0</x>
+      <y>235</y>
+      <w>20</w>
+      <h>20</h>
+    </coordinates>
+    <panel_attributes>type=initial</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>15</x>
+      <y>240</y>
+      <w>70</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>120.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>245</x>
+      <y>225</y>
+      <w>130</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>halign=left
+valign=top
+*Validate:*
+- blend radii all positive
+- last blend radius zero
+- only first request has start state
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>195</x>
+      <y>240</y>
+      <w>60</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>100.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>370</x>
+      <y>240</y>
+      <w>30</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>40.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>390</x>
+      <y>230</y>
+      <w>105</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>halign=left
+valign=top
+*Calculate*
+individual sequence items</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>490</x>
+      <y>240</y>
+      <w>30</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>40.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>770</x>
+      <y>230</y>
+      <w>60</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>halign=left
+valign=top
+*Blend*
+*Trajectories*</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>630</x>
+      <y>240</y>
+      <w>25</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>30.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>970</x>
+      <y>240</y>
+      <w>55</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>90.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1205</x>
+      <y>240</y>
+      <w>35</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>50.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>1385</x>
+      <y>235</y>
+      <w>60</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>halign=left
+valign=top
+*Execute*
+*Trajectories*</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1355</x>
+      <y>240</y>
+      <w>40</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>60.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1440</x>
+      <y>245</y>
+      <w>50</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>80.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>1480</x>
+      <y>235</y>
+      <w>95</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>halign=left
+valign=top
+*Generate:*
+MoveGroupSequenceResult</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1570</x>
+      <y>245</y>
+      <w>25</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>30.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>645</x>
+      <y>230</y>
+      <w>110</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>halign=left
+valign=top
+*Validate*
+Blend radii do not overlap</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>825</x>
+      <y>240</y>
+      <w>35</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>50.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>750</x>
+      <y>240</y>
+      <w>30</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>40.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>1015</x>
+      <y>225</y>
+      <w>50</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>type=decision</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1060</x>
+      <y>230</y>
+      <w>35</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>Action</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Text</id>
+    <coordinates>
+      <x>1045</x>
+      <y>265</y>
+      <w>40</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>Service</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1060</x>
+      <y>240</y>
+      <w>75</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>130.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLState</id>
+    <coordinates>
+      <x>1100</x>
+      <y>565</y>
+      <w>120</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>halign=left
+valign=top
+*Build*
+GetMotionSequence::Response</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1035</x>
+      <y>260</y>
+      <w>75</w>
+      <h>325</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>130.0;630.0;10.0;630.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1215</x>
+      <y>570</y>
+      <w>380</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>740.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLSpecialState</id>
+    <coordinates>
+      <x>1785</x>
+      <y>310</y>
+      <w>20</w>
+      <h>20</h>
+    </coordinates>
+    <panel_attributes>type=final</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1710</x>
+      <y>245</y>
+      <w>95</w>
+      <h>75</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>170.0;130.0;170.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1710</x>
+      <y>325</y>
+      <w>95</w>
+      <h>260</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>170.0;10.0;170.0;500.0;10.0;500.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>65</x>
+      <y>80</y>
+      <w>145</w>
+      <h>310</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt; MotionSequenceRequest &gt;&gt;
+MySequence
+layer=-500
+
+group=7</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>90</x>
+      <y>140</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;MotionSequenceItem&gt;&gt;
+Item_1 (Group_1)
+bg=cyan
+transparency=0
+group=7</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>90</x>
+      <y>175</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;MotionSequenceItem&gt;&gt;
+Item_2 (Group_1)
+bg=cyan
+transparency=0
+group=7</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>90</x>
+      <y>215</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>bg=yellow
+&lt;&lt;MotionSequenceItem&gt;&gt;
+Item_3 (Group_2)
+bg=yellow
+transparency=0
+group=7</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>90</x>
+      <y>255</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;MotionSequenceItem&gt;&gt;
+Item_4 (Group_2)
+bg=yellow
+transparency=0
+group=7</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>90</x>
+      <y>295</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;MotionSequenceItem&gt;&gt;
+Item_5 (Group_1)
+bg=cyan
+transparency=0
+group=7</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>90</x>
+      <y>350</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;MotionSequenceItem&gt;&gt;
+Item_N (Group_2)
+bg=yellow
+transparency=0
+group=7</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>75</x>
+      <y>110</y>
+      <w>125</w>
+      <h>275</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt; Vector&lt;MotionSequenceItem&gt; &gt;&gt;
+MySequence
+layer=-100
+bg=light_gray
+transparency=0
+
+group=7</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>240</x>
+      <y>65</y>
+      <w>765</w>
+      <h>460</h>
+    </coordinates>
+    <panel_attributes>symbol=component
+halign=left
+valign=top
+layer=-1000
+CommandListManager</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>760</x>
+      <y>100</y>
+      <w>230</w>
+      <h>335</h>
+    </coordinates>
+    <panel_attributes>symbol=component
+symbol=component
+halign=left
+valign=top
+layer=-100
+PlanComponentsBuilder</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>45</x>
+      <y>45</y>
+      <w>1710</w>
+      <h>830</h>
+    </coordinates>
+    <panel_attributes>symbol=component
+halign=left
+valign=top
+layer=-1000000
+MoveGroupSequenceAction/Service</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>1365</x>
+      <y>180</y>
+      <w>100</w>
+      <h>125</h>
+    </coordinates>
+    <panel_attributes>symbol=component
+layer=-100
+MoveGroupContext</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>1375</x>
+      <y>210</y>
+      <w>80</w>
+      <h>75</h>
+    </coordinates>
+    <panel_attributes>symbol=component
+layer=-50
+PlanExecution</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>1595</x>
+      <y>615</y>
+      <w>110</w>
+      <h>65</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;RobotTrajectory&gt;&gt;
+Item_1 + Item_2  (Group_1)
+bg=cyan
+transparency=0
+group=10</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>1595</x>
+      <y>690</y>
+      <w>110</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>bg=yellow
+&lt;&lt;RobotTrajectory&gt;&gt;
+Item_3 + Item_4 (Group_2)
+transparency=0
+group=10</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>1595</x>
+      <y>770</y>
+      <w>110</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;RobotTrajectory&gt;&gt;
+Item_5  (Group_1)
+bg=cyan
+transparency=0
+group=10</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLDeployment</id>
+    <coordinates>
+      <x>1595</x>
+      <y>825</y>
+      <w>110</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;RobotTrajectory&gt;&gt;
+Item_N  (Group_2)
+bg=yellow
+transparency=0
+group=10</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1590</x>
+      <y>590</y>
+      <w>120</w>
+      <h>270</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt; Vector&lt;&lt;:RobotTrajectory&gt;&gt; &gt;&gt;
+planning_trajectory
+bg=light_gray
+transparency=0
+layer=-50
+group=10</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1590</x>
+      <y>535</y>
+      <w>120</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>planning_time
+
+group=10</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1590</x>
+      <y>555</y>
+      <w>120</w>
+      <h>25</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt; Vector&lt;RobotState&gt; &gt;&gt;
+trajectory_start
+
+group=10</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1590</x>
+      <y>515</y>
+      <w>120</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>error_code
+
+group=10</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1585</x>
+      <y>480</y>
+      <w>130</w>
+      <h>385</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;GetMotionSequenceResponse&gt;&gt;
+MySequence
+layer=-100
+transparency=0
+group=10</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>

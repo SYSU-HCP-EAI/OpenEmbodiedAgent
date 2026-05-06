@@ -1,0 +1,7 @@
+<library path="libmoveit_depth_image_octomap_updater">
+  <class name="occupancy_map_monitor/DepthImageOctomapUpdater" type="occupancy_map_monitor::DepthImageOctomapUpdater" base_class_type="occupancy_map_monitor::OccupancyMapUpdater">
+    <description>
+    </description>
+  </class>
+
+</library>

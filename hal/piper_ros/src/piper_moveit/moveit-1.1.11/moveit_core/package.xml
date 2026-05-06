@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>moveit_core</name>
+  <version>1.1.11</version>
+  <description>Core libraries used by MoveIt</description>
+  <author email="isucan@google.com">Ioan Sucan</author>
+  <author email="robot.moveit@gmail.com">Sachin Chitta</author>
+  <author email="acorn.pooley@sri.com">Acorn Pooley</author>
+
+  <maintainer email="dave@picknik.ai">Dave Coleman</maintainer>
+  <maintainer email="me@v4hn.de">Michael Görner</maintainer>
+  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>pkg-config</buildtool_depend>
+
+  <depend>assimp</depend>
+  <depend>boost</depend>
+  <depend>eigen</depend>
+  <depend>bullet</depend>
+  <depend condition="$ROS_PYTHON_VERSION == 3">python3</depend>
+  <depend condition="$ROS_PYTHON_VERSION == 2">python</depend>
+  <depend>eigen_stl_containers</depend>
+  <depend condition="$ROS_DISTRO != noetic">libfcl-dev</depend>
+  <depend condition="$ROS_DISTRO == noetic">fcl</depend>
+  <depend version_gte="0.5.2">geometric_shapes</depend>
+  <depend>geometry_msgs</depend>
+  <depend>kdl_parser</depend>
+  <depend>libconsole-bridge-dev</depend>
+  <depend>urdf</depend>
+  <depend>liburdfdom-dev</depend>
+  <depend>liburdfdom-headers-dev</depend>
+  <depend>moveit_msgs</depend>
+  <depend>octomap</depend>
+  <depend>octomap_msgs</depend>
+  <depend>pybind11_catkin</depend>
+  <depend>random_numbers</depend>
+  <depend>roslib</depend>
+  <depend>rostime</depend>
+  <depend>rosconsole</depend>
+  <depend>ruckig</depend>
+  <depend>sensor_msgs</depend>
+  <depend>shape_msgs</depend>
+  <depend>srdfdom</depend>
+  <depend>std_msgs</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>trajectory_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>xmlrpcpp</depend>
+  <depend>pluginlib</depend>
+
+  <doc_depend>python3-sphinx-rtd-theme</doc_depend>
+
+  <test_depend>moveit_resources_panda_moveit_config</test_depend>
+  <test_depend>moveit_resources_pr2_description</test_depend>
+  <test_depend>angles</test_depend>
+  <test_depend>tf2_kdl</test_depend>
+  <test_depend condition="$ROS_DISTRO != noetic">orocos_kdl</test_depend>
+  <test_depend condition="$ROS_DISTRO == noetic">liborocos-kdl-dev</test_depend>
+  <test_depend>rosunit</test_depend>
+  <test_depend>rostest</test_depend>
+
+  <export>
+    <moveit_core plugin="${prefix}/collision_detector_fcl_description.xml"/>
+    <moveit_core plugin="${prefix}/collision_detector_bullet_description.xml"/>
+  </export>
+</package>

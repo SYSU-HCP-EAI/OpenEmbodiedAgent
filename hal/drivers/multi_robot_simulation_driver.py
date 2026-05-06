@@ -462,6 +462,9 @@ class MultiRobotSimulationInternutopiaDriver(BaseDriver):
         return out
 
     def _ensure_pythonpath(self) -> None:
+        from hal.internutopia_paths import ensure_bundled_internutopia_sys_path
+
+        ensure_bundled_internutopia_sys_path()
         for entry in reversed(self._pythonpath_entries):
             if entry not in sys.path:
                 sys.path.insert(0, entry)

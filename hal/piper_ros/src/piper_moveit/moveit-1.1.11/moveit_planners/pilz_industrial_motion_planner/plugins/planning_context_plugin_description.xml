@@ -1,0 +1,18 @@
+<library path="lib/libplanning_context_loader_ptp">
+  <class type="pilz_industrial_motion_planner::PlanningContextLoaderPTP"
+         base_class_type="pilz_industrial_motion_planner::PlanningContextLoader">
+    <description>Loader for PTP Context</description>
+  </class>
+</library>
+<library path="lib/libplanning_context_loader_lin">
+  <class type="pilz_industrial_motion_planner::PlanningContextLoaderLIN"
+         base_class_type="pilz_industrial_motion_planner::PlanningContextLoader">
+    <description>Loader for LIN Context</description>
+  </class>
+</library>
+<library path="lib/libplanning_context_loader_circ">
+  <class type="pilz_industrial_motion_planner::PlanningContextLoaderCIRC"
+         base_class_type="pilz_industrial_motion_planner::PlanningContextLoader">
+    <description>Loader for CIRC Context</description>
+  </class>
+</library>

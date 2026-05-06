@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>moveit_ros_control_interface</name>
+  <version>1.1.11</version>
+  <description>ros_control controller manager interface for MoveIt</description>
+
+  <author email="mathias.luedtke@ipa.fraunhofer.de">Mathias Lüdtke</author>
+
+  <maintainer email="mathias.luedtke@ipa.fraunhofer.de">Mathias Lüdtke</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>actionlib</depend>
+  <depend>controller_manager_msgs</depend>
+  <depend>moveit_core</depend>
+  <depend>moveit_simple_controller_manager</depend>
+  <depend version_gte="1.11.2">pluginlib</depend>
+  <depend>trajectory_msgs</depend>
+
+  <export>
+     <moveit_core plugin="${prefix}/moveit_core_plugins.xml" />
+     <moveit_ros_control_interface plugin="${prefix}/moveit_ros_control_interface_plugins.xml" />
+  </export>
+</package>

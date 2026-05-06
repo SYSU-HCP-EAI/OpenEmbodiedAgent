@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find moveit_resources_fanuc_moveit_config)/launch/test_environment.launch"/>
+  <test pkg="moveit_commander" type="python_time_parameterization.py" test-name="python_time_parameterization"
+        time-limit="300" args=""/>
+</launch>

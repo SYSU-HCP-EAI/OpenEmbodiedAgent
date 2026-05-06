@@ -1,0 +1,9 @@
+<launch>
+  <!-- Launch an example that sends commands via C++ API. -->
+
+  <node name="servo_server" pkg="moveit_servo" type="cpp_interface_example" output="screen" >
+    <param name="parameter_ns" type="string" value="optional_parameter_namespace" />
+    <rosparam ns="optional_parameter_namespace" command="load" file="$(find moveit_servo)/config/ur_simulated_config.yaml" />
+  </node>
+
+</launch>

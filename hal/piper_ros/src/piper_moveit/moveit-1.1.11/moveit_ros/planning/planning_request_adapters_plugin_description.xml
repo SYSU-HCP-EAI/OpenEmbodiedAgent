@@ -1,0 +1,63 @@
+<library path="libmoveit_default_planning_request_adapter_plugins">
+
+  <class name="default_planner_request_adapters/Empty" type="default_planner_request_adapters::Empty" base_class_type="planning_request_adapter::PlanningRequestAdapter">
+    <description>
+    </description>
+  </class>
+
+  <class name="default_planner_request_adapters/FixStartStateBounds" type="default_planner_request_adapters::FixStartStateBounds" base_class_type="planning_request_adapter::PlanningRequestAdapter">
+    <description>
+    </description>
+  </class>
+
+  <class name="default_planner_request_adapters/FixStartStatePathConstraints" type="default_planner_request_adapters::FixStartStatePathConstraints" base_class_type="planning_request_adapter::PlanningRequestAdapter">
+    <description>
+    </description>
+  </class>
+
+  <class name="default_planner_request_adapters/FixWorkspaceBounds" type="default_planner_request_adapters::FixWorkspaceBounds" base_class_type="planning_request_adapter::PlanningRequestAdapter">
+    <description>
+    </description>
+  </class>
+
+  <class name="default_planner_request_adapters/FixStartStateCollision" type="default_planner_request_adapters::FixStartStateCollision" base_class_type="planning_request_adapter::PlanningRequestAdapter">
+    <description>
+    </description>
+  </class>
+
+  <class name="default_planner_request_adapters/ResolveConstraintFrames" type="default_planner_request_adapters::ResolveConstraintFrames" base_class_type="planning_request_adapter::PlanningRequestAdapter">
+    <description>
+      Resolves constraints that are defined in collision objects or subframes to robot links, because the former are not known to the planner.
+    </description>
+  </class>
+
+  <class name="default_planner_request_adapters/AddTimeParameterization" type="default_planner_request_adapters::AddTimeParameterization" base_class_type="planning_request_adapter::PlanningRequestAdapter">
+    <description>
+    </description>
+  </class>
+
+  <class name="default_planner_request_adapters/AddIterativeSplineParameterization" type="default_planner_request_adapters::AddIterativeSplineParameterization" base_class_type="planning_request_adapter::PlanningRequestAdapter">
+    <description>
+      A deprecated time parameterization algorithm.
+    </description>
+  </class>
+
+  <class name="default_planner_request_adapters/AddTimeOptimalParameterization" type="default_planner_request_adapters::AddTimeOptimalParameterization" base_class_type="planning_request_adapter::PlanningRequestAdapter">
+    <description>
+      This is an improved time parameterization using Time-Optimal Trajectory Generation for Path Following With Bounded Acceleration and Velocity (Kunz and Stilman, RSS 2008)
+    </description>
+  </class>
+
+  <class name="default_planner_request_adapters/LimitMaxCartesianLinkSpeed" type="default_planner_request_adapters::LimitMaxCartesianLinkSpeed" base_class_type="planning_request_adapter::PlanningRequestAdapter">
+    <description>
+      Reparameterize the trajectory to keep it below a desired Cartesian speed for a given link, e.g., the end effector.
+    </description>
+  </class>
+
+  <class name="default_planner_request_adapters/AddRuckigTrajectorySmoothing" type="default_planner_request_adapters::AddRuckigTrajectorySmoothing" base_class_type="planning_request_adapter::PlanningRequestAdapter">
+    <description>
+      Adds jerk-limited trajectory smoothing via ruckig. Best used after a time parameterization algorithm such as TimeOptimalParameterization.
+    </description>
+  </class>
+
+</library>

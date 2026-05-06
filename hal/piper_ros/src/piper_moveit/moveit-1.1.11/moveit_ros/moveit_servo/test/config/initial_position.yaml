@@ -1,0 +1,10 @@
+# This is a good initial position, not near joint limits or singularity
+zeros:
+  panda_joint1: 0
+  panda_joint2: -0.785
+  panda_joint3: 0
+  panda_joint4: -2.356
+  panda_joint5: 0
+  panda_joint6: 1.571
+  panda_joint7: 0.785
+publish_default_positions: True

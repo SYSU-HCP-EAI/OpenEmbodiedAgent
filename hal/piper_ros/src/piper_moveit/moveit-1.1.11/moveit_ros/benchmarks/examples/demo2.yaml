@@ -1,0 +1,29 @@
+# This is an example configuration that loads the "Kitchen" scene from the
+# local MoveIt warehouse and benchmarks the "manipulator" group over all pairs
+# of motion plan queries and start states in the Kitchen scene.
+
+# Five planners from two different plugins are run a total of 50 times each, with a
+# maximum of 10 seconds per run.  Output is stored in the /home/benchmarks directory.
+
+benchmark_config:
+    warehouse:
+        host: 127.0.0.1
+        port: 33829
+        scene_name: Kitchen     # Required
+    parameters:
+        name: KitchenPick1
+        runs: 50
+        group: manipulator      # Required
+        timeout: 10.0
+        output_directory: /home/benchmarks/
+        queries: .*
+        start_states: .*
+    planning_pipelines:
+        - name: ompl
+          planners:
+            - RRTConnectkConfigDefault
+            - BKPIECEkConfigDefault
+            - KPIECEkConfigDefault
+        - name: my_pipeline
+          planners:
+            - MyPlanner

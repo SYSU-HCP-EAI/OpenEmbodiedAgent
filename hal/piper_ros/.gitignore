@@ -1,0 +1,17 @@
+.catkin_workspace
+src/CMakeLists.txt
+devel
+build
+.vscode
+.idea
+src/piper/backup
+.catkin_workspace
+*.log
+*.7z
+*.zip
+*.tar
+analytical_solution
+oculus_reader
+__pycache__
+CATKIN_IGNORE
+log

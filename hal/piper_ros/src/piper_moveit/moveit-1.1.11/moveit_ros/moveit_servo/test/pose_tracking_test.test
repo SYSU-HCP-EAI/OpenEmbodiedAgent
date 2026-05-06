@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Load URDF, SRDF -->
+  <include file="$(find moveit_resources_panda_moveit_config)/launch/planning_context.launch" >
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
+  <!-- Initial joint positions -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <rosparam command="load" file="$(find moveit_servo)/test/config/initial_position.yaml" />
+    <param name="publish_frequency" type="double" value="50.0"/>
+  </node>
+
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="tool_state_publisher">
+    <param name="publish_frequency" type="double" value="50.0"/>
+  </node>
+
+  <test pkg="moveit_servo" type="pose_tracking_test" test-name="pose_tracking_test" time-limit="60
+    " args="">
+    <param name="parameter_ns" type="string" value="" />
+    <rosparam command="load" file="$(find moveit_servo)/test/config/servo_settings.yaml"/>
+    <rosparam command="load" file="$(find moveit_servo)/config/pose_tracking_settings.yaml"/>
+  </test>
+</launch>

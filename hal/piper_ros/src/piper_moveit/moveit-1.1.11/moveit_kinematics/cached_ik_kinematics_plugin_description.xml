@@ -1,0 +1,38 @@
+<library path="lib/libmoveit_cached_ik_kinematics_plugin">
+  <class name="cached_ik_kinematics_plugin/CachedKDLKinematicsPlugin" type="cached_ik_kinematics_plugin::CachedIKKinematicsPlugin<kdl_kinematics_plugin::KDLKinematicsPlugin>" base_class_type="kinematics::KinematicsBase">
+    <description>
+      A kinematics plugin for persistently caching IK solutions computed with the KDL kinematics plugin.
+    </description>
+  </class>
+  <class name="cached_ik_kinematics_plugin/CachedSrvKinematicsPlugin" type="cached_ik_kinematics_plugin::CachedIKKinematicsPlugin<srv_kinematics_plugin::SrvKinematicsPlugin>" base_class_type="kinematics::KinematicsBase">
+    <description>
+      A kinematics plugin for persistently caching IK solutions computed with the Srv kinematics plugin.
+    </description>
+  </class>
+  <!--<class name="cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin" type="cached_ik_kinematics_plugin::CachedIKKinematicsPlugin<trac_ik_kinematics_plugin::TRAC_IKKinematicsPlugin>" base_class_type="kinematics::KinematicsBase">
+    <description>
+      A kinematics plugin for persistently caching IK solutions computed with the TRAC kinematics plugin.
+    </description>
+  </class>-->
+</library>
+<!--<library path="lib/libmoveit_cached_ur3_kinematics_plugin">
+  <class name="cached_ik_kinematics_plugin/CachedUR3KinematicsPlugin" type="cached_ik_kinematics_plugin::CachedIKKinematicsPlugin<ur_kinematics::URKinematicsPlugin>" base_class_type="kinematics::KinematicsBase">
+    <description>
+      A kinematics plugin for persistently caching IK solutions computed with the UR3 kinematics plugin.
+    </description>
+  </class>
+</library>
+<library path="lib/libmoveit_cached_ur5_kinematics_plugin">
+  <class name="cached_ik_kinematics_plugin/CachedUR5KinematicsPlugin" type="cached_ik_kinematics_plugin::CachedIKKinematicsPlugin<ur_kinematics::URKinematicsPlugin>" base_class_type="kinematics::KinematicsBase">
+    <description>
+      A kinematics plugin for persistently caching IK solutions computed with the UR5 kinematics plugin.
+    </description>
+  </class>
+</library>
+<library path="lib/libmoveit_cached_ur10_kinematics_plugin">
+  <class name="cached_ik_kinematics_plugin/CachedUR10KinematicsPlugin" type="cached_ik_kinematics_plugin::CachedIKKinematicsPlugin<ur_kinematics::URKinematicsPlugin>" base_class_type="kinematics::KinematicsBase">
+    <description>
+      A kinematics plugin for persistently caching IK solutions computed with the UR10 kinematics plugin.
+    </description>
+  </class>
+</library>-->

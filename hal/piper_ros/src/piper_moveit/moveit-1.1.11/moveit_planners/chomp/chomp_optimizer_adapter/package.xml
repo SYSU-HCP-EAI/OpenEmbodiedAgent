@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>moveit_chomp_optimizer_adapter</name>
+  <description>MoveIt planning request adapter utilizing chomp for solution optimization</description>
+
+  <version>1.1.11</version>
+  <author email="raghavendersahdev@gmail.com">Raghavender Sahdev</author>
+  <maintainer email="raghavendersahdev@gmail.com">Raghavender Sahdev</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>moveit_core</depend>
+  <depend>chomp_motion_planner</depend>
+  <depend version_gte="1.11.2">pluginlib</depend>
+
+  <export>
+    <moveit_core plugin="${prefix}/chomp_optimizer_adapter_plugin_description.xml"/>
+  </export>
+</package>

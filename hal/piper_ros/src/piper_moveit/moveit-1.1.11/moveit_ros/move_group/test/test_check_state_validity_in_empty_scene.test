@@ -1,0 +1,7 @@
+<launch>
+	<include file="$(find moveit_resources_fanuc_moveit_config)/launch/demo.launch">
+		<arg name="use_rviz" value="false"/>
+	</include>
+
+	<test test-name="check_state_validity_in_empty_scene" pkg="moveit_ros_move_group" type="test_check_state_validity_in_empty_scene.py"/>
+</launch>

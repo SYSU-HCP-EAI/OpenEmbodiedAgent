@@ -1,0 +1,7 @@
+<library path="lib/libmoveit_srv_kinematics_plugin">
+  <class name="srv_kinematics_plugin/SrvKinematicsPlugin" type="srv_kinematics_plugin::SrvKinematicsPlugin" base_class_type="kinematics::KinematicsBase">
+    <description>
+      A implementation of kinematics as a plugin that uses a ROS service layer to communicate with an external IK solver
+    </description>
+  </class>
+</library>

@@ -1,0 +1,95 @@
+<!--
+Software License Agreement (BSD License)
+
+Copyright (c) 2018 Pilz GmbH & Co. KG
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+ * Neither the name of Pilz GmbH & Co. KG nor the names of its
+   contributors may be used to endorse or promote products derived
+   from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<testdata>
+
+  <poses>
+    <pos name="ZeroPose">
+      <joints group_name="manipulator">0.0 0.0 0.0 0.0 0.0 0.0</joints>
+    </pos>
+
+    <pos name="P1">
+      <joints group_name="manipulator">0.0 0.005583 -1.323096 0.0 -1.812912 -2.356194</joints>
+      <xyzQuat group_name="manipulator" link_name="prbt_tcp">0.3 0.0 0.5 0.707106 0.707106 0.0 0.0</xyzQuat>
+    </pos>
+
+    <pos name="P2">
+      <joints group_name="manipulator">0.380506 0.752267 -0.595009 0.0 -1.794315 -1.975688</joints>
+      <xyzQuat group_name="manipulator" link_name="prbt_tcp">0.5 0.2 0.4 0.707106 0.707106 0.0 0.0</xyzQuat>
+    </pos>
+
+    <pos name="P3">
+      <joints group_name="manipulator">0.927295 0.607232 -1.173008 0.0 -1.361351 -1.428899</joints>
+      <xyzQuat group_name="manipulator" link_name="prbt_tcp">0.3 0.4 0.3 0.707106 0.707106 0.0 0.0
+      </xyzQuat>
+    </pos>
+
+  </poses>
+
+  <ptps>
+    <ptp name="Ptp1">
+      <planningGroup>manipulator</planningGroup>
+      <targetLink>prbt_tcp</targetLink>
+      <startPos>ZeroPose</startPos>
+      <endPos>P1</endPos>
+      <vel>1.0</vel>
+      <acc>0.4</acc>
+    </ptp>
+
+  </ptps>
+
+  <lins>
+    <lin name="lin2">
+        <planningGroup>manipulator</planningGroup>
+        <targetLink>prbt_tcp</targetLink>
+        <startPos>P1</startPos>
+        <endPos>P2</endPos>
+        <vel>0.1</vel>
+        <acc>0.2</acc>
+    </lin>
+  </lins>
+
+  <circs>
+    <circ name="circ1_center_2">
+      <planningGroup>manipulator</planningGroup>
+      <targetLink>prbt_tcp</targetLink>
+      <startPos>P3</startPos>
+      <centerPos>P2</centerPos>
+      <endPos>P1</endPos>
+      <vel>0.1</vel>
+      <acc>0.2</acc>
+    </circ>
+  </circs>
+
+</testdata>

@@ -1,0 +1,7 @@
+<launch>
+    <!-- 启动 piper_mujoco_ros.py -->
+    <node name="piper_mujoco_ros" pkg="piper_mujoco" type="piper_mujoco_ros.py" output="screen">
+        <param name="use_sim_time" value="true"/>
+        <remap from="/mujoco_joint_states_ctrl" to="/joint_states" />
+    </node>
+</launch>

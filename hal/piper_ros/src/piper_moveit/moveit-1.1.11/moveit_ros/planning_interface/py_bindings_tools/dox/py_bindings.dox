@@ -1,0 +1,48 @@
+/**\page py_bindings_roscpp Creating Python bindings for C++ classes
+
+   \par Problem
+   When creating Python bindings of C++ classes it may be
+   necessary to have roscpp initialized (ros::init() called) when the
+   instance of a particular C++ class is created.
+   \par Example
+   For example, say we need python bindings for class Foo;
+   A common approach to define functionality specific for the wrappers is to
+   define:
+   \code
+   class FooWrapper : public Foo
+   {
+   public:
+   ...
+   };
+   \endcode
+   This allows defining additional functions in FooWrapper that are
+   more amenable to the construction of Python bindings.
+   Say that FooWrapper is now constructed because a Python programmer
+   created the instance of the wrapped object. At that point, if Foo
+   needs ros::init() to have been called, there is an error, because
+   even if rospy is initialized, roscpp is not.
+   @par Solutions
+   We can update class FooWrapper using the moveit_py_bindings_tools::ROScppInitializer class
+   like so:
+   \code
+   class FooWrapper : protected ROScppInitializer
+                      public Foo
+   {
+   public:
+   FooWrapper(...) : ROScppInitializer(),
+                     Foo(...)
+   { }
+   ...
+   };
+   \endcode
+   This way it is ensured that the constructor of ROScppInitialier is
+   called right before the instance of Foo is constructed (in the
+   process of constructing FooWrapper).
+   The advantage of this solution is that the Python programmer could not care less
+   what roscpp is doing. Things will "just work".
+   The downside of this solution is that if any command line arguments
+   have been passed to the Python program, they are not forwarded to roscpp.
+   But to forward these parameters an explicit function call needs to be made.
+   For that we provide a function call
+
+*/

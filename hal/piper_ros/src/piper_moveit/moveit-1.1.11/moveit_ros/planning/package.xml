@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package format="2">
+  <name>moveit_ros_planning</name>
+  <version>1.1.11</version>
+  <description>Planning components of MoveIt that use ROS</description>
+  <author email="isucan@google.com">Ioan Sucan</author>
+  <author email="robot.moveit@gmail.com">Sachin Chitta</author>
+
+  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="me@v4hn.de">Michael Görner</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>moveit_core</depend>
+  <depend>moveit_ros_occupancy_map_monitor</depend>
+  <depend>moveit_msgs</depend>
+  <depend>message_filters</depend>
+  <depend version_gte="1.11.2">pluginlib</depend>
+  <depend>actionlib</depend>
+  <depend>dynamic_reconfigure</depend>
+  <depend>rosconsole</depend>
+  <depend>roscpp</depend>
+  <depend>srdfdom</depend>
+  <depend>urdf</depend>
+  <depend>tf2</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_msgs</depend>
+  <depend>tf2_ros</depend>
+
+  <build_depend>eigen</build_depend>
+
+  <test_depend>moveit_resources_panda_moveit_config</test_depend>
+  <test_depend>rostest</test_depend>
+
+  <!-- we moved moveit_cpp from planning_interface in this version,
+       so files conflict. replace provides a migration path for deb/rpm -->
+  <conflict version_lt="1.1.2">moveit_ros_planning_interface</conflict>
+  <replace version_lt="1.1.2">moveit_ros_planning_interface</replace>
+
+  <export>
+    <moveit_core plugin="${prefix}/planning_request_adapters_plugin_description.xml"/>
+  </export>
+
+</package>

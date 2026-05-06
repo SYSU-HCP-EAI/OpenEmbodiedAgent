@@ -1,0 +1,22 @@
+<package>
+  <description brief="sbpl_interface">
+
+     sbpl_interface
+
+  </description>
+  <author>Gil Jones</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/sbpl_interface</url>
+
+  <rosdep name="sbpl" />
+
+  <depend package="planning_models"/>
+  <depend package="collision_distance_field"/>
+  <depend package="planning_scene"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_interface"/>
+  </export>
+
+</package>

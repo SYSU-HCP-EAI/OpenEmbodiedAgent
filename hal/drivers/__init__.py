@@ -24,6 +24,7 @@ DRIVER_REGISTRY: dict[str, str] = {
     "go2_edu":     "hal.drivers.go2_driver.Go2Driver",
     "franka_simulation": "hal.drivers.franka_simulation_driver.FrankaSimulationDriver",
     "g1_navigation": "hal.drivers.g1_navigation_driver.G1NavigationDriver",
+    "g1_simulation": "hal.drivers.g1_simulation_driver.G1SimulationDriver",
     "xlerobot_sim": "hal.drivers.xlerobot_sim_driver.XLerobotSimDriver",
     "xlerobot_2wheels_remote": "hal.drivers.xlerobot_2wheels_remote_driver.XLerobot2WheelsRemoteDriver",
     "pipergo2_manipulation": "hal.drivers.pipergo2_manipulation_driver.PiperGo2ManipulationDriver",
@@ -50,6 +51,16 @@ def load_driver(name: str, **kwargs: Any) -> BaseDriver:
     ImportError
         If the driver module cannot be imported (missing dependency).
     """
+    from hal.internutopia_paths import ensure_bundled_internutopia_sys_path
+
+    ensure_bundled_internutopia_sys_path()
+    try:
+        from hal.simulation.og_attribute_deque_shim import try_apply_omnigraph_deque_attribute_shim
+
+        try_apply_omnigraph_deque_attribute_shim()
+    except Exception:
+        pass
+
     dotted = DRIVER_REGISTRY.get(name)
     if dotted is None:
         spec = resolve_external_driver(name)

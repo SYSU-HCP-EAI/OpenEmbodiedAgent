@@ -1,0 +1,34 @@
+<launch>
+    <!-- Specify the config files to use -->
+    <rosparam ns="moveit_cpp_test" command="load" file="$(find moveit_ros_planning)/moveit_cpp/test/moveit_cpp.yaml" />
+
+    <!-- Planning Pipeline -->
+    <include ns="/moveit_cpp_test/ompl" file="$(find moveit_resources_panda_moveit_config)/launch/ompl_planning_pipeline.launch.xml"/>
+
+    <!-- Trajectory execution  -->
+    <!--include ns="moveit_cpp_test" file="$(find moveit_resources_panda_moveit_config)/launch/trajectory_execution.launch.xml">
+      <arg name="moveit_controller_manager" value="fake"/>
+    </include-->
+
+    <!-- Load the robot specific controller manager; this sets the moveit_controller_manager ROS parameter -->
+    <include ns="moveit_cpp_test" file="$(find moveit_resources_panda_moveit_config)/launch/fake_moveit_controller_manager.launch.xml" />
+
+    <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+    <include file="$(find moveit_resources_panda_moveit_config)/launch/planning_context.launch">
+      <arg name="load_robot_description" value="true"/>
+    </include>
+
+    <!-- If needed, broadcast static tf for robot root -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="virtual_joint_broadcaster_1" args="0 0 0 0 0 0 world panda_link0" />
+
+    <!-- Send fake joint values -->
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+      <rosparam param="source_list">["/moveit_cpp_test/fake_controller_joint_states"]</rosparam>
+    </node>
+
+    <!-- Start robot state publisher -->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+    <!-- Unit Test /-->
+    <test test-name="moveit_cpp_test" pkg="moveit_ros_planning" type="moveit_cpp_test" />
+</launch>

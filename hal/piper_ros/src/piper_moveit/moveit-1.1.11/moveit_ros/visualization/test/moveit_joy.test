@@ -1,0 +1,4 @@
+<launch>
+  <test pkg="moveit_ros_visualization" type="test_moveit_joy.py" test-name="moveit_joy"
+        time-limit="300"/>
+</launch>

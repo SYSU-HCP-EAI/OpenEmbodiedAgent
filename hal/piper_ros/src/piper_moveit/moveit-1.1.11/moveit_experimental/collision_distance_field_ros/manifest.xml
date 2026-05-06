@@ -1,0 +1,18 @@
+<package>
+  <description brief="collision_distance_field_ros">
+
+     collision_distance_field_ros
+
+  </description>
+  <author>E. Gil Jones</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/collision_distance_field_ros</url>
+  <depend package="collision_distance_field"/>
+  <depend package="planning_models"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include"/>
+  </export>
+
+</package>

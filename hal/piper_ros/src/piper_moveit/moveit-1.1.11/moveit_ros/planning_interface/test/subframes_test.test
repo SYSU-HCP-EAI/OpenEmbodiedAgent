@@ -1,0 +1,7 @@
+<launch>
+  <include file="$(find moveit_resources_panda_moveit_config)/launch/test_environment.launch" />
+
+  <!-- Subframes test -->
+  <test pkg="moveit_ros_planning_interface" type="subframes_test" test-name="subframes_test"
+        time-limit="30" args=""/>
+</launch>

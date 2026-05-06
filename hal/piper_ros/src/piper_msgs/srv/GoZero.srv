@@ -1,0 +1,4 @@
+bool is_mit_mode
+---
+int64 code
+bool status  # 响应消息类型为bool

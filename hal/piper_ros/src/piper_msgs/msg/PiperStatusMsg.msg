@@ -1,0 +1,20 @@
+uint8 ctrl_mode
+uint8 arm_status
+uint8 mode_feedback
+uint8 teach_status
+uint8 motion_status
+uint8 trajectory_num
+int64 err_code
+bool joint_1_angle_limit
+bool joint_2_angle_limit
+bool joint_3_angle_limit
+bool joint_4_angle_limit
+bool joint_5_angle_limit
+bool joint_6_angle_limit
+bool communication_status_joint_1
+bool communication_status_joint_2
+bool communication_status_joint_3
+bool communication_status_joint_4
+bool communication_status_joint_5
+bool communication_status_joint_6
+

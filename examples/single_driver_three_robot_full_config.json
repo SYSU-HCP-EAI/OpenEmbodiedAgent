@@ -1,5 +1,5 @@
 {
-    "scene_asset_path": "examples/merom_scene_baked.usd",
+    "scene_asset_path": "asserts/merom_scene_baked.usd",
     "pipergo2_robot_start": [
       0.58,
       7.50704,
@@ -360,10 +360,5 @@
 
     "idle_step_enabled": true,
     "idle_steps_per_cycle": 1,
-    "idle_step_interval_s": 0.033,
-  
-    "pythonpath": [
-      "/home/zyserver/work/my_project/InternUtopia"
-    ]
-  
-}    
+    "idle_step_interval_s": 0.033
+}

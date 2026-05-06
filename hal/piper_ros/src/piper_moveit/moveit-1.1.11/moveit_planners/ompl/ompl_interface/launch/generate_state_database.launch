@@ -1,0 +1,14 @@
+<launch>
+  <arg name="use_current_scene" default="false"/>
+  <arg name="planning_group"/>
+  <arg name="constraints_file" doc="the path to a constraints yaml file (see generate_state_database for details)"/>
+
+  <node name="generate_state_database" pkg="moveit_planners_ompl" type="generate_state_database" output="screen">
+    <param name="use_current_scene" value="$(arg use_current_scene)"/>
+    <param name="planning_group" value="$(arg planning_group)"/>
+    <remap from="~output_folder" to="move_group/constraint_approximations_path"/>
+
+    <rosparam ns="constraints" command="load" file="$(arg constraints_file)"/>
+  </node>
+
+</launch>

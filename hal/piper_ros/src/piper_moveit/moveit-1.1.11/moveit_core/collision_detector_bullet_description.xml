@@ -1,0 +1,8 @@
+<library path="lib/libcollision_detector_bullet_plugin">
+  <class name="Bullet" type="collision_detection::CollisionDetectorBtPluginLoader"
+  base_class_type="collision_detection::CollisionPlugin">
+    <description>
+      Bullet Collision Detector
+    </description>
+  </class>
+</library>

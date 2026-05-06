@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>moveit_ros_planning_interface</name>
+  <version>1.1.11</version>
+  <description>Components of MoveIt that offer simpler interfaces to planning and execution</description>
+
+  <author email="isucan@google.com">Ioan Sucan</author>
+
+  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="me@v4hn.de">Michael Görner</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend condition="$ROS_PYTHON_VERSION == 2">python-catkin-pkg</buildtool_depend>
+  <buildtool_depend condition="$ROS_PYTHON_VERSION == 3">python3-catkin-pkg</buildtool_depend>
+
+  <depend>moveit_ros_planning</depend>
+  <depend>moveit_ros_warehouse</depend>
+  <depend>moveit_ros_move_group</depend>
+  <depend>moveit_ros_manipulation</depend>
+  <depend>roscpp</depend>
+  <depend>rospy</depend>
+  <depend>rosconsole</depend>
+  <depend>actionlib</depend>
+  <depend>geometry_msgs</depend>
+  <depend>moveit_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend condition="$ROS_PYTHON_VERSION == 2">python</depend>
+  <depend condition="$ROS_PYTHON_VERSION == 3">python3</depend>
+  <depend>eigenpy</depend>
+
+  <build_depend>eigen</build_depend>
+
+  <test_depend>moveit_resources_fanuc_moveit_config</test_depend>
+  <test_depend>moveit_resources_panda_moveit_config</test_depend>
+  <test_depend>rostest</test_depend>
+</package>

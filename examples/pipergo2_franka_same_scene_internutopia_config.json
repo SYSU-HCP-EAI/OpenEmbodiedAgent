@@ -1,6 +1,6 @@
 {
   "_comment": "Two-robot single-scene config for multi_robot_simulation_internutopia (PiperGo2 + Franka).",
-  "scene_asset_path": "examples/merom_scene_baked.usd",
+  "scene_asset_path": "asserts/merom_scene_baked.usd",
 
   "room_lighting": "grey_studio",
   "camera_eye_offset": [2.5, 2.5, 2.0],
@@ -153,9 +153,5 @@
   },
   "franka_output_dir": "/tmp/paos_franka_sim_logs",
   "franka_grasp_dump": "franka_grasp.json",
-  "franka_place_dump": "franka_place.json",
-
-  "pythonpath": [
-    "/home/zyserver/work/my_project/InternUtopia"
-  ]
+  "franka_place_dump": "franka_place.json"
 }

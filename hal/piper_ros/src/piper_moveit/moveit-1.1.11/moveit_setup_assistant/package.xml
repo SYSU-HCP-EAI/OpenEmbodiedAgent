@@ -1,0 +1,41 @@
+<package format="2">
+  <name>moveit_setup_assistant</name>
+  <version>1.1.11</version>
+
+  <description>Generates a configuration package that makes it easy to use MoveIt</description>
+
+  <author email="dave@picknik.ai">Dave Coleman</author>
+
+  <maintainer email="dave@picknik.ai">Dave Coleman</maintainer>
+  <maintainer email="rhaschke@techfak.uni-bielefeld.de">Robert Haschke</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>libogre-dev</build_depend>
+  <build_depend>qtbase5-dev</build_depend>
+  <build_depend>libqt5-opengl-dev</build_depend>
+  <build_depend>ompl</build_depend>
+  <build_depend>rviz</build_depend>
+
+  <depend>moveit_core</depend>
+  <depend>moveit_ros_planning</depend>
+  <depend>moveit_ros_visualization</depend>
+  <depend>rosconsole</depend>
+  <depend>roscpp</depend>
+  <depend>urdf</depend>
+  <depend>yaml-cpp</depend>
+  <depend version_gt="0.3.1">srdfdom</depend>
+
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>rviz</exec_depend>
+
+  <test_depend>moveit_resources_panda_moveit_config</test_depend>
+  <test_depend>rosunit</test_depend>
+</package>

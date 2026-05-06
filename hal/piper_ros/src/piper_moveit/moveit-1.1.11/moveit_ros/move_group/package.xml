@@ -1,0 +1,39 @@
+<package format="2">
+  <name>moveit_ros_move_group</name>
+  <version>1.1.11</version>
+  <description>The move_group node for MoveIt</description>
+  <author email="isucan@google.com">Ioan Sucan</author>
+  <author email="robot.moveit@gmail.com">Sachin Chitta</author>
+
+  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="me@v4hn.de">Michael Görner</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>actionlib</depend>
+  <depend>moveit_core</depend>
+  <depend>moveit_ros_planning</depend>
+  <depend>roscpp</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend version_gte="1.11.2">pluginlib</depend>
+  <depend>std_srvs</depend>
+
+  <exec_depend>moveit_kinematics</exec_depend>
+
+  <test_depend>rostest</test_depend>
+  <test_depend>moveit_resources_fanuc_moveit_config</test_depend>
+
+  <export>
+    <moveit_ros_move_group plugin="${prefix}/default_capabilities_plugin_description.xml"/>
+  </export>
+
+</package>

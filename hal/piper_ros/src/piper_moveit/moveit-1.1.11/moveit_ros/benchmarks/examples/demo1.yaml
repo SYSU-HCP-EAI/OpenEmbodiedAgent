@@ -1,0 +1,26 @@
+# This is an example configuration that loads the "Kitchen" scene from the
+# local MoveIt warehouse and benchmarks the "panda_arm" group in the Pick1
+# query using the Start1 initial state (all pre-stored in the local warehouse)
+
+# Three different planners from OMPL are run a total of 50 times each, with a
+# maximum of 10 seconds per run.  Output is stored in the /tmp/moveit_benchmarks directory.
+
+benchmark_config:
+    warehouse:
+        host: 127.0.0.1
+        port: 33829
+        scene_name: Kitchen1     # Required
+    parameters:
+        name: KitchenPick1
+        runs: 50
+        group: panda_arm       # Required
+        timeout: 10.0
+        output_directory: /tmp/moveit_benchmarks/
+        queries: Pick1
+        start_states: Start1
+    planning_pipelines:
+        - name: ompl
+          planners:
+            - RRTConnectkConfigDefault
+            - BKPIECEkConfigDefault
+            - KPIECEkConfigDefault

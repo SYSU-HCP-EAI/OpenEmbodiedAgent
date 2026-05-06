@@ -1,0 +1,38 @@
+<package format="2">
+  <name>moveit_ros_manipulation</name>
+  <version>1.1.11</version>
+  <description>Components of MoveIt used for manipulation</description>
+
+  <author email="isucan@google.com">Ioan Sucan</author>
+  <author email="robot.moveit@gmail.com">Sachin Chitta</author>
+
+  <maintainer email="me@v4hn.de">Michael Görner</maintainer>
+  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>actionlib</depend>
+  <depend>dynamic_reconfigure</depend>
+  <depend>moveit_core</depend>
+  <depend>moveit_ros_move_group</depend>
+  <depend>moveit_ros_planning</depend>
+  <depend>moveit_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>rosconsole</depend>
+  <depend>tf2_eigen</depend>
+  <depend version_gte="1.11.2">pluginlib</depend>
+
+  <build_depend>eigen</build_depend>
+
+  <export>
+    <moveit_ros_move_group plugin="${prefix}/pick_place_capability_plugin_description.xml"/>
+  </export>
+
+</package>

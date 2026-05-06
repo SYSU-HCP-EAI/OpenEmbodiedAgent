@@ -1,6 +1,6 @@
 {
-  "scene_asset_path": "examples/merom_scene_baked.usd",
-  "robot_usd_path": "examples/robots/g1_29dof_color.usd",
+  "scene_asset_path": "asserts/merom_scene_baked.usd",
+  "robot_usd_path": "asserts/robots/g1/g1_29dof_color.usd",
   "robot_start": [
     0.58,
     7.50704,
@@ -64,9 +64,6 @@
   },
   "visible_objects": [],
   "objects": [],
-  "pythonpath": [
-    "/home/zyserver/work/my_project/InternUtopia"
-  ],
   "auto_enter_simulation_on_start": true,
   "vla": {
     "attach_on_start": false

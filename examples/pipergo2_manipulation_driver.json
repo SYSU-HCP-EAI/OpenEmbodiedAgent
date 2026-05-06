@@ -7,13 +7,10 @@
       "EXP_PATH": "/isaac-sim/apps",
       "INTERNUTOPIA_ASSETS_PATH": "/data/datasets/GRScenes"
     },
-    "setup_python_env": "/isaac-sim/setup_python_env.sh",
-    "extra_pythonpath": [
-      "/home/zyserver/work/my_project/InternUtopia"
-    ]
+    "setup_python_env": "/isaac-sim/setup_python_env.sh"
   },
-  "scene_asset_path": "examples/merom_scene_baked.usd",
-  "robot_usd_path": "examples/robots/pipergo2.usd",
+  "scene_asset_path": "asserts/merom_scene_baked.usd",
+  "robot_usd_path": "asserts/robots/pipergo2/pipergo2.usd",
   "robot_start": [
     0.58,
     7.50704,
@@ -61,7 +58,7 @@
         0.05,
         100.0
       ],
-      "focal_length": 2.4,
+      "focal_length": 1.2,
       "purpose": "robot_body_view"
     }
   },
@@ -334,9 +331,6 @@
       "red"
     ]
   },
-  "pythonpath": [
-    "/home/zyserver/work/my_project/InternUtopia"
-  ],
   "vla": {
     "ckpt_path": "/data/wangyuanlei/vla",
     "task_text": "pick up the red cube",

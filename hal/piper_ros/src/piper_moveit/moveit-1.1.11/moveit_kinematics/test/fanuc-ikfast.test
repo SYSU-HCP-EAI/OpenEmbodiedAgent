@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+<launch>
+	<group ns="fanuc">
+		<include file="$(find moveit_resources_fanuc_moveit_config)/launch/planning_context.launch">
+			<arg name="load_robot_description" value="true"/>
+		</include>
+
+		<param name="tip_link" value="tool0"/>
+		<param name="root_link" value="base_link"/>
+		<param name="group" value="manipulator"/>
+		<param name="ik_timeout" value="0.2"/>
+		<rosparam param="joint_names">[joint_1, joint_2, joint_3, joint_4, joint_5, joint_6]</rosparam>
+
+		<param name="ik_plugin_name" value="fanuc_manipulator/IKFastKinematicsPlugin"/>
+		<!-- By default disable all tests: enable selectively with private parameters
+		     The reason is two-fold: First some of these tests are flaky (due to random seeding in solvers)
+		     Second, we don't want to repeat all tests for all configurations -->
+		<param name="num_fk_tests" value="0"/>
+		<param name="num_ik_tests" value="0"/>
+		<param name="num_ik_cb_tests" value="0"/>
+		<param name="num_ik_multiple_tests" value="0"/>
+		<param name="num_nearest_ik_tests" value="0"/>
+
+		<test test-name="fanuc_ikfast" pkg="moveit_kinematics" type="test_kinematics_plugin" time-limit="180">
+			<!-- enable basic FK and IK tests -->
+			<param name="num_fk_tests" value="100"/>
+			<param name="num_ik_tests" value="100"/>
+			<!-- use a non-singular seed -->
+			<rosparam param="seed">[0, -0.32, -0.5, 0, -0.5, 0]</rosparam>
+			<rosparam param="consistency_limits">[0.4, 0.4, 0.4, 0.4, 0.4, 0.4]</rosparam>
+			<!-- List of unit tests to apply, starting from the seed, applying the specified transforms,
+			     and expecting the given joints as solution.
+			     If the result is not deterministic, it's possible to drop "joints". -->
+			<rosparam param="unit_tests">
+- pos.x: 0.1
+  joints: [0, -0.152627, -0.367847, 0, -0.46478, 0]
+- pos.y: 0.1
+  joints: [0.1582256, -0.3066389, -0.490349, 0.250946, -0.5159858, -0.319381]
+- pos.z: 0.1
+  joints: [0, -0.287588, -0.324304, 0, -0.643285, 0]
+
+- rot.x: 0.1
+  joints: [-0.0159181, -0.319276, -0.499953, -0.231014, -0.511806, 0.212341]
+- rot.y: 0.1
+  joints: [0, -0.331586, -0.520375, 0, -0.391211, 0]
+- rot.z: 0.1
+  joints: [0, -0.32, -0.5, 0, -0.5, -0.1]
+</rosparam>
+		</test>
+
+		<test test-name="fanuc_ikfast_singular" pkg="moveit_kinematics" type="test_kinematics_plugin" time-limit="180">
+			<param name="ik_timeout" value="1.0"/>
+			<rosparam param="seed">[0, 0, 0, 0, 0, 0]</rosparam> <!-- zero pose is singular -->
+			<rosparam param="unit_tests">
+- pose:
+    position: [0.889898, -0.201372, 1.09478]
+    orientation: [0.70730173938410212, -0.00017737593464318564, 0.7069117395278034, 0.00010256596220803817]
+  joints: [-0.24956209125170759, -0.0064534268911693839, -0.24240439884057174, 0.82892859428707288, 0.34106727668811626, -0.7992823163375341]
+- pos.x: +0.1
+  joints: [0, 0.17225521580111153, 0.18616019238929934, 0, -0.013904976588187847, 0]
+- pos.x: -0.1
+  joints: [0, -0.16314862009306849, -0.15067469903041658, 0, -0.012473921062651848, 0]
+
+- pos.y: +0.1
+- pos.y: -0.1
+
+- pos.z: +0.1
+  joints: [0, 0.068450807289788598, 0.2317804402761828, 0, -0.16332963298639425, 0]
+- pos.z: -0.1
+  joints: [0, -0.038270954623974673, -0.19079719308481202, 0, 0.15252623846083735, 0]
+
+- rot.x: +0.1
+- rot.x: -0.1
+
+- rot.y: +0.1
+  joints: [0, -0.0042227733863642921, -0.019776669463347087, 0, 0.11555389607698333, 0]
+- rot.y: -0.1
+  joints: [0, 0.0061816323866541508, 0.021837005762580415, 0, -0.1156553733759268, 0]
+
+- rot.z: +0.1
+- rot.z: -0.1
+</rosparam>
+		</test>
+	</group>
+</launch>

@@ -8,8 +8,9 @@ cd "$NEW_REPO"
 
 # 1. 复制新增目录和文件
 cp -r "$OLD_REPO/environment.yml" . 2>/dev/null
-mkdir -p examples
-cp "$OLD_REPO/examples"/{fleet_multi_robot_demo.json,franka_research3.driver.json,franka_simulation_driver.json,g1_simulation_driver.json,merom_scene_baked.usd,multi_robot_simulation_internutopia_driver.json,pipergo2_franka_same_scene_internutopia_config.json,single_driver_three_robot_full_config.json,start_fleet_multi_robot.sh,three_robot_same_scene_internutopia_driver.json} examples/ 2>/dev/null
+mkdir -p examples asserts
+cp "$OLD_REPO/examples"/{fleet_multi_robot_demo.json,franka_research3.driver.json,franka_simulation_driver.json,g1_simulation_driver.json,multi_robot_simulation_internutopia_driver.json,pipergo2_franka_same_scene_internutopia_config.json,single_driver_three_robot_full_config.json,start_fleet_multi_robot.sh,three_robot_same_scene_internutopia_driver.json} examples/ 2>/dev/null
+cp "$OLD_REPO/examples/merom_scene_baked.usd" asserts/ 2>/dev/null
 
 cp -r "$OLD_REPO/hal/drivers/franka_backends" hal/drivers/
 cp "$OLD_REPO/hal/drivers"/{franka_driver.py,franka_multi_backend_driver.py,franka_simulation_driver.py,g1_simulation_driver.py,multi_robot_simulation_driver.py,multi_robot_unified_isaac_driver.py} hal/drivers/ 2>/dev/null

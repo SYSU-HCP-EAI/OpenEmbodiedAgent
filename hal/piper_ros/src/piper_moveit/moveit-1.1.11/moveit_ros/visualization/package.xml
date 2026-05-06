@@ -1,0 +1,52 @@
+<package format="2">
+  <name>moveit_ros_visualization</name>
+  <version>1.1.11</version>
+  <description>Components of MoveIt that offer visualization</description>
+
+  <author email="isucan@google.com">Ioan Sucan</author>
+  <author email="dave@picknik.ai">Dave Coleman</author>
+  <author email="robot.moveit@gmail.com">Sachin Chitta</author>
+
+  <maintainer email="jon.binney@gmail.com">Jon Binney</maintainer>
+  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>pkg-config</buildtool_depend>
+
+  <build_depend>class_loader</build_depend>
+  <build_depend>eigen</build_depend>
+  <build_depend>libogre-dev</build_depend>
+  <build_depend>libqt5-opengl-dev</build_depend>
+  <build_depend>qtbase5-dev</build_depend>
+
+  <depend>geometric_shapes</depend>
+  <depend>interactive_markers</depend>
+  <depend>moveit_ros_robot_interaction</depend>
+  <depend>moveit_ros_perception</depend>
+  <depend>moveit_ros_planning_interface</depend>
+  <depend>moveit_ros_warehouse</depend>
+  <depend>object_recognition_msgs</depend>
+  <depend version_gte="1.11.2">pluginlib</depend>
+  <depend>rosconsole</depend>
+  <depend>roscpp</depend>
+  <depend>rospy</depend>
+  <depend>rviz</depend>
+  <depend>tf2_eigen</depend>
+
+  <test_depend>rostest</test_depend>
+
+  <export>
+    <rviz plugin="${prefix}/robot_state_rviz_plugin_description.xml"/>
+    <rviz plugin="${prefix}/planning_scene_rviz_plugin_description.xml"/>
+    <rviz plugin="${prefix}/motion_planning_rviz_plugin_description.xml"/>
+    <rviz plugin="${prefix}/trajectory_rviz_plugin_description.xml"/>
+  </export>
+
+</package>

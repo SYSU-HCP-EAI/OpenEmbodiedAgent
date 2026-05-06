@@ -1,0 +1,19 @@
+<package>
+  <description brief="kinematics_cache_ros">
+
+     kinematics_cache_ros
+
+  </description>
+  <author>Sachin Chitta</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/kinematics_cache_ros</url>
+  <depend package="kinematics_cache"/>
+  <depend package="planning_models"/>
+  <depend package="robot_model_loader"/>
+  <depend package="kinematics_base"/>
+  <depend package="pluginlib"/>
+  <depend package="srdf"/>
+  <depend package="urdf"/>
+
+</package>

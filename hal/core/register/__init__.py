@@ -1,0 +1,2 @@
+import internutopia.core.register.register
+from internutopia.core.register.register import import_all_modules_for_register

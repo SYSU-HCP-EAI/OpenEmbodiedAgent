@@ -1,3 +1,7 @@
+from hal.internutopia_paths import ensure_bundled_internutopia_sys_path
+
+ensure_bundled_internutopia_sys_path()
+
 from internutopia.core.config import Config, SimConfig
 from internutopia.core.gym_env import Env
 from internutopia.core.util import has_display
@@ -11,9 +15,13 @@ from internutopia_extension.configs.tasks import SingleInferenceTaskCfg
 
 import numpy as np
 import cv2
+from pathlib import Path
 
 # ================= 路径 =================
-SCENE_USD = "/home/zyserver/work/my_project/InternUtopia/internutopia/demo/merom_scene_baked.usd"
+_REPO = Path(__file__).resolve().parent
+_MEROM_ASSERTS = _REPO / "asserts" / "merom_scene_baked.usd"
+_MEROM_EXAMPLES = _REPO / "examples" / "merom_scene_baked.usd"
+SCENE_USD = str(_MEROM_ASSERTS if _MEROM_ASSERTS.is_file() else _MEROM_EXAMPLES)
 
 SPAWN_PRIM = "/World/env_0/scene/MeromScene/carpet_ctclvd_1/Asset/base_link/visuals"
 

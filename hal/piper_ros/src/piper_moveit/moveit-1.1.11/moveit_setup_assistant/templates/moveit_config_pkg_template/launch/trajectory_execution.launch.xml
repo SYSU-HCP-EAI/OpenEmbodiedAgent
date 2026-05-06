@@ -1,0 +1,23 @@
+<launch>
+  <!-- This file summarizes all settings required for trajectory execution  -->
+
+  <!-- Define moveit controller manager plugin: fake, simple, or ros_control -->
+  <arg name="moveit_controller_manager" />
+  <arg name="fake_execution_type" default="interpolate" />
+
+  <!-- Flag indicating whether MoveIt is allowed to load/unload  or switch controllers -->
+  <arg name="moveit_manage_controllers" default="true"/>
+  <param name="moveit_manage_controllers" value="$(arg moveit_manage_controllers)"/>
+
+  <!-- When determining the expected duration of a trajectory, this multiplicative factor is applied to get the allowed duration of execution -->
+  <param name="trajectory_execution/allowed_execution_duration_scaling" value="1.2"/> <!-- default 1.2 -->
+  <!-- Allow more than the expected execution time before triggering a trajectory cancel (applied after scaling) -->
+  <param name="trajectory_execution/allowed_goal_duration_margin" value="0.5"/> <!-- default 0.5 -->
+  <!-- Allowed joint-value tolerance for validation that trajectory's first point matches current robot state -->
+  <param name="trajectory_execution/allowed_start_tolerance" value="0.01"/> <!-- default 0.01 -->
+
+  <!-- We use pass_all_args=true here to pass fake_execution_type, which is required by fake controllers, but not by real-robot controllers.
+       As real-robot controller_manager.launch files shouldn't be required to define this argument, we use the trick of passing all args. -->
+  <include file="$(dirname)/$(arg moveit_controller_manager)_moveit_controller_manager.launch.xml" pass_all_args="true" />
+
+</launch>

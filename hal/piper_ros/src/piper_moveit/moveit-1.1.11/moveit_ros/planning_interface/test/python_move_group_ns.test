@@ -1,0 +1,9 @@
+<launch>
+  <group  ns="test_ns">
+    <include file="$(find moveit_resources_fanuc_moveit_config)/launch/test_environment.launch"/>
+    <test pkg="moveit_ros_planning_interface" type="python_move_group.py" test-name="python_move_group"
+          time-limit="300" args=""/>
+  </group>
+  <test pkg="moveit_ros_planning_interface" type="python_move_group_ns.py" test-name="python_move_group_ns"
+        time-limit="300" args=""/>
+</launch>

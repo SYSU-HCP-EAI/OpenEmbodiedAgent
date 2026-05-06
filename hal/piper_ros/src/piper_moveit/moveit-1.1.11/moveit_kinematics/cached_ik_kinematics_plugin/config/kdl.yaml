@@ -1,0 +1,30 @@
+arm:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+arm_left:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+arm_right:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+arm_with_torso:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+head:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+left_arm:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+left_arm_hand:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+left_gripper:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+left_leg:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+manipulator:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+right_arm:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+right_arm_hand:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+right_gripper:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+right_leg:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+torso:
+    kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin

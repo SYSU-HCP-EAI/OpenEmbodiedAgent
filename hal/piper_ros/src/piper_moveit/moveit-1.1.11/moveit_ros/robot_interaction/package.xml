@@ -1,0 +1,29 @@
+<package format="2">
+  <name>moveit_ros_robot_interaction</name>
+  <version>1.1.11</version>
+  <description>Components of MoveIt that offer interaction via interactive markers</description>
+
+  <author email="isucan@google.com">Ioan Sucan</author>
+
+  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="rhaschke@techfak.uni-bielefeld.de">Robert Haschke</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>moveit_ros_planning</depend>
+  <depend>roscpp</depend>
+  <depend>tf2</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>interactive_markers</depend>
+
+  <test_depend>rosunit</test_depend>
+</package>

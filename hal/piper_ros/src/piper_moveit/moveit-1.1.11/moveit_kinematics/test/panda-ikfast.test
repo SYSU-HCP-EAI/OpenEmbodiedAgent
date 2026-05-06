@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<launch>
+	<group ns="panda">
+		<include file="$(find moveit_resources_panda_moveit_config)/launch/planning_context.launch">
+			<arg name="load_robot_description" value="true"/>
+		</include>
+
+		<param name="root_link" value="panda_link0"/>
+		<param name="tip_link" value="panda_link8"/>
+		<param name="group" value="panda_arm"/>
+		<param name="ik_timeout" value="0.2"/>
+		<rosparam param="joint_names">[panda_joint1, panda_joint2, panda_joint3, panda_joint4, panda_joint5, panda_joint6, panda_joint7]</rosparam>
+
+		<!-- IKFast solver parameters -->
+		<param name="ik_plugin_name" value="panda_panda_arm/IKFastKinematicsPlugin"/>
+
+		<!-- by default disable all tests: enable selectively with private parameters -->
+		<param name="num_fk_tests" value="0"/>
+		<param name="num_ik_tests" value="0"/>
+		<param name="num_ik_cb_tests" value="0"/>
+		<param name="num_ik_multiple_tests" value="0"/>
+		<param name="num_nearest_ik_tests" value="0"/>
+
+		<test test-name="panda_ikfast" pkg="moveit_kinematics" type="test_kinematics_plugin" time-limit="180">
+			<!-- enable basic FK and IK tests -->
+			<param name="num_fk_tests" value="100"/>
+			<param name="num_ik_tests" value="100"/>
+			<!-- use a non-singular seed -->
+			<rosparam param="seed">[-0.5, -0.5, 0.3, -2, 0.8, 1.8, 1.9]</rosparam>
+			<rosparam param="consistency_limits">[0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]</rosparam>
+			<rosparam param="unit_tests">
+- pos.x: +0.1
+- pos.x: -0.1
+- pos.y: +0.1
+- pos.y: -0.1
+- pos.z: +0.1
+- pos.z: -0.1
+- rot.x: +0.1
+- rot.x: -0.1
+- rot.y: +0.1
+- rot.y: -0.1
+- rot.z: +0.1
+- rot.z: -0.1
+</rosparam>
+		</test>
+
+		<test test-name="panda_ikfast_singular" pkg="moveit_kinematics" type="test_kinematics_plugin" time-limit="180">
+			<param name="ik_timeout" value="1.0"/>
+			<rosparam param="seed">[0, 0, 0, 0, 0, 0, 0]</rosparam> <!-- zero pose is singular -->
+			<rosparam param="unit_tests">
+- pos.x: +0.1
+- pos.x: -0.1
+- pos.y: +0.1
+- pos.y: -0.1
+- pos.z: +0.0
+- pos.z: -0.1
+- rot.x: +0.1
+- rot.x: -0.1
+- rot.y: +0.1
+- rot.y: -0.1
+- rot.z: -0.1
+</rosparam>
+		</test>
+	</group>
+</launch>

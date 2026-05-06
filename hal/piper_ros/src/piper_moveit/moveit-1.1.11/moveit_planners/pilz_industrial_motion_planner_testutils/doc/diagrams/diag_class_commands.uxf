@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?><diagram program="umlet" version="13.3">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>530</x>
+      <y>370</y>
+      <w>560</w>
+      <h>150</h>
+    </coordinates>
+    <panel_attributes>template=StartType, GoalType
+BaseCommand
+{abstract}
+--
++ setStartConfiguration(...)
++ getStartConfiguration(...) : StartType
+
++ setGoalConfiguration(...)
++ getGoalConfiguration(...) : GoalType
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>910</x>
+      <y>560</y>
+      <w>230</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>template=StartType, GoalType
+Ptp</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>970</x>
+      <y>510</y>
+      <w>30</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;60.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>710</x>
+      <y>510</y>
+      <w>30</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;60.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>650</x>
+      <y>560</y>
+      <w>230</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>template=StartType, GoalType
+Lin</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>530</x>
+      <y>670</y>
+      <w>300</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>template=StartType, AuxiliaryType, GoalType
+Circ</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>540</x>
+      <y>510</y>
+      <w>30</w>
+      <h>190</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;170.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>50</x>
+      <y>200</y>
+      <w>400</w>
+      <h>150</h>
+    </coordinates>
+    <panel_attributes>Sequence
+--
++ add(cmd : MotionCmdUPtr)
++ setAllBlendRadiiToZero()
++ getBlendRadius(index: int)
++ getCmd() : MotionCmd&amp;
+
++ toRequest() : moveit_msgs::MotionSequenceRequest</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>590</x>
+      <y>200</y>
+      <w>390</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>MotionCmd
+{abstract}
+--
++ setPlanningGroup(...)
++ setTargetLink(...)
++ setVelocityScale(...)
++ setAccelerationScale(...)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>750</x>
+      <y>310</y>
+      <w>30</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;70.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>640</x>
+      <y>80</y>
+      <w>260</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>MPReqConvertible
+{abstract}
+--
+/+ toRequest(): MotionPlanRequest/</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>750</x>
+      <y>130</y>
+      <w>30</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;70.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>440</x>
+      <y>280</y>
+      <w>170</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-
+m2=*</panel_attributes>
+    <additional_attributes>10.0;10.0;150.0;10.0</additional_attributes>
+  </element>
+</diagram>

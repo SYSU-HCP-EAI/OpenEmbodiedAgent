@@ -11,30 +11,21 @@
       "robot_type": "pipergo2",
       "driver": "pipergo2_manipulation",
       "driver_kwargs": {
-        "scene_asset_path": "examples/merom_scene_baked.usd",
-        "pythonpath": [
-          "/home/zyserver/work/my_project/InternUtopia"
-        ]
+        "scene_asset_path": "asserts/merom_scene_baked.usd"
       }
     },
     "franka_001": {
       "robot_type": "franka",
       "driver": "franka_simulation",
       "driver_kwargs": {
-        "scene_asset_path": "examples/merom_scene_baked.usd",
-        "pythonpath": [
-          "/home/zyserver/work/my_project/InternUtopia"
-        ]
+        "scene_asset_path": "asserts/merom_scene_baked.usd"
       }
     },
     "g1_001": {
       "robot_type": "g1",
       "driver": "g1_simulation",
       "driver_kwargs": {
-        "scene_asset_path": "examples/merom_scene_baked.usd",
-        "pythonpath": [
-          "/home/zyserver/work/my_project/InternUtopia"
-        ]
+        "scene_asset_path": "asserts/merom_scene_baked.usd"
       }
     }
   }

@@ -1,0 +1,21 @@
+<package>
+  <description brief="sbpl_interface_ros">
+
+     sbpl_interface_ros
+
+  </description>
+  <author>Gil Jones</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/sbpl_interface_ros</url>
+  <depend package="sbpl_interface"/>
+  <depend package="pluginlib"/>
+  <depend package="planning_scene_monitor"/>
+  <depend package="planning_interface"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_interface_ros `rosboost-cfg --lflags thread`"/>
+    <planning_interface plugin="${prefix}/plugin_description.xml"/>
+  </export>
+
+</package>

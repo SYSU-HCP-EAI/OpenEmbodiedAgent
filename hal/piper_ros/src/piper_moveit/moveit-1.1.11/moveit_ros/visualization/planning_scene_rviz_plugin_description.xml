@@ -1,0 +1,7 @@
+<library path="libmoveit_planning_scene_rviz_plugin">
+  <class name="moveit_rviz_plugin/PlanningScene" type="moveit_rviz_plugin::PlanningSceneDisplay" base_class_type="rviz::Display">
+    <description>
+      Displays a planning scene.
+    </description>
+  </class>
+</library>

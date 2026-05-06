@@ -175,11 +175,10 @@ class AgentLoop:
         if not lowered:
             return None
 
-        nav_verb = (
-            "move", "go", "navigate", "walk", "head", "reach",
-            "移动", "去", "导航", "前往", "走到", "回",
-        )
-        has_nav_intent = any(token in lowered for token in nav_verb)
+        nav_verb_zh = ("移动", "去", "导航", "前往", "走到", "回")
+        has_nav_intent = bool(re.search(r"\b(?:move|go|navigate|walk|head|reach)\b", lowered))
+        if not has_nav_intent:
+            has_nav_intent = any(token in lowered for token in nav_verb_zh)
         if not has_nav_intent:
             return None
 

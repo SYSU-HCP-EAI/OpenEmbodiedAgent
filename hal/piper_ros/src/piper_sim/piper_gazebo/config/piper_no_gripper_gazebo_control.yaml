@@ -1,0 +1,29 @@
+gazebo:
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 200
+
+  joint1_position_controller:
+    type: position_controllers/JointPositionController
+    joint: joint1
+    pid: {p: 100.0, i: 0.01, d: 5.0}
+  joint2_position_controller:
+    type: position_controllers/JointPositionController
+    joint: joint2
+    pid: {p: 100.0, i: 0.01, d: 5.0}
+  joint3_position_controller:
+    type: position_controllers/JointPositionController
+    joint: joint3
+    pid: {p: 100.0, i: 0.01, d: 5.0}
+  joint4_position_controller:
+    type: position_controllers/JointPositionController
+    joint: joint4
+    pid: {p: 100.0, i: 0.01, d: 5.0}
+  joint5_position_controller:
+    type: position_controllers/JointPositionController
+    joint: joint5
+    pid: {p: 100.0, i: 0.01, d: 5.0}
+  joint6_position_controller:
+    type: position_controllers/JointPositionController
+    joint: joint6
+    pid: {p: 100.0, i: 0.01, d: 5.0}
