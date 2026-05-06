@@ -15,6 +15,10 @@
   </p>
 </div>
 
+## 🔥 Highlight 🔥
+
+In the near future, we will **refactor and release** the second version of PhyAgentOS, accompanied by user-friendly documentation and guidelines, as well as a detailed roadmap outlining our upcoming plans and progress. Thank you very much for your support during this time.
+
 ## Long Demo    
 [![Watch the video](https://img.youtube.com/vi/LtUWamZRyhM/maxresdefault.jpg)](https://youtu.be/LtUWamZRyhM?si=UjKNdqFnO1knfWbX)
 
