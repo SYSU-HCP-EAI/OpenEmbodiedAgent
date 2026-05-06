@@ -7,13 +7,24 @@
   </p>
   <p>
     <img src="https://img.shields.io/badge/version-0.05-blue" alt="Version">
-    <img src="https://img.shields.io/badge/python-≥3.10-blue" alt="Python">
+    <img src="https://img.shields.io/badge/python-≥3.11-blue" alt="Python">
     <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
         <a href="https://sysu-hcp-eai.github.io/PhyAgentOS-website/">
         <img src="https://img.shields.io/badge/🔗_Website-online-orange" alt="Website">
     </a>
   </p>
 </div>
+
+## 当前状态
+
+仅支持DumpSimTarget、DummyOpenPIAdapter、DummyPolicyClient调试，单skill单target串行 MVP 执行的新框架实现。
+
+下一步目标：
+
+- 多skill、多target的注册、管理、调度
+- 完整watchdog功能落实
+- 协议落实
+- 感知插件完善闭环
 
 ## 👾长程任务演示
 
@@ -82,13 +93,29 @@ PhyAgentOS 的核心是一个本地工作区（Workspace），软硬件作为独
 ### 1. 安装依赖
 
 ```bash
-git clone https://github.com/your-repo/Physical Agent Operating System.git
-cd Physical Agent Operating System
+git clone https://github.com/PhyAgentOS/PhyAgentOS.git
+cd PhyAgentOS
+python -m venv .venv
+source .venv/bin/activate
 pip install -e .
-# 安装仿真环境依赖 (如 watchdog)
-pip install watchdog
+```
 
-# 可选：安装外部 ReKep 真机插件
+PhyAgentOS 需要 Python 3.11 或更新版本。开发和运行测试时，安装 dev extras：
+```bash
+pip install -e ".[dev]"
+```
+
+如果需要使用维护者侧更完整的机器人 Conda 环境：
+```bash
+conda env create -f environment.yml
+conda activate paos
+pip install -e .
+```
+
+Runtime 的 dummy simulation 链路保持轻量，基础安装即可运行。OpenPI、LIBERO、RoboCasa、RoboLab 等重型 benchmark / policy 环境是可选依赖，建议按需放在独立环境中。
+
+可选：安装外部 ReKep 真机插件：
+```bash
 python scripts/deploy_rekep_real_plugin.py \
   --repo-url https://github.com/baiyu858/PhyAgentOS-rekep-real-plugin.git
 ```
@@ -126,6 +153,13 @@ python hal/hal_watchdog.py --driver rekep_real
 ```bash
 paos agent
 ```
+
+**可选：Runtime dummy session smoke test**
+Runtime 使用 `TARGETS.md`、`SKILLS.md`、`SESSIONS.md`，不走旧的 `ACTION.md` 队列。如果工作区已包含这些文件，可以执行一次 supervisor：
+```bash
+python scripts/run_runtime_watchdog.py --workspace /tmp/paos_runtime_smoke --once
+```
+成功后，session 会被标记为 `succeeded`，episode 摘要会写入 `artifacts/runtime/<session_id>/episode.json`。
 
 ### 4. 交互示例
 

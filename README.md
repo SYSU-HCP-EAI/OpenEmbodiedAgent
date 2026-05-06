@@ -7,13 +7,24 @@
   </p>
   <p>
     <img src="https://img.shields.io/badge/version-0.0.5-blue" alt="Version">
-    <img src="https://img.shields.io/badge/python-≥3.10-blue" alt="Python">
+    <img src="https://img.shields.io/badge/python-≥3.11-blue" alt="Python">
     <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
     <a href="https://sysu-hcp-eai.github.io/PhyAgentOS-website/">
         <img src="https://img.shields.io/badge/🔗_Website-online-orange" alt="Website">
     </a>
   </p>
 </div>
+
+## Current Status
+
+New framework implementation supporting debugging only for DumpSimTarget, DummyOpenPIAdapter, and DummyPolicyClient, with single-skill, single-target serial MVP execution.
+
+Next Steps:
+
+- **Register, manage, and schedule** multiple skills and multiple targets
+- **Implement** the full watchdog functionality
+- **Implement** the protocol
+- **Refine** the perception plugin to complete the closed loop
 
 ## Long Demo    
 [![Watch the video](https://img.youtube.com/vi/LtUWamZRyhM/maxresdefault.jpg)](https://youtu.be/LtUWamZRyhM?si=UjKNdqFnO1knfWbX)
@@ -33,6 +44,7 @@ PhyAgentOS utilizes a **"State-as-a-File"** protocol matrix, natively supporting
 *   🔌 **Dynamic Plugin Mechanism**: Supports dynamic loading of external hardware drivers via `hal/drivers/`, allowing for new hardware support without modifying core code.
 *   🛡️ **Safety Correction Mechanism**: Strict action verification and `LESSONS.md` experience library prevent Agent workflows from going out of control.
 *   🎮 **Simulation Loop**: Built-in lightweight simulation support allows verification of the full chain from natural language instructions to physical state changes without real hardware.
+*   🧪 **Runtime Session Loop**: A session-centered runtime (`SESSIONS.md` → `WatchdogSupervisor` → policy client → simulation target → artifacts) is available for dependency-light dummy simulation smoke tests.
 *   🗺️ **Semantic Navigation & Perception**: Built-in `SemanticNavigationTool` and `PerceptionService` support resolving high-level semantic goals into physical coordinates and constructing scene graphs by fusing geometric and semantic information.
 
 ## 🦾 Showcase
@@ -81,11 +93,27 @@ PhyAgentOS's core is a local workspace where software and hardware operate as in
 ```bash
 git clone https://github.com/PhyAgentOS/PhyAgentOS.git
 cd PhyAgentOS
+python -m venv .venv
+source .venv/bin/activate
 pip install -e .
-# Install simulation dependencies (e.g., watchdog)
-pip install watchdog
+```
 
-# Optional: Install external ReKep real-world plugin
+PhyAgentOS requires Python 3.11 or newer. For development and tests, install the dev extras:
+```bash
+pip install -e ".[dev]"
+```
+
+For the fuller robotics-oriented Conda environment used by the repository maintainers:
+```bash
+conda env create -f environment.yml
+conda activate paos
+pip install -e .
+```
+
+Runtime's dummy simulation path is intentionally lightweight and is covered by the base install. Heavy benchmark stacks such as OpenPI, LIBERO, RoboCasa, and RoboLab are optional and should be installed in separate environments when needed.
+
+Optional: install the external ReKep real-world plugin:
+```bash
 python scripts/deploy_rekep_real_plugin.py \
   --repo-url https://github.com/baiyu858/PhyAgentOS-rekep-real-plugin.git
 ```
@@ -119,6 +147,13 @@ python hal/hal_watchdog.py --driver rekep_real
 paos agent
 ```
 
+**Optional: Runtime dummy session smoke test**
+Runtime uses `TARGETS.md`, `SKILLS.md`, and `SESSIONS.md` instead of the old `ACTION.md` queue. If you have a workspace containing those files, run one supervisor pass with:
+```bash
+python scripts/run_runtime_watchdog.py --workspace /tmp/paos_runtime_smoke --once
+```
+On success, the session is marked `succeeded` and an episode summary is written under `artifacts/runtime/<session_id>/episode.json`.
+
 ### 4. Interaction Example
 In the `paos agent` CLI, input:
 > "Look at what is on the table, then grasp that apple for me."
@@ -143,6 +178,7 @@ To auto-onboard a new robot into `PhyAgentOS-rekep-real-plugin` with the built-i
 Physical Agent Operating System/
 ├── PhyAgentOS/                # Track A: Software Brain Core
 │   ├── agent/              # Agent Logic (Planner, Critic)
+│   ├── runtime/            # Runtime session supervisor, schemas, policy clients, targets
 │   ├── templates/          # Workspace Markdown Templates  
 │   └── ...
 ├── hal/                    # Track B: Hardware HAL & Simulation
@@ -154,6 +190,9 @@ Physical Agent Operating System/
 │   ├── EMBODIED.md         # Runtime Robot Profile
 │   ├── ENVIRONMENT.md      # Current Scene-Graph
 │   ├── ACTION.md           # Pending Action Commands
+│   ├── SESSIONS.md         # Runtime session queue (optional)
+│   ├── TARGETS.md          # Runtime target registry (optional)
+│   ├── SKILLS.md           # Runtime skill registry (optional)
 │   ├── LESSONS.md          # Failure Experience Records
 │   └── SKILL.md            # Successful Workflow SOP
 ├── workspaces/             # Fleet Topology
