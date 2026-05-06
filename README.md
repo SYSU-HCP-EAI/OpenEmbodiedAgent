@@ -15,6 +15,17 @@
   </p>
 </div>
 
+## Current Status
+
+New framework implementation supporting debugging only for DumpSimTarget, DummyOpenPIAdapter, and DummyPolicyClient, with single-skill, single-target serial MVP execution.
+
+Next Steps:
+
+- **Register, manage, and schedule** multiple skills and multiple targets
+- **Implement** the full watchdog functionality
+- **Implement** the protocol
+- **Refine** the perception plugin to complete the closed loop
+
 ## Long Demo    
 [![Watch the video](https://img.youtube.com/vi/LtUWamZRyhM/maxresdefault.jpg)](https://youtu.be/LtUWamZRyhM?si=UjKNdqFnO1knfWbX)
 

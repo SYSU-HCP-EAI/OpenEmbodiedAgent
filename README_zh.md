@@ -15,6 +15,17 @@
   </p>
 </div>
 
+## 当前状态
+
+仅支持DumpSimTarget、DummyOpenPIAdapter、DummyPolicyClient调试，单skill单target串行 MVP 执行的新框架实现。
+
+下一步目标：
+
+- 多skill、多target的注册、管理、调度
+- 完整watchdog功能落实
+- 协议落实
+- 感知插件完善闭环
+
 ## 👾长程任务演示
 
 [![Watch the video](https://img.youtube.com/vi/LtUWamZRyhM/maxresdefault.jpg)](https://youtu.be/LtUWamZRyhM?si=UjKNdqFnO1knfWbX)
