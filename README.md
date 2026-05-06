@@ -15,7 +15,7 @@
   </p>
 </div>
 
-## Long Demo    
+## Long Demo
 [![Watch the video](https://img.youtube.com/vi/LtUWamZRyhM/maxresdefault.jpg)](https://youtu.be/LtUWamZRyhM?si=UjKNdqFnO1knfWbX)
 
 ## 📖 Introduction
@@ -151,7 +151,7 @@ To auto-onboard a new robot into `PhyAgentOS-rekep-real-plugin` with the built-i
 Physical Agent Operating System/
 ├── PhyAgentOS/                # Track A: Software Brain Core
 │   ├── agent/              # Agent Logic (Planner, Critic)
-│   ├── templates/          # Workspace Markdown Templates  
+│   ├── templates/          # Workspace Markdown Templates
 │   └── ...
 ├── hal/                    # Track B: Hardware HAL & Simulation
 │   ├── hal_watchdog.py     # Hardware Watchdog Daemon
@@ -204,7 +204,103 @@ PhyAgentOS supports various embodiment types through the HAL (Hardware Abstracti
 | **Edu Robot** | Hiwonder Series | 🔴 Unsupported | Awaiting driver plugin development |
 | **General Environment** | Built-in Simulator | 🟢 Verified | Lightweight simulation based on disk mapping |
 
-> **Note**: PhyAgentOS is designed with a plugin architecture. Any hardware that supports a Python control interface can be quickly integrated via `hal/drivers/`. A community plugin template is available at `docs/user_development_guide/PLUGIN_DEVELOPMENT_GUIDE.md`, with the Chinese version at `docs/user_development_guide/PLUGIN_DEVELOPMENT_GUIDE_zh.md`.
+> **Note**: PhyAgentOS is designed with a plugin architecture. Any hardware that supports a Python control interface can be quickly integrated via `hal/drivers/`. A community plugin template is available at `docs/user_development_guide/PLUGIN_DEVELOPMENT_GUIDE.md`, with the Chinese version at `docs/user_development_guide/PLUGIN_DEVELOPING_GUIDE_zh.md`.
+
+## ❓ FAQ
+
+### What is PhyAgentOS?
+
+PhyAgentOS is a **Physical Agent Operating System** — a self-evolving embodied AI framework that decouples cognitive planning (Track A) from physical execution (Track B). It uses a "State-as-a-File" protocol where software and hardware communicate through Markdown files like `ENVIRONMENT.md`, `ACTION.md`, and `EMBODIED.md`.
+
+### How does PhyAgentOS differ from other Agent frameworks?
+
+Unlike traditional Agent frameworks that focus on software-only tasks, PhyAgentOS is designed for **embodied AI**:
+- **Cognitive-Physical Decoupling**: Large models plan, but hardware executes independently
+- **State-as-a-File**: Transparent protocol using Markdown files instead of opaque API calls
+- **Cross-Embodiment**: Same agent code works across different robots without modification
+- **Safety Correction**: Built-in Critic mechanism validates actions before execution
+
+### What hardware is supported?
+
+PhyAgentOS supports multiple robot types through its HAL (Hardware Abstraction Layer):
+- **Verified**: AgileX PIPER, Dobot Nova 2, XLeRobot, Franka Research 3, Built-in Simulator
+- **Partial**: Unitree Go2 (mobility), XiaoZhi (ESP32 voice)
+- **Plugin-based**: Any Python-controlled hardware can be integrated via `hal/drivers/`
+
+See [Supported Devices](#-supported-devices) for the full list.
+
+### How do I install PhyAgentOS?
+
+```bash
+# Clone repository
+git clone https://github.com/PhyAgentOS/PhyAgentOS.git
+cd PhyAgentOS
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure your robot profile
+cp profiles/piper.md workspace/EMBODIED.md  # Example for PIPER
+
+# Run the system
+python PhyAgentOS/agent/main.py
+```
+
+See [User Manual](docs/user_manual/README.md) for detailed setup instructions.
+
+### Can I use PhyAgentOS without a physical robot?
+
+Yes! PhyAgentOS includes a **built-in simulator** based on disk mapping that allows full-chain verification without real hardware. This is useful for:
+- Testing agent workflows
+- Developing new skills
+- Validating action sequences
+
+Enable simulation mode by setting the `EMBODIED.md` profile to the simulator profile.
+
+### How does the Multi-Agent system work?
+
+PhyAgentOS uses a **Dual-Track Multi-Agent System**:
+- **Track A (Cognitive Core)**: Planner proposes actions, Critic validates them against robot constraints
+- **Track B (Physical Execution)**: Hardware watchdog (`hal_watchdog.py`) monitors and executes commands
+
+This separation ensures safety: the Critic can reject dangerous actions before they reach the hardware.
+
+### What is "State-as-a-File"?
+
+It's PhyAgentOS's core protocol. Instead of direct API calls, the system reads/writes Markdown files:
+- `ENVIRONMENT.md`: Current scene state
+- `ACTION.md`: Pending commands
+- `EMBODIED.md`: Robot profile and capabilities
+- `LESSONS.md`: Failure experience library
+- `SKILL.md`: Successful workflow SOPs
+
+This makes the system transparent, debuggable, and portable across platforms.
+
+### How do I add support for a new robot?
+
+PhyAgentOS uses a plugin architecture. To add a new robot:
+1. Create a driver in `hal/drivers/<your_robot>/`
+2. Define the robot profile in `profiles/<your_robot>.md`
+3. Implement the HAL interface following [Plugin Development Guide](docs/user_development_guide/PLUGIN_DEVELOPMENT_GUIDE.md)
+
+Community plugins are welcome!
+
+### Can I run multiple robots simultaneously?
+
+Yes! PhyAgentOS supports **Fleet mode** through the `workspaces/` directory structure:
+- Each robot has its own workspace (`workspaces/<robot_id>/`)
+- Shared workspace for coordination (`workspaces/shared/`)
+- Global `ENVIRONMENT.md` for fleet-wide scene graph
+
+See [User Manual](docs/user_manual/README.md) for Fleet mode configuration.
+
+### Where can I get help?
+
+- 📖 [Documentation Hub](docs/README.md): Complete docs with reading paths
+- 💬 Open an issue on GitHub for bugs or questions
+- 🤝 Check [Contribute](#-contribute) for development guidelines
+
+---
 
 ## 🤝 Contribute
 
@@ -223,4 +319,3 @@ PRs and Issues are welcome! Please refer to `docs/user_development_guide/README.
 </p>
 
 We welcome any individual or team to join as a contributor！
-
