@@ -1,6 +1,6 @@
 {
   "robot_id": "xlerobot_001",
-  "scene_asset_path": "examples/merom_scene_baked.usd",
+  "scene_asset_path": "asserts/merom_scene_baked.usd",
   "robot_usd_path": "/data/wanghanting/codes/InternUtopia/internutopia/demo/urdf/xlerobot/xlerobot/xlerobot.usd",
   "robot_start": [0.58, 7.50704, 0.8],
   "robot_start_orientation": [1.0, 0.0, 0.0, 0.0],
@@ -8,9 +8,6 @@
   "startup_upright_enabled": true,
   "startup_upright_min_head_height": 0.9,
   "startup_upright_retry_settle_steps": 32,
-  "pythonpath": [
-    "/home/zyserver/work/my_project/InternUtopia"
-  ],
   "isaac_env": {
     "display": ":99",
     "novnc_port": 31315,

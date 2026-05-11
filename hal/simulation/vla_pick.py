@@ -241,6 +241,12 @@ def attach_cameras(
     prim is missing are skipped with a warning.
     """
     try:
+        from hal.simulation.og_attribute_deque_shim import try_apply_omnigraph_deque_attribute_shim
+
+        try_apply_omnigraph_deque_attribute_shim()
+    except Exception:
+        pass
+    try:
         from isaacsim.sensors.camera import Camera  # type: ignore
     except ImportError:
         from omni.isaac.sensor import Camera  # type: ignore

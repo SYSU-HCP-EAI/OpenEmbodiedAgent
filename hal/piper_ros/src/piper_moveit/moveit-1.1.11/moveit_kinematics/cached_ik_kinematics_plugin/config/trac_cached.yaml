@@ -1,0 +1,75 @@
+arm:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+arm_left:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+arm_right:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+arm_with_torso:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+head:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+left_arm:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+left_arm_hand:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+left_gripper:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+left_leg:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+manipulator:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+right_arm:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+right_arm_hand:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+right_gripper:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+right_leg:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin
+torso:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedTRACKinematicsPlugin

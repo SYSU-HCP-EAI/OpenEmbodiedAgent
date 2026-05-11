@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Start joint_state_publisher, robot_state_publisher, and MoveGroup -->
+  <include file="$(find moveit_resources_panda_moveit_config)/launch/test_environment.launch"/>
+
+  <!-- Test MoveGroupInterface for Python -->
+  <test pkg="pilz_industrial_motion_planner" type="python_move_group_planning.py" test-name="python_move_group_planning"
+        time-limit="300" args=""/>
+</launch>

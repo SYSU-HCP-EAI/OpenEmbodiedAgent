@@ -1,0 +1,22 @@
+<launch>
+  <!-- benchmark options file -->
+  <arg name="bench_opts" default="$(find moveit_ros_benchmarks)/examples/demo1.yaml"/>
+
+  <!-- Load robot settings -->
+  <include file="$(find moveit_resources_fanuc_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
+  <!-- Load all planning pipelines that will be benchmarked -->
+  <include ns="moveit_run_benchmark/ompl" file="$(find moveit_resources_fanuc_moveit_config)/launch/planning_pipeline.launch.xml">
+    <arg name="pipeline" value="ompl" />
+  </include>
+
+  <!-- Load warehouse containing scenes and queries to benchmark -->
+  <include file="$(find moveit_resources_fanuc_moveit_config)/launch/default_warehouse_db.launch" />
+
+  <!-- Launch benchmark node -->
+  <node name="moveit_run_benchmark" pkg="moveit_ros_benchmarks" type="moveit_run_benchmark" output="screen" required="true">
+    <rosparam command="load" file="$(arg bench_opts)"/>
+  </node>
+</launch>

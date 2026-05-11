@@ -1,0 +1,29 @@
+# This is a format job. Pre-commit has a first-party GitHub action, so we use
+# that: https://github.com/pre-commit/action
+
+name: Format
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
+jobs:
+  pre-commit:
+    name: pre-commit
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install clang-format-10
+        run: sudo apt-get install clang-format-10
+      - uses: rhaschke/install-catkin_lint-action@v1.0
+      - uses: pre-commit/action@v3.0.0
+        id: precommit
+      - name: Upload pre-commit changes
+        if: failure() && steps.precommit.outcome == 'failure'
+        uses: rhaschke/upload-git-patch-action@main
+        with:
+          name: pre-commit

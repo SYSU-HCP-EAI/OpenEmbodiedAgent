@@ -42,7 +42,7 @@ Put HAL fields **inside** `parameters`. If the model places `waypoint_key` / `ta
 - Idle responsiveness tuning (optional): `idle_step_enabled`, `idle_steps_per_cycle`, `idle_step_interval_s`.
 - UI + camera tuning (optional): `room_lighting` (`grey_studio`), `camera_eye_offset`, `camera_target_z_offset`, `camera_target_min_z`.
 
-If `internutopia` is not installed in the same environment where watchdog runs, set `pythonpath` to the InternUtopia repo root (the directory that contains the `internutopia/` package). This fixes module discovery when watchdog is started from another working directory.
+InternUtopia-compatible modules are vendored under `hal/` (`core/`, `bridge/`, `internutopia_extension/`) and wired via `hal/internutopia_paths.py`; watchdog prepends `hal/` automatically. You can still set optional `pythonpath` in driver JSON to prepend extra directories (e.g. to override with another checkout).
 
 ## Parameters vs HAL Watchdog `--driver-config`
 

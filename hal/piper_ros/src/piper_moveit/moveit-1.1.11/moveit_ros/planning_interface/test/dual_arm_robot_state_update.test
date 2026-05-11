@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find moveit_resources_dual_panda_moveit_config)/launch/test_environment.launch"/>
+  <test pkg="moveit_ros_planning_interface" type="dual_arm_robot_state_update.py" test-name="dual_arm_robot_state_update"
+        time-limit="300" args=""/>
+</launch>

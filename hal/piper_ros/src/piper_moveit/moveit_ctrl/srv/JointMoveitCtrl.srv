@@ -1,0 +1,9 @@
+# JointMoveitCtrl.srv
+float64[6] joint_states  # 关节弧度
+float64 gripper # 夹爪张开宽度
+float64[7] joint_endpose # 末端执行器位置控制(四元数)
+float64 max_velocity # 最大速度
+float64 max_acceleration # 最大加速度
+---
+int64 error_code
+bool status

@@ -1,0 +1,10 @@
+<launch>
+	<!-- CHOMP Plugin for MoveIt -->
+	<arg name="planning_plugin" value="chomp_interface/CHOMPPlanner" />
+	<arg name="start_state_max_bounds_error" value="0.1" />
+
+	<param name="planning_plugin" value="$(arg planning_plugin)" />
+	<param name="start_state_max_bounds_error" value="$(arg start_state_max_bounds_error)" />
+
+	<rosparam command="load" file="$(find moveit_planners_chomp)/test/chomp_planning.yaml"/>
+</launch>

@@ -1,0 +1,37 @@
+# ignore everything
+*
+# but include these:
+!.github/workflows/upstream.rosinstall
+!**/package.xml
+!**/CATKIN_IGNORE
+
+# https://github.com/moby/moby/issues/42788
+!moveit_plugins/moveit_plugins/package.xml
+!moveit_plugins/moveit_ros_control_interface/package.xml
+!moveit_plugins/moveit_simple_controller_manager/package.xml
+!moveit_plugins/moveit_fake_controller_manager/package.xml
+!moveit_kinematics/package.xml
+!moveit_setup_assistant/package.xml
+!moveit_core/package.xml
+!moveit_commander/package.xml
+!moveit_planners/ompl/package.xml
+!moveit_planners/chomp/chomp_motion_planner/package.xml
+!moveit_planners/chomp/chomp_interface/package.xml
+!moveit_planners/chomp/chomp_optimizer_adapter/package.xml
+!moveit_planners/pilz_industrial_motion_planner_testutils/package.xml
+!moveit_planners/pilz_industrial_motion_planner/package.xml
+!moveit_planners/moveit_planners/package.xml
+!moveit_runtime/package.xml
+!moveit/package.xml
+!moveit_ros/warehouse/package.xml
+!moveit_ros/moveit_servo/package.xml
+!moveit_ros/occupancy_map_monitor/package.xml
+!moveit_ros/perception/package.xml
+!moveit_ros/move_group/package.xml
+!moveit_ros/robot_interaction/package.xml
+!moveit_ros/visualization/package.xml
+!moveit_ros/manipulation/package.xml
+!moveit_ros/planning/package.xml
+!moveit_ros/planning_interface/package.xml
+!moveit_ros/benchmarks/package.xml
+!moveit_ros/moveit_ros/package.xml

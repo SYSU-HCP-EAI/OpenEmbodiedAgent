@@ -211,6 +211,10 @@ class FrankaSimulationDriver(BaseDriver):
 
     def _ensure_pythonpath(self) -> None:
         import sys
+
+        from hal.internutopia_paths import ensure_bundled_internutopia_sys_path
+
+        ensure_bundled_internutopia_sys_path()
         for entry in reversed(self._pythonpath_entries):
             if entry in sys.path:
                 continue

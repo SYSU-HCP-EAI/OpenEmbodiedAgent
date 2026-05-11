@@ -1,0 +1,56 @@
+---
+Checks:          '-*,
+                  performance-*,
+                  llvm-namespace-comment,
+                  modernize-redundant-void-arg,
+                  modernize-use-nullptr,
+                  modernize-use-default,
+                  modernize-use-override,
+                  modernize-loop-convert,
+                  modernize-make-shared,
+                  modernize-make-unique,
+                  modernize-avoid-bind,
+                  misc-unused-parameters,
+                  readability-named-parameter,
+                  readability-redundant-smartptr-get,
+                  readability-redundant-string-cstr,
+                  readability-simplify-boolean-expr,
+                  readability-container-size-empty,
+                  readability-identifier-naming,
+                  '
+HeaderFilterRegex: ''
+AnalyzeTemporaryDtors: false
+CheckOptions:
+  - key:             llvm-namespace-comment.ShortNamespaceLines
+    value:           '10'
+  - key:             llvm-namespace-comment.SpacesBeforeComments
+    value:           '2'
+  - key:             misc-unused-parameters.StrictMode
+    value:           '1'
+  - key:             readability-braces-around-statements.ShortStatementLines
+    value:           '2'
+  # type names
+  - key:             readability-identifier-naming.ClassCase
+    value:           CamelCase
+  - key:             readability-identifier-naming.EnumCase
+    value:           CamelCase
+  - key:             readability-identifier-naming.UnionCase
+    value:           CamelCase
+  # method names
+  - key:             readability-identifier-naming.MethodCase
+    value:           camelBack
+  # variable names
+  - key:             readability-identifier-naming.VariableCase
+    value:           lower_case
+  - key:             readability-identifier-naming.ClassMemberSuffix
+    value:           '_'
+  # const static or global variables are UPPER_CASE
+  - key:             readability-identifier-naming.EnumConstantCase
+    value:           UPPER_CASE
+  - key:             readability-identifier-naming.StaticConstantCase
+    value:           UPPER_CASE
+  - key:             readability-identifier-naming.ClassConstantCase
+    value:           UPPER_CASE
+  - key:             readability-identifier-naming.GlobalVariableCase
+    value:           UPPER_CASE
+...

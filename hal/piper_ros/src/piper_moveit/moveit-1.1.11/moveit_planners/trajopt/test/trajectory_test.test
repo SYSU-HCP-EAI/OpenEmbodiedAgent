@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+
+  <test pkg="moveit_planners_trajopt" type="trajectory_test" test-name="trajectory_test" time-limit="300" args="">
+
+    <rosparam command="load" file="$(find moveit_resources_panda_moveit_config)/config/trajopt_planning.yaml"/>
+
+  </test>
+
+</launch>

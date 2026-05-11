@@ -1,0 +1,6 @@
+<library path="lib/libchomp_planner_plugin">
+  <class name="chomp_interface_ros/CHOMPPlanner" type="chomp_interface_ros::CHOMPPlanner" base_class_type="planning_interface::Planner">
+    <description>
+    </description>
+  </class>
+</library>

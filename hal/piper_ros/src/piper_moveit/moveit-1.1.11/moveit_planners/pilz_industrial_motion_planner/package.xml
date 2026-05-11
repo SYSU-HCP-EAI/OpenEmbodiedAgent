@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>pilz_industrial_motion_planner</name>
+  <version>1.1.11</version>
+  <description>MoveIt plugin to generate industrial trajectories PTP, LIN, CIRC and sequences thereof.</description>
+
+  <maintainer email="a.gutenkunst@pilz.de">Alexander Gutenkunst</maintainer>
+  <maintainer email="c.henkel@pilz.de">Christian Henkel</maintainer>
+  <maintainer email="i.martini@pilz.de">Immanuel Martini</maintainer>
+  <maintainer email="j.schleicher@pilz.de">Joachim Schleicher</maintainer>
+  <maintainer email="h.slusarek@pilz.de">Hagen Slusarek</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>joint_limits_interface</depend>
+  <depend>moveit_ros_planning_interface</depend>
+  <depend>moveit_msgs</depend>
+  <depend>moveit_core</depend>
+  <depend>moveit_ros_planning</depend> <!-- RobotModelLoader -->
+  <depend>moveit_ros_move_group</depend> <!-- move_group capability -->
+  <depend condition="$ROS_DISTRO != noetic">orocos_kdl</depend>
+  <depend condition="$ROS_DISTRO == noetic">liborocos-kdl-dev</depend>
+  <depend>pluginlib</depend>
+  <depend>roscpp</depend>
+  <depend>tf2</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_kdl</depend>
+  <depend>tf2_ros</depend>
+
+  <!-- Test dependencies -->
+  <test_depend>rostest</test_depend>
+  <test_depend>rosunit</test_depend>
+  <test_depend>cmake_modules</test_depend>
+  <test_depend>moveit_resources_panda_moveit_config</test_depend>
+  <test_depend>pilz_industrial_motion_planner_testutils</test_depend>
+  <test_depend>moveit_resources_prbt_moveit_config</test_depend>
+  <test_depend>moveit_resources_prbt_support</test_depend>
+  <test_depend>moveit_resources_prbt_pg70_support</test_depend>
+  <test_depend>code_coverage</test_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <moveit_core plugin="${prefix}/plugins/pilz_industrial_motion_planner_plugin_description.xml"/>
+    <moveit_ros_move_group plugin="${prefix}/plugins/sequence_capability_plugin_description.xml"/>
+    <pilz_industrial_motion_planner plugin="${prefix}/plugins/planning_context_plugin_description.xml"/>
+  </export>
+</package>

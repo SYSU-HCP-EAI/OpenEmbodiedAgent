@@ -1,0 +1,7 @@
+<launch>
+  <include file="$(find moveit_resources_panda_moveit_config)/launch/test_environment.launch" />
+
+  <!-- test -->
+  <test pkg="moveit_ros_planning_interface" type="move_group_pick_place_test" test-name="move_group_pick_place_test"
+        time-limit="60" args=""/>
+</launch>

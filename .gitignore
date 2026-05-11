@@ -23,3 +23,7 @@ nano.*.save
 docs/html
 SECURITY.md
 docs/dev_plans
+
+# Simulation assets (Merom scene, baked textures, robot USD/weights). Download per docs/README_paos_env.md.
+asserts/**
+!asserts/.gitkeep

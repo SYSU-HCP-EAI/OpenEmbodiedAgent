@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>moveit_kinematics</name>
+  <version>1.1.11</version>
+  <description>Package for all inverse kinematics solvers in MoveIt</description>
+
+  <author email="dave@picknik.ai">Dave Coleman</author>
+  <author email="isucan@google.com">Ioan Sucan</author>
+  <author email="robot.moveit@gmail.com">Sachin Chitta</author>
+
+  <maintainer email="dave@picknik.ai">Dave Coleman</maintainer>
+  <maintainer email="g.a.vanderhoorn@tudelft.nl">G.A. vd. Hoorn</maintainer>
+  <maintainer email="jorge.nicho@swri.org">Jorge Nicho</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>moveit_core</depend>
+  <depend version_gte="1.11.2">pluginlib</depend>
+  <depend>eigen</depend>
+  <depend>tf2</depend>
+  <depend>tf2_kdl</depend>
+  <depend condition="$ROS_DISTRO != noetic">orocos_kdl</depend>
+  <depend condition="$ROS_DISTRO == noetic">liborocos-kdl-dev</depend>
+
+  <!-- some requirements of ikfast scripts -->
+  <exec_depend>liburdfdom-tools</exec_depend> <!-- provides check_urdf -->
+  <exec_depend condition="$ROS_PYTHON_VERSION == 2">python-lxml</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 3">python3-lxml</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 2">python-yaml</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 3">python3-yaml</exec_depend>
+
+  <test_depend>rostest</test_depend>
+  <test_depend>moveit_ros_planning</test_depend>
+  <test_depend>moveit_resources_fanuc_description</test_depend>
+  <test_depend>moveit_resources_fanuc_moveit_config</test_depend>
+  <test_depend>moveit_resources_panda_description</test_depend>
+  <test_depend>moveit_resources_panda_moveit_config</test_depend>
+  <test_depend>xmlrpcpp</test_depend>
+
+  <export>
+    <moveit_core plugin="${prefix}/kdl_kinematics_plugin_description.xml"/>
+    <moveit_core plugin="${prefix}/lma_kinematics_plugin_description.xml"/>
+    <moveit_core plugin="${prefix}/srv_kinematics_plugin_description.xml"/>
+    <moveit_core plugin="${prefix}/cached_ik_kinematics_plugin_description.xml"/>
+  </export>
+
+</package>

@@ -1,0 +1,7 @@
+<library path="lib/libmoveit_lma_kinematics_plugin">
+  <class name="lma_kinematics_plugin/LMAKinematicsPlugin" type="lma_kinematics_plugin::LMAKinematicsPlugin" base_class_type="kinematics::KinematicsBase">
+    <description>
+      A implementation of kinematics as a plugin based on KDL ChainIkSolverPos_LMA.
+    </description>
+  </class>
+</library>

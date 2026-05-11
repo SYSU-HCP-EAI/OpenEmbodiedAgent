@@ -1,0 +1,36 @@
+<package format="2">
+  <name>moveit_ros</name>
+  <version>1.1.11</version>
+  <description>Components of MoveIt that use ROS</description>
+  <author email="isucan@google.com">Ioan Sucan</author>
+  <author email="robot.moveit@gmail.com">Sachin Chitta</author>
+  <author email="acorn.pooley@sri.com">Acorn Pooley</author>
+
+  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="me@v4hn.de">Michael Görner</maintainer>
+  <maintainer email="dave@picknik.ai">Dave Coleman</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <exec_depend>moveit_ros_perception</exec_depend>
+  <exec_depend>moveit_ros_planning</exec_depend>
+  <exec_depend>moveit_ros_warehouse</exec_depend>
+  <exec_depend>moveit_ros_benchmarks</exec_depend>
+  <exec_depend>moveit_ros_robot_interaction</exec_depend>
+  <exec_depend>moveit_ros_planning_interface</exec_depend>
+  <exec_depend>moveit_ros_visualization</exec_depend>
+  <exec_depend>moveit_ros_manipulation</exec_depend>
+  <exec_depend>moveit_ros_move_group</exec_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+
+</package>

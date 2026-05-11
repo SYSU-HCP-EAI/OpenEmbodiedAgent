@@ -1,0 +1,40 @@
+# This config uses industrial_ci (https://github.com/ros-industrial/industrial_ci.git).
+# For troubleshooting, see readme (https://github.com/ros-industrial/industrial_ci/blob/master/README.rst)
+
+name: pre-release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
+jobs:
+  default:
+    strategy:
+      matrix:
+        distro: [noetic]
+
+    env:
+      # https://github.com/ros-industrial/industrial_ci/issues/666
+      BUILDER: catkin_make_isolated
+      ROS_DISTRO: ${{ matrix.distro }}
+      PRERELEASE: true
+      BASEDIR: ${{ github.workspace }}/.work
+
+    if: github.event_name == 'workflow_dispatch' # only allow manual triggering
+    name: "${{ matrix.distro }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Free up disk space"
+        run: |
+          sudo apt-get -qq purge build-essential "ghc*"
+          sudo apt-get clean
+          # cleanup docker images not used by us
+          docker system prune -af
+          # free up a lot of stuff from /usr/local
+          sudo rm -rf /usr/local
+          df -h
+      - uses: actions/checkout@v3
+      - name: industrial_ci
+        uses: ros-industrial/industrial_ci@master

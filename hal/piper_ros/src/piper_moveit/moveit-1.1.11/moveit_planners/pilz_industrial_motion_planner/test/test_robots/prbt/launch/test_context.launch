@@ -1,0 +1,43 @@
+<launch>
+
+  <!-- Defining a gripper will load all parameters with the defined gripper -->
+  <arg name="gripper" default=""/>
+
+  <!-- URDF and SRDF without gripper -->
+  <!-- The name of the parameter under which the URDF is loaded -->
+  <arg if="$(eval not gripper)" name="robot_description" default="robot_description"/>
+  <arg unless="$(eval not gripper)" name="robot_description" default="robot_description_$(arg gripper)"/>
+
+  <!-- Load universal robot description format (URDF) -->
+  <param name="$(arg robot_description)"
+         command="$(find xacro)/xacro $(find moveit_resources_prbt_support)/urdf/prbt.xacro gripper:=$(arg gripper)"/>
+
+  <!-- The semantic description that corresponds to the URDF -->
+  <param name="$(arg robot_description)_semantic" command="$(find xacro)/xacro
+         $(find moveit_resources_prbt_moveit_config)/config/prbt.srdf.xacro gripper:=$(arg gripper)" />
+
+
+  <!-- Load updated joint limits (override information from URDF) -->
+  <group ns="$(arg robot_description)_planning">
+    <rosparam if="$(eval not gripper)" command="load" file="$(find moveit_resources_prbt_moveit_config)/config/joint_limits.yaml"/>
+    <rosparam unless="$(eval not gripper)" command="load"
+              file="$(eval find('moveit_resources_prbt_'+ gripper + '_support') + '/config/joint_limits.yaml')" />
+
+    <!-- Load cartesian limits -->
+    <rosparam command="load" file="$(find moveit_resources_prbt_moveit_config)/config/cartesian_limits.yaml"/>
+  </group>
+
+  <!-- Load limits again in default namespace (which may not be configurable for planners) -->
+  <group ns="robot_description_planning">
+    <rosparam if="$(eval not gripper)" command="load" file="$(find moveit_resources_prbt_moveit_config)/config/joint_limits.yaml"/>
+    <rosparam unless="$(eval not gripper)" command="load"
+              file="$(eval find('moveit_resources_prbt_'+ gripper + '_support') + '/config/joint_limits.yaml')" />
+    <rosparam command="load" file="$(find moveit_resources_prbt_moveit_config)/config/cartesian_limits.yaml"/>
+  </group>
+
+  <!-- Load default settings for kinematics; these settings are overridden by settings in a node's namespace -->
+  <group ns="$(arg robot_description)_kinematics">
+    <rosparam command="load" file="$(find moveit_resources_prbt_moveit_config)/config/kinematics.yaml"/>
+  </group>
+
+</launch>

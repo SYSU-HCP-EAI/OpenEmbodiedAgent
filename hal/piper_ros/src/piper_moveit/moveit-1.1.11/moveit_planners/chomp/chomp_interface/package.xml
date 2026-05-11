@@ -1,0 +1,28 @@
+<package format="2">
+  <name>moveit_planners_chomp</name>
+  <description>The interface for using CHOMP within MoveIt</description>
+
+  <version>1.1.11</version>
+  <author email="gjones@willowgarage.com">Gil Jones</author>
+
+  <maintainer email="chitt@live.in">Chittaranjan Srinivas Swaminathan</maintainer>
+  <maintainer email="dave@picknik.ai">Dave Coleman</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>moveit_core</depend>
+  <depend version_gte="1.11.2">pluginlib</depend>
+  <depend>chomp_motion_planner</depend>
+
+  <test_depend>moveit_ros_planning_interface</test_depend>
+  <test_depend>rostest</test_depend>
+
+  <export>
+    <moveit_core plugin="${prefix}/chomp_interface_plugin_description.xml"/>
+  </export>
+
+</package>

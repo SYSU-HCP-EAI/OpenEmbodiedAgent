@@ -1,0 +1,20 @@
+<launch>
+  <!-- load OMPL planning pipeline, but add the CHOMP planning adapter. -->
+  <include file="$(find [GENERATED_PACKAGE_NAME])/launch/ompl_planning_pipeline.launch.xml">
+    <arg name="planning_adapters"
+         default="default_planner_request_adapters/LimitMaxCartesianLinkSpeed
+                  default_planner_request_adapters/AddTimeParameterization
+                  default_planner_request_adapters/FixWorkspaceBounds
+                  default_planner_request_adapters/FixStartStateBounds
+                  default_planner_request_adapters/FixStartStateCollision
+                  default_planner_request_adapters/FixStartStatePathConstraints
+                  chomp/OptimizerAdapter"
+                  />
+  </include>
+
+  <!-- load chomp config -->
+  <rosparam command="load" file="$(find [GENERATED_PACKAGE_NAME])/config/chomp_planning.yaml" />
+
+  <!-- override trajectory_initialization_method: Use OMPL-generated trajectory -->
+  <param name="trajectory_initialization_method" value="fillTrajectory"/>
+</launch>

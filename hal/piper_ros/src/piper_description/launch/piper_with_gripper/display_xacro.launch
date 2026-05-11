@@ -1,0 +1,25 @@
+<launch>
+  <arg
+    name="model" />
+  <arg name="rviz_config" default="$(find piper_description)/rviz/piper_ctrl.rviz" />
+  <param
+    name="robot_description"
+    textfile="$(find piper_description)/urdf/piper_description.xacro" />
+  <node
+    name="joint_state_publisher_gui"
+    pkg="joint_state_publisher_gui"
+    type="joint_state_publisher_gui">
+    <param name="rate" value="100" />
+  </node>
+  <node
+    name="$(anon robot_state_publisher)"
+    pkg="robot_state_publisher"
+    type="robot_state_publisher" >
+    <param name="rate" value="100" />
+  </node>
+  <node
+    name="rviz"
+    pkg="rviz"
+    type="rviz"
+    args="-d $(arg rviz_config)" />
+</launch>

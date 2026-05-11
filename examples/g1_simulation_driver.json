@@ -2,7 +2,7 @@
   "_comment": "G1 Simulation Driver Configuration",
   "_参考": "InternUtopia/internutopia/demo/test3_multi_robot_debug.py 中的 G1 设置",
 
-  "scene_asset_path": "examples/merom_scene_baked.usd",
+  "scene_asset_path": "asserts/merom_scene_baked.usd",
 
   "robot_position": [0.58, 7.50704, 0.78],
 
@@ -49,10 +49,6 @@
   "idle_step_enabled": true,
   "idle_steps_per_cycle": 1,
   "idle_step_interval_s": 0.033,
-
-  "pythonpath": [
-    "/home/zyserver/work/my_project/InternUtopia"
-  ],
 
   "_multi_robot_note": "此配置用于多机器人协同场景，G1 作为 locomotion 机器人，与 PiperGo2 + Franka 协同工作"
 }

@@ -1,0 +1,28 @@
+<launch>
+  <arg name="robot" doc="Name of the robot"/>
+  <arg name="group" default="all" doc="Name of the planning group"/>
+  <arg name="tip" default="default" doc="Name of the end effector links (separated by ':' if there's more than one)"/>
+  <arg name="num" default="10000" doc="Number of IK calls to evaluate"/>
+  <arg name="reset_to_default" default="true" doc="Whether to reset to default values before calling IK (rather than seed the solver with the correct IK solution)"/>
+  <arg name="kinematics" default="false"/>
+  <arg name="kinematics_path" default="false" doc="path to file with additional kinematics parameters that override the ones in the default kinematics.yaml"/>
+  <arg name="output_dir_override" default="false"/>
+  <arg name="output_dir" default="false" doc="output directory for cache files"/>
+  <include file="$(eval find(arg('robot') + '_moveit_config') + '/launch/planning_context.launch')">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
+  <node name="measure_ik_call_cost"
+        pkg="moveit_kinematics"
+        type="measure_ik_call_cost"
+        respawn="false"
+        output="screen"
+        required="true"
+        args="--group $(arg group) --tip $(arg tip) --num $(arg num) --reset_to_default $(arg reset_to_default)">
+    <rosparam command="load"
+              file="$(eval find(arg('robot') + '_moveit_config') + '/config/kinematics.yaml')"/>
+    <rosparam command="load" file="$(arg kinematics_path)" if="$(arg kinematics)"/>
+    <rosparam param="cached_ik_path" if="$(arg output_dir_override)" subst_value="True">$(arg output_dir)</rosparam>
+    <rosparam param="cached_ik_path" unless="$(arg output_dir_override)" subst_value="True">$(arg robot)</rosparam>
+  </node>
+</launch>

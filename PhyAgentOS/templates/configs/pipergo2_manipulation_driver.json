@@ -1,6 +1,6 @@
 {
-  "scene_asset_path": "examples/merom_scene_baked.usd",
-  "robot_usd_path": "examples/robots/pipergo2.usd",
+  "scene_asset_path": "asserts/merom_scene_baked.usd",
+  "robot_usd_path": "asserts/robots/pipergo2/pipergo2.usd",
   "robot_start": [
     0.58,
     7.50704,
@@ -302,8 +302,5 @@
       "red",
       "red"
     ]
-  },
-  "pythonpath": [
-    "/home/zyserver/work/my_project/InternUtopia"
-  ]
+  }
 }

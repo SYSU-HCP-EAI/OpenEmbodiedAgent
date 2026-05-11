@@ -1,0 +1,40 @@
+arm_controller:
+  type: position_controllers/JointTrajectoryController
+  joints:
+    - joint1
+    - joint2
+    - joint3
+    - joint4
+    - joint5
+    - joint6
+  gains:
+    joint1:
+      p: 100
+      d: 1
+      i: 1
+      i_clamp: 1
+    joint2:
+      p: 100
+      d: 1
+      i: 1
+      i_clamp: 1
+    joint3:
+      p: 100
+      d: 1
+      i: 1
+      i_clamp: 1
+    joint4:
+      p: 100
+      d: 1
+      i: 1
+      i_clamp: 1
+    joint5:
+      p: 100
+      d: 1
+      i: 1
+      i_clamp: 1
+    joint6:
+      p: 100
+      d: 1
+      i: 1
+      i_clamp: 1

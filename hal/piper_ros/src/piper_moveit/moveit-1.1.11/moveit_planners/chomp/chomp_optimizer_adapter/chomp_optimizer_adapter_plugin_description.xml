@@ -1,0 +1,9 @@
+<library path="libmoveit_chomp_optimizer_adapter">
+
+  <class name="chomp/OptimizerAdapter" type="chomp::OptimizerAdapter"
+         base_class_type="planning_request_adapter::PlanningRequestAdapter">
+    <description>
+    </description>
+  </class>
+
+</library>

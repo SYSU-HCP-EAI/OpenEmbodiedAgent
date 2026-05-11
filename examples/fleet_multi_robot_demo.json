@@ -41,9 +41,8 @@
 
   "_driver_configs": {
     "pipergo2_001": {
-      "scene_asset_path": "examples/merom_scene_baked.usd",
+      "scene_asset_path": "asserts/merom_scene_baked.usd",
       "robot_position": [0.58, 7.50704, 0.55],
-      "pythonpath": ["/home/zyserver/work/my_project/InternUtopia"],
       "waypoints": {
         "home": [0.58, 7.50704],
         "staging": [2.74051, 7.67599],
@@ -58,7 +57,7 @@
       "idle_step_interval_s": 0.033
     },
     "franka_001": {
-      "scene_asset_path": "examples/merom_scene_baked.usd",
+      "scene_asset_path": "asserts/merom_scene_baked.usd",
       "robot_position": [3.46261, 8.0, 0.41172],
       "pause_steps": 45,
       "gripper_settle_steps": 30,
@@ -87,14 +86,13 @@
           }
         }
       },
-      "pythonpath": ["/home/zyserver/work/my_project/InternUtopia"],
       "output_dir": "/tmp/paos_fleet_multi_robot/franka_001/logs",
       "idle_step_enabled": true,
       "idle_steps_per_cycle": 1,
       "idle_step_interval_s": 0.033
     },
     "g1_001": {
-      "scene_asset_path": "examples/merom_scene_baked.usd",
+      "scene_asset_path": "asserts/merom_scene_baked.usd",
       "robot_position": [6.0, 7.5, 0.78],
       "waypoints": {
         "home": [6.0, 7.5],
@@ -108,7 +106,6 @@
       "navigation_action_name": "move_to_point",
       "navigation_max_steps": 1500,
       "navigation_threshold": 0.10,
-      "pythonpath": ["/home/zyserver/work/my_project/InternUtopia"],
       "output_dir": "/tmp/paos_fleet_multi_robot/g1_001/logs",
       "idle_step_enabled": true,
       "idle_steps_per_cycle": 1,

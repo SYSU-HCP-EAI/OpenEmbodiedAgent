@@ -1,0 +1,7 @@
+<library path="lib/libmoveit_depth_self_filter">
+    <class name="mesh_filter/DepthSelfFiltering" type="mesh_filter::DepthSelfFiltering" base_class_type="nodelet::Nodelet">
+        <description>
+            Nodelet for filtering meshes from depth images. e.g. meshes of the robot or any attached object where a transformation can be provided for.
+        </description>
+    </class>
+</library>

@@ -1,0 +1,21 @@
+<package>
+  <description brief="moveit_warehouse">
+
+     moveit_warehouse
+
+  </description>
+  <author>Ioan Sucan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/moveit_warehouse</url>
+
+  <depend package="mongo_ros"/>
+  <depend package="moveit_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="planning_scene_monitor"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmoveit_warehouse"/>
+  </export>
+
+</package>

@@ -1,0 +1,7 @@
+<launch>
+	<include file="$(find moveit_resources_fanuc_moveit_config)/launch/demo.launch">
+		<arg name="use_rviz" value="false"/>
+	</include>
+
+	<test test-name="cancel_before_plan_execution" pkg="moveit_ros_move_group" type="test_cancel_before_plan_execution.py"/>
+</launch>

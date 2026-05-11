@@ -1,0 +1,10 @@
+<class_libraries>
+  <library path="lib/libmoveit_ros_control_interface_plugin">
+    <class type="moveit_ros_control_interface::MoveItControllerManager" base_class_type="moveit_controller_manager::MoveItControllerManager">
+        <description>ros_control controller manager interface for MoveIt</description>
+    </class>
+    <class type="moveit_ros_control_interface::MoveItMultiControllerManager" base_class_type="moveit_controller_manager::MoveItControllerManager">
+        <description>multiple ros_control controller managers interface for MoveIt</description>
+    </class>
+  </library>
+</class_libraries>

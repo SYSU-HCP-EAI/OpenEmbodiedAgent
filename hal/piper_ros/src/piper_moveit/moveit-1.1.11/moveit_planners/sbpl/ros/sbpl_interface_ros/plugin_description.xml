@@ -1,0 +1,10 @@
+<library path="lib/libsbpl_planner_plugin">
+  <class name="sbpl_interface_ros/SBPLPlanner" type="sbpl_interface_ros::SBPLPlanner" base_class_type="planning_interface::Planner">
+    <description>
+    </description>
+  </class>
+  <class name="sbpl_interface_ros/SBPLMetaPlanner" type="sbpl_interface_ros::SBPLMetaPlanner" base_class_type="planning_interface::Planner">
+    <description>
+    </description>
+  </class>
+</library>

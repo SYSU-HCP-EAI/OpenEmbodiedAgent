@@ -1,0 +1,70 @@
+<mujoco model="piper">
+    <compiler angle="radian" />
+    <size njmax="500" nconmax="100" />
+    <asset>
+        <mesh name="base_link" file="../meshes/base_link.STL" />
+        <mesh name="link1" file="../meshes/link1.STL" />
+        <mesh name="link2" file="../meshes/link2.STL" />
+        <mesh name="link3" file="../meshes/link3.STL" />
+        <mesh name="link4" file="../meshes/link4.STL" />
+        <mesh name="link5" file="../meshes/link5.STL" />
+        <mesh name="link6" file="../meshes/link6.STL" />
+        <mesh name="gripper_base" file="../meshes/gripper_base.STL" />
+        <mesh name="link7" file="../meshes/link7.STL" />
+        <mesh name="link8" file="../meshes/link8.STL" />
+    </asset>
+    <worldbody>
+        <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="base_link" />
+        <body name="link1" pos="0 0 0.123">
+            <inertial pos="0.000121505 0.000104632 -0.00438597" quat="0.682111 0.730899 0.0143111 -0.0175062" mass="0.71" diaginertia="0.000489262 0.000439887 0.000404551" />
+            <joint name="joint1" pos="0 0 0" axis="0 0 1" limited="true" range="-2.618 2.168" damping="500"/>
+            <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="link1" />
+            <body name="link2" pos="0 0 0" quat="0.0356735 -0.0356786 -0.706207 -0.706205">
+                <inertial pos="0.198666 -0.0109269 0.00142122" quat="0.510131 0.475585 0.525075 0.48773" mass="1.17" diaginertia="0.0679032 0.067745 0.00111966" />
+                <joint name="joint2" pos="0 0 0" axis="0 0 1" limited="true" range="0 3.14" damping="5"/>
+                <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="link2" />
+                <body name="link3" pos="0.28503 0 0" quat="0.637536 0 0 -0.77042">
+                    <inertial pos="-0.0202738 -0.133915 -0.000458683" quat="0.706282 0.705111 0.0532202 0.0339395" mass="0.5" diaginertia="0.0138227 0.0138032 0.000244685" />
+                    <joint name="joint3" pos="0 0 0" axis="0 0 1" limited="true" range="-2.967 0" damping="20"/>
+                    <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="link3" />
+                    <body name="link4" pos="-0.021984 -0.25075 0" quat="0.707105 0.707108 0 0">
+                        <inertial pos="-9.66636e-05 0.000876064 -0.00496881" quat="0.714689 -0.0948484 0.0635223 0.690064" mass="0.38" diaginertia="0.000191586 0.000185052 0.000152863" />
+                        <joint name="joint4" pos="0 0 0" axis="0 0 1" limited="true" range="-1.745 1.745" damping="5"/>
+                        <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="link4" />
+                        <body name="link5" pos="0 0 0" quat="0.707105 -0.707108 0 0">
+                            <inertial pos="-4.10554e-05 -0.0566487 -0.00372058" quat="0.709589 0.704614 0.00134613 -0.00132656" mass="0.383" diaginertia="0.00166169 0.00164328 0.000185028" />
+                            <joint name="joint5" pos="0 0 0" axis="0 0 1" limited="true" range="-1.22 1.22" damping="5"/>
+                            <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="link5" />
+                            <body name="link6" pos="8.8259e-05 -0.091 0" quat="0.707105 0.707108 0 0">
+                                <inertial pos="-0.000182345 7.94104e-05 0.0316214" quat="0.999977 6.30554e-05 0.00678017 0.000789386" mass="0.456991" diaginertia="0.000938039 0.000723068 0.000395388" />
+                                <joint name="joint6" pos="0 0 0" axis="0 0 1" limited="true" range="-2.0944 2.0944" damping="5"/>
+                                <geom type="mesh" rgba="0.898039 0.917647 0.929412 1" mesh="link6" />
+                                <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="gripper_base" />
+                                <body name="link7" pos="0 0 0.1358" quat="0.707105 0.707108 0 0">
+                                    <inertial pos="0.000651232 -0.049193 0.00972259" quat="0.477798 0.572974 -0.518028 0.418398" mass="0.025" diaginertia="7.74531e-05 7.36783e-05 5.0886e-06" />
+                                    <joint name="joint7" pos="0 0 0" axis="0 0 1" type="slide" limited="true" range="0 0.035" damping="100"/>
+                                    <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="link7" />
+                                </body>
+                                <body name="link8" pos="0 0 0.1358" quat="-2.59734e-06 -2.59735e-06 -0.707108 -0.707105">
+                                    <inertial pos="0.000651232 -0.049193 0.00972259" quat="0.477798 0.572974 -0.518028 0.418398" mass="0.025" diaginertia="7.74531e-05 7.36783e-05 5.0886e-06" />
+                                    <joint name="joint8" pos="0 0 0" axis="0 0 -1" type="slide" limited="true" range="-0.035 0" damping="100"/>
+                                    <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="link8" />
+                                </body>
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+    </worldbody>
+    <actuator>
+        <position name="joint1" ctrllimited="true" ctrlrange="-2.618 2.618" joint="joint1" kp="10000" user="1" forcelimited="false"/>
+        <position name="joint2" ctrllimited="true" ctrlrange="0 3.14158" joint="joint2" kp="2000" user="1" forcelimited="false"/>
+        <position name="joint3" ctrllimited="true" ctrlrange="-2.697 0" joint="joint3" kp="2000" user="1" forcelimited="false"/>
+        <position name="joint4" ctrllimited="true" ctrlrange="-1.832 1.832" joint="joint4" kp="500" user="1" forcelimited="false"/>
+        <position name="joint5" ctrllimited="true" ctrlrange="-1.22 1.22" joint="joint5" kp="200" user="1" forcelimited="false"/>
+        <position name="joint6" ctrllimited="true" ctrlrange="-3.14158 3.14158" joint="joint6" kp="200" user="1" forcelimited="false"/>
+        <position name="joint7" ctrllimited="true" ctrlrange="0 0.0475" joint="joint7" kp="10000" user="1" forcelimited="false" forcerange="-100 100"/>
+        <position name="joint8" ctrllimited="true" ctrlrange="-0.0475 0" joint="joint8" kp="10000" user="1" forcelimited="false" forcerange="-100 100"/>
+    </actuator>
+</mujoco>

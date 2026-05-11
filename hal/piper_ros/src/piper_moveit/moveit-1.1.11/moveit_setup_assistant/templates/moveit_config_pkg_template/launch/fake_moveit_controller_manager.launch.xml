@@ -1,0 +1,12 @@
+<launch>
+
+  <!-- execute the trajectory in 'interpolate' mode or jump to goal position in 'last point' mode -->
+  <arg name="fake_execution_type" default="interpolate" />
+
+  <!-- Set the param that trajectory_execution_manager needs to find the controller plugin -->
+  <param name="moveit_controller_manager" value="moveit_fake_controller_manager/MoveItFakeControllerManager"/>
+
+  <!-- The rest of the params are specific to this plugin -->
+  <rosparam subst_value="true" file="$(find [GENERATED_PACKAGE_NAME])/config/fake_controllers.yaml"/>
+
+</launch>

@@ -1,0 +1,62 @@
+# To use:
+#
+#     pre-commit run -a
+#
+# Or:
+#
+#     pre-commit install  # (runs every time you commit in git)
+#
+# To update this file:
+#
+#     pre-commit autoupdate
+#
+# See https://github.com/pre-commit/pre-commit
+
+repos:
+  # Standard hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-yaml
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+
+  - repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-markup
+    rev: v1.0.1
+    hooks:
+      - id: rst-linter
+        exclude: .*/doc/.*
+
+  - repo: local
+    hooks:
+      - id: misspelled-moveit
+        name: misspelled-moveit
+        description: MoveIt should be spelled exactly as MoveIt
+        language: pygrep
+        entry: Moveit\W|MoveIt!
+        exclude: .pre-commit-config.yaml
+      - id: clang-format
+        name: clang-format
+        description: Format files with ClangFormat.
+        entry: clang-format-10
+        language: system
+        files: \.(c|cc|cxx|cpp|frag|glsl|h|hpp|hxx|ih|ispc|ipp|java|js|m|proto|vert)$
+        args: ["-fallback-style=none", "-i"]
+      - id: catkin_lint
+        name: catkin_lint
+        description: Check package.xml and cmake files
+        entry: catkin_lint .
+        language: system
+        always_run: true
+        pass_filenames: false

@@ -1,0 +1,7 @@
+<library path="lib/libchomp_planner_plugin">
+  <class name="chomp_interface/CHOMPPlanner" type="chomp_interface::CHOMPPlannerManager" base_class_type="planning_interface::PlannerManager">
+    <description>
+    The CHOMP motion planner plugin.
+    </description>
+  </class>
+</library>

@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+    <test pkg="moveit_planners_ompl" type="test_planning_context_manager" test-name="test_planning_context_manager" />
+</launch>

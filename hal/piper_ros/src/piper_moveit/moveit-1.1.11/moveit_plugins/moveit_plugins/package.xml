@@ -1,0 +1,25 @@
+<package format="2">
+  <name>moveit_plugins</name>
+  <version>1.1.11</version>
+  <description>Metapackage for MoveIt plugins.</description>
+
+  <author email="mferguson@fetchrobotics.com">Michael Ferguson</author>
+  <author email="isucan@google.com">Ioan Sucan</author>
+
+  <maintainer email="me@v4hn.de">Michael Görner</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <exec_depend>moveit_simple_controller_manager</exec_depend>
+  <exec_depend>moveit_fake_controller_manager</exec_depend>
+  <exec_depend>moveit_ros_control_interface</exec_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+</package>

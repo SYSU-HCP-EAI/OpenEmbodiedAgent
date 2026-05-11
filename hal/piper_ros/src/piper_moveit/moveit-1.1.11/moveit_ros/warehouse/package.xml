@@ -1,0 +1,26 @@
+<package format="2">
+  <name>moveit_ros_warehouse</name>
+  <version>1.1.11</version>
+  <description>Components of MoveIt connecting to MongoDB</description>
+
+  <author email="isucan@google.com">Ioan Sucan</author>
+
+  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>warehouse_ros</depend>
+  <depend>moveit_ros_planning</depend>
+  <depend>roscpp</depend>
+  <depend>rosconsole</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_ros</depend>
+
+</package>

@@ -1,0 +1,6 @@
+- builder: doxygen
+  name: Documentation of pilz_industrial_motion_planner package
+  output_dir: pilz_industrial_motion_planner
+  file_patterns: '*.c *.cpp *.h *.cc *.hh *.dox *.md'
+  exclude_patterns: 'test'
+  use_mdfile_as_mainpage: 'README.md'

@@ -1,0 +1,15 @@
+<launch>
+  <arg name="visualization" default="false" doc="turns on and off visualization with rviz"/>
+
+  <include file="$(find moveit_resources_panda_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
+  <node name="compare_collision_checking_speed" pkg="moveit_ros_planning" type="moveit_compare_collision_checking_speed_fcl_bullet" respawn="false" output="screen">
+    <rosparam command="load" file="$(find moveit_resources_panda_moveit_config)/config/kinematics.yaml"/>
+    <param name="visualization" value="$(arg visualization)" type="bool"/>
+  </node>
+
+  <include if="$(arg visualization)" file="$(find moveit_resources_panda_moveit_config)/launch/demo.launch"/>
+
+</launch>

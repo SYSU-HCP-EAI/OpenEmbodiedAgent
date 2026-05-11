@@ -1,0 +1,5 @@
+manipulator:
+    max_cache_size: 10000
+    min_joint_config_distance: 4
+    min_pose_distance: 1
+    kinematics_solver: cached_ik_kinematics_plugin/CachedUR5KinematicsPlugin

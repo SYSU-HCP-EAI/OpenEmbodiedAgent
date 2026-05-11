@@ -1,0 +1,10 @@
+<launch>
+    <include file="$(find moveit_resources_panda_moveit_config)/launch/test_environment.launch"/>
+
+    <!-- Load the robot specific controller manager; this sets the moveit_controller_manager ROS parameter -->
+    <include ns="test_execution_manager" file="$(find moveit_resources_panda_moveit_config)/launch/fake_moveit_controller_manager.launch.xml" />
+
+    <rosparam ns="planning_pipelines" param="pipeline_names">["ompl"]</rosparam>
+
+    <test pkg="moveit_ros_planning" type="test_execution_manager" test-name="test_execution_manager" time-limit="300" args="" />
+</launch>

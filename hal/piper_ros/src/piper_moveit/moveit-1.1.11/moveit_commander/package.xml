@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>moveit_commander</name>
+  <version>1.1.11</version>
+  <description>Python interfaces to MoveIt</description>
+
+  <author email="isucan@google.com">Ioan Sucan</author>
+
+  <maintainer email="me@v4hn.de">Michael Görner</maintainer>
+  <maintainer email="rhaschke@techfak.uni-bielefeld.de">Robert Haschke</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend condition="$ROS_PYTHON_VERSION == 2">python-catkin-pkg</buildtool_depend>
+  <buildtool_depend condition="$ROS_PYTHON_VERSION == 3">python3-catkin-pkg</buildtool_depend>
+
+  <depend condition="$ROS_PYTHON_VERSION == 2">python</depend>
+  <depend condition="$ROS_PYTHON_VERSION == 3">python3</depend>
+
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>moveit_msgs</exec_depend>
+  <exec_depend>moveit_ros_planning_interface</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 2">python-pyassimp</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 3">python3-pyassimp</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>shape_msgs</exec_depend>
+  <exec_depend>tf</exec_depend>
+
+  <test_depend>rostest</test_depend>
+  <test_depend>moveit_resources_fanuc_moveit_config</test_depend>
+</package>

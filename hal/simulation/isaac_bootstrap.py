@@ -10,8 +10,9 @@ do from bash, but from inside the Python process:
     ``INTERNUTOPIA_ASSETS_PATH`` / ...
   * ``setup_python_env.sh`` - source it and copy the resulting ``PYTHONPATH`` /
     ``LD_LIBRARY_PATH`` / ... back into the current process.
-  * ``extra_pythonpath`` - additional prefixes (e.g. ``/data/.../InternUtopia``)
-    prepended to both ``PYTHONPATH`` and ``sys.path``.
+  * ``extra_pythonpath`` - optional extra prefixes prepended to both
+    ``PYTHONPATH`` and ``sys.path`` (defaults are not required: vendored
+    ``internutopia`` under ``hal/`` is installed automatically).
 
 This MUST run before any ``import internutopia`` / ``import isaacsim`` /
 ``import omni`` / ``import carb``. Calling it a second time is a no-op.
@@ -36,7 +37,7 @@ The config block is read from driver-config JSON at key ``isaac_env``, e.g.::
             "INTERNUTOPIA_ASSETS_PATH": "/data/datasets/GRScenes"
         },
         "setup_python_env": "/isaac-sim/setup_python_env.sh",
-        "extra_pythonpath": ["/data/wangyuanlei/InternUtopia"]
+        "extra_pythonpath": []
     }
 """
 
@@ -60,6 +61,9 @@ def _log(msg: str) -> None:
 
 
 def _install_pythonpath_into_sys_path() -> None:
+    from hal.internutopia_paths import ensure_bundled_internutopia_sys_path
+
+    ensure_bundled_internutopia_sys_path()
     for entry in os.environ.get("PYTHONPATH", "").split(os.pathsep):
         if entry and entry not in sys.path:
             sys.path.insert(0, entry)
@@ -148,6 +152,13 @@ def bootstrap_isaac_env(cfg: dict[str, Any] | None, *, want_gui: bool) -> None:
     # just mirror PYTHONPATH into sys.path and mark done.
     if os.environ.get(_SENTINEL_ENV) == "1":
         _install_pythonpath_into_sys_path()
+        try:
+            from hal.simulation.og_attribute_deque_shim import try_apply_omnigraph_deque_attribute_shim
+
+            if try_apply_omnigraph_deque_attribute_shim():
+                _log("OmniGraph deque→list shim active (Replicator orchestrator)")
+        except Exception as exc:  # pragma: no cover - optional import path
+            _log(f"WARNING: OmniGraph deque shim skipped: {exc}")
         display = os.environ.get("DISPLAY", "<unset>")
         _log(f"post-reexec ready (want_gui={want_gui}, DISPLAY={display})")
         _DONE = True
@@ -188,6 +199,13 @@ def bootstrap_isaac_env(cfg: dict[str, Any] | None, *, want_gui: bool) -> None:
             _log(f"WARNING: setup_python_env script not found: {script_path}")
 
     _install_pythonpath_into_sys_path()
+    try:
+        from hal.simulation.og_attribute_deque_shim import try_apply_omnigraph_deque_attribute_shim
+
+        if try_apply_omnigraph_deque_attribute_shim():
+            _log("OmniGraph deque→list shim active (Replicator orchestrator)")
+    except Exception as exc:  # pragma: no cover - optional import path
+        _log(f"WARNING: OmniGraph deque shim skipped: {exc}")
 
     ld_after = os.environ.get("LD_LIBRARY_PATH", "")
     if ld_after and ld_after != ld_before:

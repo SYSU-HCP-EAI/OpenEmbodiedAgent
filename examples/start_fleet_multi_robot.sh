@@ -10,7 +10,7 @@
 #
 # 前置条件:
 #   1. conda 环境已激活 (paos_zhongqijun)
-#   2. InternUtopia 已安装并配置 pythonpath
+#   2. hal/ 下已包含 vendored internutopia（core/bridge/internutopia_extension），无需单独 InternUtopia 仓库
 #   3. scene_asset_path 指向有效的 USD 文件
 #
 

@@ -1,0 +1,31 @@
+joint_limits:
+  joint_1:
+    has_acceleration_limits: true
+    max_acceleration: 1
+    has_deceleration_limits: true
+    max_deceleration: -1
+  joint_2:
+    has_acceleration_limits: true
+    max_acceleration: 2
+    has_deceleration_limits: true
+    max_deceleration: -2
+  joint_3:
+    has_acceleration_limits: true
+    max_acceleration: 3
+    has_deceleration_limits: true
+    max_deceleration: -3
+  joint_4:
+    has_acceleration_limits: true
+    max_acceleration: 4
+    has_deceleration_limits: true
+    max_deceleration: -4
+  joint_5:
+    has_acceleration_limits: true
+    max_acceleration: 5
+    has_deceleration_limits: true
+    max_deceleration: -5
+  joint_6:
+    has_acceleration_limits: true
+    max_acceleration: 6
+    has_deceleration_limits: true
+    max_deceleration: -6

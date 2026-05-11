@@ -1,0 +1,7 @@
+<launch>
+
+  <include file="$(find moveit_planners_chomp)/test/rrbot_move_group.launch"/>
+
+  <test test-name="chomp_test" pkg="moveit_planners_chomp" type="chomp_moveit_test" time-limit="80.0"/>
+
+</launch>

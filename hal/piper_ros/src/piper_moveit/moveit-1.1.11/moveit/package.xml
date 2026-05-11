@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>moveit</name>
+  <version>1.1.11</version>
+  <description>Meta package that contains all essential package of MoveIt. Until Summer 2016 MoveIt had been developed over multiple repositories, where developers' usability and maintenance effort was non-trivial. See <a href = "http://discourse.ros.org/t/migration-to-one-github-repo-for-moveit/266/34">the detailed discussion for the merge of several repositories</a>.</description>
+  <maintainer email="dave@picknik.ai">Dave Coleman</maintainer>
+  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="me@v4hn.de">Michael Görner</maintainer>
+  <maintainer email="rhaschke@techfak.uni-bielefeld.de">Robert Haschke</maintainer>
+  <maintainer email="imcmahon01@gmail.com">Ian McMahon</maintainer>
+  <maintainer email="130s@2000.jukuin.keio.ac.jp">Isaac I. Y. Saito</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+
+  <author email="isucan@google.com">Ioan Sucan</author>
+  <author email="robot.moveit@gmail.com">Sachin Chitta</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>moveit_commander</exec_depend>
+  <exec_depend>moveit_core</exec_depend>
+  <exec_depend>moveit_planners</exec_depend>
+  <exec_depend>moveit_plugins</exec_depend>
+  <exec_depend>moveit_ros</exec_depend>
+  <exec_depend>moveit_setup_assistant</exec_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+</package>

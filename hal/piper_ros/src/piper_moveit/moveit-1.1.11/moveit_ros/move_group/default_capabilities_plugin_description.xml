@@ -1,0 +1,75 @@
+<library path="libmoveit_move_group_default_capabilities">
+
+  <class name="move_group/MoveGroupCartesianPathService" type="move_group::MoveGroupCartesianPathService" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Computing straight line Cartesian paths with collision checking via a ROS service
+    </description>
+  </class>
+
+  <class name="move_group/MoveGroupExecuteService" type="move_group::MoveGroupExecuteService" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Allow execution of previously computed paths via a ROS service
+    </description>
+  </class>
+
+  <class name="move_group/MoveGroupExecuteTrajectoryAction" type="move_group::MoveGroupExecuteTrajectoryAction" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Allow execution of previously computed trajectories via a ROS action
+    </description>
+  </class>
+
+  <class name="move_group/MoveGroupKinematicsService" type="move_group::MoveGroupKinematicsService" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Compute forward and inverse kinematics via ROS services
+    </description>
+  </class>
+
+  <class name="move_group/MoveGroupMoveAction" type="move_group::MoveGroupMoveAction" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Compute motion plans via a ROS action
+    </description>
+  </class>
+
+  <class name="move_group/MoveGroupPlanService" type="move_group::MoveGroupPlanService" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Compute motion plans via a ROS service
+    </description>
+  </class>
+
+  <class name="move_group/MoveGroupQueryPlannersService" type="move_group::MoveGroupQueryPlannersService" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Allow querying of available planners (loaded from the motion planning plugin) via a ROS service
+    </description>
+  </class>
+
+  <class name="move_group/MoveGroupStateValidationService" type="move_group::MoveGroupStateValidationService" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Provide a ROS service that allows for testing state validity
+    </description>
+  </class>
+
+  <class name="move_group/MoveGroupGetPlanningSceneService" type="move_group::MoveGroupGetPlanningSceneService" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Provide a ROS service that allows for querying the planning scene
+    </description>
+  </class>
+
+  <class name="move_group/ApplyPlanningSceneService" type="move_group::ApplyPlanningSceneService" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Provide a ROS service for blocking updates to the planning scene
+    </description>
+  </class>
+
+  <class name="move_group/ClearOctomapService" type="move_group::ClearOctomapService" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Provide a ROS service that allows for clearing the octomap
+    </description>
+  </class>
+
+  <class name="move_group/TfPublisher" type="move_group::TfPublisher" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Provide a capability that publishes PlanningScene frames to the tf system
+    </description>
+  </class>
+
+</library>

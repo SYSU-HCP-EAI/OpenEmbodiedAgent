@@ -1,0 +1,173 @@
+<!--
+Software License Agreement (BSD License)
+
+Copyright (c) 2018 Pilz GmbH & Co. KG
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+ * Neither the name of Pilz GmbH & Co. KG nor the names of its
+   contributors may be used to endorse or promote products derived
+   from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<testdata>
+
+  <poses>
+
+    <pos name="ZeroPose">
+      <joints group_name="panda_arm">0.0 -0.785 0.0 -2.356 0.0 1.571 0.785</joints>
+    </pos>
+
+    <pos name="P1">
+      <joints group_name="panda_arm">-0.022096 -0.753529 0.007612 -1.716165 0.0063464 0.962660 0.771123</joints>
+      <xyzQuat group_name="panda_arm" link_name="panda_link8">0.2 0 0.8 0.924138 -0.382057 0.0 0.0
+        <seed><joints group_name="panda_arm">-0.022096 -0.753529 0.007612 -1.716165 0.0063464 0.962660 0.771123</joints></seed>
+      </xyzQuat>
+    </pos>
+
+    <pos name="P2">
+      <joints group_name="panda_arm">-0.061035 -0.301221 0.410282 -1.665777 0.120602 1.389535 1.138547</joints>
+      <xyzQuat group_name="panda_arm" link_name="panda_link8">0.4 0.2 0.7 0.924138 -0.382057 0.0 0.0
+        <seed><joints group_name="panda_arm">-0.061035 -0.301221 0.410282 -1.665777 0.120602 1.389535 1.138547</joints></seed>
+      </xyzQuat>
+    </pos>
+
+    <pos name="P3">
+      <joints group_name="panda_arm">0.0875228 -0.540765 0.770139 -1.990062 0.366596 1.582282 1.560837</joints>
+      <xyzQuat group_name="panda_arm" link_name="panda_link8">0.2 0.4 0.6 0.924138 -0.382057 0.0 0.0
+        <seed><joints group_name="panda_arm">0.0875228 -0.540765 0.770139 -1.990062 0.366596 1.582282 1.560837</joints></seed>
+      </xyzQuat>
+    </pos>
+
+    <pos name="P4">
+      <joints group_name="panda_arm">0.164988 -0.805223 0.304894 -2.020563 0.230321 1.247100 1.238191</joints>
+      <xyzQuat group_name="panda_arm" link_name="panda_link8">0.2 0.2 0.7 0.924138 -0.382057 0.0 0.0
+        <seed><joints group_name="panda_arm">0.164988 -0.805223 0.304894 -2.020563 0.230321 1.247100 1.238191</joints></seed>
+      </xyzQuat>
+    </pos>
+
+  </poses>
+
+  <ptps>
+    <ptp name="Ptp1">
+      <planningGroup>panda_arm</planningGroup>
+      <targetLink>panda_link8</targetLink>
+      <startPos>ZeroPose</startPos>
+      <endPos>P1</endPos>
+      <vel>1.0</vel>
+      <acc>0.2</acc>
+    </ptp>
+
+    <ptp name="Ptp2">
+      <planningGroup>panda_arm</planningGroup>
+      <targetLink>panda_link8</targetLink>
+      <startPos>P3</startPos>
+      <endPos>P2</endPos>
+      <vel>1.0</vel>
+      <acc>0.2</acc>
+    </ptp>
+
+    <ptp name="Ptp3">
+      <planningGroup>panda_arm</planningGroup>
+      <targetLink>panda_link8</targetLink>
+      <startPos>P2</startPos>
+      <endPos>P3</endPos>
+      <vel>1.0</vel>
+      <acc>0.2</acc>
+    </ptp>
+  </ptps>
+
+  <lins>
+    <lin name="lin3">
+        <planningGroup>panda_arm</planningGroup>
+        <targetLink>panda_link8</targetLink>
+        <startPos>P2</startPos>
+        <endPos>P3</endPos>
+        <vel>0.1</vel>
+        <acc>0.05</acc>
+    </lin>
+
+    <lin name="lin2">
+        <planningGroup>panda_arm</planningGroup>
+        <targetLink>panda_link8</targetLink>
+        <startPos>P1</startPos>
+        <endPos>P2</endPos>
+        <vel>0.1</vel>
+        <acc>0.05</acc>
+    </lin>
+
+    <lin name="lin4">
+        <planningGroup>panda_arm</planningGroup>
+        <targetLink>panda_link8</targetLink>
+        <startPos>P2</startPos>
+        <endPos>P4</endPos>
+        <vel>0.1</vel>
+        <acc>0.05</acc>
+    </lin>
+  </lins>
+
+  <circs>
+    <circ name="circ3_interim">
+      <planningGroup>panda_arm</planningGroup>
+      <targetLink>panda_link8</targetLink>
+      <startPos>P1</startPos>
+      <intermediatePos>P2</intermediatePos>
+      <endPos>P3</endPos>
+      <vel>0.1</vel>
+      <acc>0.1</acc>
+    </circ>
+
+    <circ name="circ1_center_2">
+      <planningGroup>panda_arm</planningGroup>
+      <targetLink>panda_link8</targetLink>
+      <startPos>P3</startPos>
+      <centerPos>P2</centerPos>
+      <endPos>P1</endPos>
+      <vel>0.1</vel>
+      <acc>0.1</acc>
+    </circ>
+  </circs>
+
+  <sequences>
+    <blend name="ComplexSequence">
+      <sequenceCmd name="Ptp1"            type="ptp_joint_cart"     blend_radius="0.1" />
+      <sequenceCmd name="circ3_interim"   type="circ_interim_cart"  blend_radius="0.1" />
+      <sequenceCmd name="Ptp2"            type="ptp_cart_cart"      blend_radius="0.1" />
+      <sequenceCmd name="lin3"            type="lin_cart"           blend_radius="0.1" />
+      <sequenceCmd name="circ1_center_2"  type="circ_center_cart"   blend_radius="0.1" />
+      <sequenceCmd name="lin2"            type="lin_cart"           blend_radius="0.1" />
+      <sequenceCmd name="Ptp3"            type="ptp_cart_cart"      blend_radius="0.0" />
+    </blend>
+    <blend name="SimpleSequence">
+      <sequenceCmd name="lin2" type="lin_cart" blend_radius="0.149" />
+      <sequenceCmd name="lin3" type="lin_cart" blend_radius="0" />
+    </blend>
+    <blend name="NoIntersectionTraj2">
+      <sequenceCmd name="lin2" type="lin_cart" blend_radius="0.21" />
+      <sequenceCmd name="lin4" type="lin_cart" blend_radius="0" />
+    </blend>
+  </sequences>
+
+</testdata>

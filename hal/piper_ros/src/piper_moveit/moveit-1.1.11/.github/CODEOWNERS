@@ -1,0 +1,104 @@
+# MoveIt is a large project with pull requests being created often. In order
+# to ensure quick review turn around time from our maintainer team, we're
+# leveraging an automated "triage" approach to auto-assign reviews to new pull
+# requests. If you already know who should review your PR, then you can assign
+# them manually. Otherwise, this code owners file will help assign reviewers
+# and reduce the amount of email received by maintainers having to "Watch" the
+# entire repository.
+
+# When a PR is finished being created ("Create Pull Request" is clicked), the
+# codeowner of each file in the PR will be added to the list of reviewers.
+# Code owners are maintainers who are familiar with certain parts of the code,
+# and thus more likely to review a PR relating to them. Being a code owner
+# does not imply authorship, control or ownership in a legal sense.
+
+# More info:
+# https://help.github.com/en/articles/about-code-owners
+
+# Order is important; the user(s) in the last matching pattern here for a file will
+# be that file's owner(s).
+
+# Unless a line further in this file matches, all of the users here will be
+# requested for review when someone opens a pull request.
+
+# DEFAULT REVIEWERS:
+
+*                                                           @v4hn @rhaschke
+
+# FILE-SPECIFIC REVIEWERS:
+
+/.github/CODEOWNERS                                         @nbbrooks @davetcoleman
+/README.md                                                  @davetcoleman
+
+# FOLDER-SPECIFIC REVIEWERS:
+
+/moveit_plugins/moveit_ros_control_interface/               @ipa-mdl @bmagyar
+/moveit_plugins/moveit_fake_controller_manager/             @v4hn @rhaschke
+/moveit_plugins/moveit_simple_controller_manager/           @mikeferguson @v4hn
+/moveit_plugins/moveit_controller_manager_example/          @v4hn
+
+/moveit_core/background_processing/                         @tylerjw
+/moveit_core/backtrace/                                     @tylerjw
+/moveit_core/collision_detection/                           @j-petit
+/moveit_core/collision_detection_fcl/                       @j-petit
+/moveit_core/collision_distance_field/                      @j-petit
+/moveit_core/constraint_samplers/                           @v4hn
+/moveit_core/controller_manager/                            @v4hn
+/moveit_core/distance_field/                                @v4hn
+/moveit_core/dynamics_solver/                               @tylerjw
+/moveit_core/exceptions/                                    @tylerjw
+/moveit_core/kinematic_constraints/                         @rhaschke
+/moveit_core/kinematics_base/                               @rhaschke @mlautman
+/moveit_core/kinematics_metrics/                            @gavanderhoorn
+/moveit_core/macros/                                        @tylerjw
+/moveit_core/planning_interface/                            @rhaschke @felixvd
+/moveit_core/planning_request_adapter/                      @rhaschke
+/moveit_core/planning_scene/                                @rhaschke @felixvd
+/moveit_core/profiler/                                      @tylerjw
+/moveit_core/robot_model/                                   @tylerjw
+/moveit_core/robot_state/                                   @rhaschke @mlautman @felixvd
+/moveit_core/robot_trajectory/                              @mlautman
+/moveit_core/sensor_manager/                                @mlautman
+/moveit_core/trajectory_processing/                         @mlautman
+/moveit_core/transforms/                                    @rhaschke
+/moveit_core/utils/                                         @mlautman
+/moveit_core/version/                                       @v4hn
+
+/moveit_commander/                                          @rhaschke @willcbaker
+
+/moveit/                                                    @130s
+
+/moveit_kinematics/                                         @rhaschke @gavanderhoorn @jrgnicho
+
+/moveit_experimental/                                       @AndyZe
+
+/moveit_ros/perception/                                     @jliukkonen @RoboticsYY
+/moveit_ros/manipulation/                                   @v4hn @felixvd
+/moveit_ros/benchmarks/                                     @henningkayser @MohmadAyman
+/moveit_ros/planning_interface/                             @mintar @rhaschke @felixvd
+/moveit_ros/robot_interaction/                              @mikeferguson @rhaschke
+/moveit_ros/warehouse/                                      @mikeferguson @dg-shadow
+/moveit_ros/move_group/                                     @rhaschke @IanTheEngineer
+/moveit_ros/visualization/                                  @rhaschke @tylerjw @RoboticsYY @felixvd
+
+/moveit_ros/planning/collision_plugin_loader/               @j-petit
+/moveit_ros/planning/constraint_sampler_manager_loader/     @nbbrooks
+/moveit_ros/planning/kinematics_plugin_loader/              @gavanderhoorn
+/moveit_ros/planning/plan_execution/                        @v4hn
+/moveit_ros/planning/planning_components_tools/             @henningkayser
+/moveit_ros/planning/planning_pipeline/                     @v4hn
+/moveit_ros/planning/planning_request_adapter_plugins/      @v4hn
+/moveit_ros/planning/planning_scene_monitor/                @rhaschke
+/moveit_ros/planning/rdf_loader/                            @nbbrooks
+/moveit_ros/planning/robot_model_loader/                    @nbbrooks
+/moveit_ros/planning/trajectory_execution_manager/          @rhaschke
+
+/moveit_setup_assistant/                                    @RoboticsYY @rhaschke @MohmadAyman
+
+/moveit_planners/ompl/                                      @BryceStevenWilley @mamoll
+/moveit_planners/chomp/chomp_interface/                     @raghavendersahdev @knorth55 @bmagyar
+/moveit_planners/chomp/chomp_optimizer_adapter/             @raghavendersahdev @knorth55 @bmagyar
+/moveit_planners/chomp/chomp_motion_planner/                @raghavendersahdev @knorth55 @bmagyar
+/moveit_planners/trajopt                                    @ommmid @mamoll
+/moveit_planners/pilz_industrial_motion_planner             @jschleicher @ct2034
+/moveit_planners/pilz_industrial_motion_planner_testutils/  @jschleicher @ct2034

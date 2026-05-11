@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # Maintain dependencies for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "🛠️"
+    ignore:
+      # Official actions have moving tags like v1, v2, ... They don't need updates to specific versions
+      - dependency-name: "actions/checkout"
+      - dependency-name: "actions/setup-python"
+      - dependency-name: "actions/cache"
+      - dependency-name: "actions/upload-artifact"
+      - dependency-name: "actions/download-artifact"
+      - dependency-name: "actions/labeler"

@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>moveit_servo</name>
+  <version>1.1.11</version>
+
+  <description>Provides real-time manipulator Cartesian and joint servoing.</description>
+
+  <maintainer email="blakeanderson@utexas.edu">Blake Anderson</maintainer>
+  <maintainer email="andyz@utexas.edu">Andy Zelenak</maintainer>
+
+  <license>BSD 3-Clause</license>
+
+  <url type="website">https://ros-planning.github.io/moveit_tutorials</url>
+
+  <author>Brian O'Neil</author>
+  <author email="andyz@utexas.edu">Andy Zelenak</author>
+  <author>Blake Anderson</author>
+  <author email="alex@machinekoder.com">Alexander Rössler</author>
+  <author email="tyler@picknik.ai">Tyler Weaver</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>control_msgs</depend>
+  <depend>control_toolbox</depend>
+  <depend>geometry_msgs</depend>
+  <depend>moveit_msgs</depend>
+  <depend>moveit_ros_planning_interface</depend>
+  <depend>rosparam_shortcuts</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>tf2_eigen</depend>
+  <depend>trajectory_msgs</depend>
+
+  <exec_depend>joy_teleop</exec_depend>
+  <exec_depend>spacenav_node</exec_depend>
+
+  <test_depend>rostest</test_depend>
+  <test_depend>moveit_resources_panda_moveit_config</test_depend>
+
+  <export>
+  </export>
+
+</package>

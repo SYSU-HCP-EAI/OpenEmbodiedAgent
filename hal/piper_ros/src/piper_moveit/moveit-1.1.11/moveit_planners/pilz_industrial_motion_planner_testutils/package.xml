@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package>
+  <name>pilz_industrial_motion_planner_testutils</name>
+  <version>1.1.11</version>
+  <description>Helper scripts and functionality to test industrial motion generation</description>
+
+  <maintainer email="a.gutenkunst@pilz.de">Alexander Gutenkunst</maintainer>
+  <maintainer email="c.henkel@pilz.de">Christian Henkel</maintainer>
+  <maintainer email="i.martini@pilz.de">Immanuel Martini</maintainer>
+  <maintainer email="j.schleicher@pilz.de">Joachim Schleicher</maintainer>
+  <maintainer email="h.slusarek@pilz.de">Hagen Slusarek</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <build_depend>moveit_core</build_depend>
+  <build_depend>moveit_msgs</build_depend>
+  <build_depend>tf2_eigen</build_depend>
+
+  <run_depend>moveit_core</run_depend>
+  <run_depend>moveit_msgs</run_depend>
+  <run_depend>moveit_commander</run_depend>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>

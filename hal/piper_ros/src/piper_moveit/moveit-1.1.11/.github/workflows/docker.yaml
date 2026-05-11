@@ -1,0 +1,179 @@
+name: docker
+
+on:
+  schedule:
+    # 6 AM UTC every Sunday
+    - cron: "0 6 * * 6"
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        ROS_DISTRO: [noetic]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    env:
+      IMAGE: moveit/moveit:${{ matrix.ROS_DISTRO }}-${{ github.job }}
+
+    steps:
+      - uses: addnab/docker-run-action@v3
+        name: Check for apt updates
+        continue-on-error: true
+        id: apt
+        with:
+          image: ${{ env.IMAGE }}
+          run: |
+            apt-get update
+            have_updates=$(apt-get --simulate upgrade | grep -q "^0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.$" && echo false || echo true)
+            echo "no_cache=$have_updates" >> "$GITHUB_OUTPUT"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event_name != 'schedule' || steps.apt.outputs.no_cache }}
+      - name: Login to Container Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and Push
+        uses: docker/build-push-action@v3
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event_name != 'schedule' || steps.apt.outputs.no_cache }}
+        with:
+          file: .docker/${{ github.job }}/Dockerfile
+          build-args: ROS_DISTRO=${{ matrix.ROS_DISTRO }}
+          push: true
+          no-cache: ${{ steps.apt.outputs.no_cache || github.event_name == 'workflow_dispatch' }}
+          cache-from: type=registry,ref=${{ env.IMAGE }}
+          cache-to: type=inline
+          tags: ${{ env.IMAGE }}
+
+  ci:
+    strategy:
+      fail-fast: false
+      matrix:
+        IMAGE: [noetic, master]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    env:
+      IMAGE: moveit/moveit:${{ matrix.IMAGE }}-${{ github.job }}
+      ROS_DISTRO: ${{ matrix.IMAGE == 'master' && 'melodic' || 'noetic' }}
+
+    steps:
+      - uses: addnab/docker-run-action@v3
+        name: Check for apt updates
+        continue-on-error: true
+        id: apt
+        with:
+          image: ${{ env.IMAGE }}
+          run: |
+            apt-get update
+            have_updates=$(apt-get --simulate upgrade | grep -q "^0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.$" && echo false || echo true)
+            echo "no_cache=$have_updates" >> "$GITHUB_OUTPUT"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event_name != 'schedule' || steps.apt.outputs.no_cache }}
+      - name: Login to Container Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and Push
+        uses: docker/build-push-action@v3
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event_name != 'schedule' || steps.apt.outputs.no_cache }}
+        with:
+          file: .docker/${{ github.job }}/Dockerfile
+          build-args: ROS_DISTRO=${{ env.ROS_DISTRO }}
+          push: true
+          no-cache: ${{ steps.apt.outputs.no_cache || github.event_name == 'workflow_dispatch' }}
+          cache-from: type=registry,ref=${{ env.IMAGE }}
+          cache-to: type=inline
+          tags: ${{ env.IMAGE }}
+
+  ci-testing:
+    needs: ci
+    strategy:
+      fail-fast: false
+      matrix:
+        IMAGE: [noetic, master]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    env:
+      IMAGE: moveit/moveit:${{ matrix.IMAGE }}-${{ github.job }}
+
+    steps:
+      - uses: addnab/docker-run-action@v3
+        name: Check for apt updates
+        continue-on-error: true
+        id: apt
+        with:
+          image: ${{ env.IMAGE }}
+          run: |
+            apt-get update
+            have_updates=$(apt-get --simulate upgrade | grep -q "^0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.$" && echo false || echo true)
+            echo "no_cache=$have_updates" >> "$GITHUB_OUTPUT"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event_name != 'schedule' || steps.apt.outputs.no_cache }}
+      - name: Login to Container Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and Push
+        uses: docker/build-push-action@v3
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event_name != 'schedule' || steps.apt.outputs.no_cache }}
+        with:
+          file: .docker/${{ github.job }}/Dockerfile
+          build-args: IMAGE=${{ matrix.IMAGE }}
+          push: true
+          no-cache: ${{ steps.apt.outputs.no_cache || github.event_name == 'workflow_dispatch' }}
+          cache-from: type=registry,ref=${{ env.IMAGE }}
+          cache-to: type=inline
+          tags: |
+            ${{ env.IMAGE }}
+            moveit/moveit:${{ matrix.IMAGE }}-ci-shadow-fixed
+
+  source:
+    needs: ci-testing
+    strategy:
+      fail-fast: false
+      matrix:
+        IMAGE: [noetic, master]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    env:
+      IMAGE: moveit/moveit:${{ matrix.IMAGE }}-${{ github.job }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Container Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: "Remove .dockerignore"
+        run: rm .dockerignore  # enforce full source context
+      - name: Build and Push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: .docker/${{ github.job }}/Dockerfile
+          build-args: IMAGE=${{ matrix.IMAGE }}
+          push: true
+          cache-from: type=registry,ref=${{ env.IMAGE }}
+          cache-to: type=inline
+          tags: ${{ env.IMAGE }}

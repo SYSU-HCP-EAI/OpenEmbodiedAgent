@@ -1,0 +1,26 @@
+<package format="2">
+  <name>moveit_ros_benchmarks</name>
+  <version>1.1.11</version>
+
+  <description>Enhanced tools for benchmarks in MoveIt</description>
+
+  <author email="rluna@rice.edu">Ryan Luna</author>
+
+  <maintainer email="dave@picknik.ai">Dave Coleman</maintainer>
+  <maintainer email="moveit_releasers@googlegroups.com">MoveIt Release Team</maintainer>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit</url>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>moveit_ros_planning</depend>
+  <depend>moveit_ros_warehouse</depend>
+  <depend>roscpp</depend>
+  <depend>tf2_eigen</depend>
+  <depend version_gte="1.11.2">pluginlib</depend>
+
+</package>

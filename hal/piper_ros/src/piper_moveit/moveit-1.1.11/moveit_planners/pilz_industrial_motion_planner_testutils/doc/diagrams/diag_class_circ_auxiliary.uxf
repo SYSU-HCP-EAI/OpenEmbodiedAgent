@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><diagram program="umlet" version="13.3">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>40</x>
+      <y>100</y>
+      <w>380</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>CartesianPathConstraintsBuilder
+--
++ to PathConstraints() : moveit_msgs::Constraints</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>410</x>
+      <y>430</y>
+      <w>210</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>CartesianCenter</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>460</x>
+      <y>90</y>
+      <w>470</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>template=ConfigType&gt;
+CircAuxiliary
+{abstract}
+--
++ toPathConstraints(): moveit_msgs::Constraints</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>470</x>
+      <y>280</y>
+      <w>230</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>template=ConfigType, Builder&gt;
+Center</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>730</x>
+      <y>280</y>
+      <w>220</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>template=ConfigType, Builder&gt;
+Interim</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>730</x>
+      <y>160</y>
+      <w>30</w>
+      <h>150</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;130.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>470</x>
+      <y>160</y>
+      <w>40</w>
+      <h>150</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.</panel_attributes>
+    <additional_attributes>20.0;10.0;17.0;130.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>490</x>
+      <y>320</y>
+      <w>340</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.
+&lt;&lt;bind&gt;&gt;
+&lt;ConfigType-&gt;CartesianConfiguration&gt;
+&lt;Builder-&gt;CartesianPathConstraintsBuilder&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;110.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>710</x>
+      <y>510</y>
+      <w>210</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>CartesianInterim</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>800</x>
+      <y>320</y>
+      <w>340</w>
+      <h>210</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.
+
+
+
+
+
+
+&lt;&lt;bind&gt;&gt;
+&lt;ConfigType-&gt;CartesianConfiguration&gt;
+&lt;Builder-&gt;CartesianPathConstraintsBuilder&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;190.0</additional_attributes>
+  </element>
+</diagram>
