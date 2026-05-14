@@ -99,6 +99,27 @@ class SessionRegistry:
         status = SessionStatus(result.status or (SessionStatus.SUCCEEDED.value if result.success else SessionStatus.FAILED.value))
         self._update_session_status(session_id, status, result=result)
 
+    def mark_retry_pending(self, session_id: str, error: Exception) -> None:
+        """Return a claimed/running session to pending for a configured retry."""
+        document = self.load()
+        for session in document.sessions:
+            if session.session_id != session_id:
+                continue
+            session.status = SessionStatus.PENDING
+            session.claimed_by = None
+            session.claim_token = None
+            session.retry.attempted += 1
+            session.updated_at = utc_now()
+            session.result = SessionResult(
+                status=SessionStatus.PENDING.value,
+                success=False,
+                error_code=error_code_for(error),
+                error_message=str(error),
+            )
+            self.save(document)
+            return
+        raise KeyError(f"session not found: {session_id}")
+
     def _update_session_status(
         self,
         session_id: str,

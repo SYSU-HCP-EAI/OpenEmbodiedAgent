@@ -17,12 +17,12 @@
 
 ## Current Status
 
-New framework implementation supporting debugging only for DumpSimTarget, DummyOpenPIAdapter, and DummyPolicyClient, with single-skill, single-target serial MVP execution.
+New framework implementation supporting debugging for DummySimTarget, DummyOpenPIAdapter, and DummyPolicyClient, with a componentized serial runtime watchdog for session scheduling, preflight health checks, runtime registries, and retry/failure escalation.
 
 Next Steps:
 
-- **Register, manage, and schedule** multiple skills and multiple targets
-- **Implement** the full watchdog functionality
+- **Expand** runtime registries to real benchmark and robot targets
+- **Add** concurrent multi-target scheduling and resource arbitration
 - **Implement** the protocol
 - **Refine** the perception plugin to complete the closed loop
 
@@ -44,7 +44,7 @@ PhyAgentOS utilizes a **"State-as-a-File"** protocol matrix, natively supporting
 *   🔌 **Dynamic Plugin Mechanism**: Supports dynamic loading of external hardware drivers via `hal/drivers/`, allowing for new hardware support without modifying core code.
 *   🛡️ **Safety Correction Mechanism**: Strict action verification and `LESSONS.md` experience library prevent Agent workflows from going out of control.
 *   🎮 **Simulation Loop**: Built-in lightweight simulation support allows verification of the full chain from natural language instructions to physical state changes without real hardware.
-*   🧪 **Runtime Session Loop**: A session-centered runtime (`SESSIONS.md` → `WatchdogSupervisor` → policy client → simulation target → artifacts) is available for dependency-light dummy simulation smoke tests.
+*   🧪 **Runtime Session Loop**: A session-centered runtime (`SESSIONS.md` → componentized `WatchdogSupervisor` → policy client → simulation target → artifacts) is available for dependency-light dummy simulation smoke tests. The current supervisor is serial, chooses pending sessions by priority, runs preflight checks, and writes retry/failure state back to `SESSIONS.md`.
 *   🗺️ **Semantic Navigation & Perception**: Built-in `SemanticNavigationTool` and `PerceptionService` support resolving high-level semantic goals into physical coordinates and constructing scene graphs by fusing geometric and semantic information.
 
 ## 🦾 Showcase
@@ -148,11 +148,22 @@ paos agent
 ```
 
 **Optional: Runtime dummy session smoke test**
-Runtime uses `TARGETS.md`, `SKILLS.md`, and `SESSIONS.md` instead of the old `ACTION.md` queue. If you have a workspace containing those files, run one supervisor pass with:
+Runtime uses `TARGETS.md`, `SKILLS.md`, and `SESSIONS.md` instead of the old `ACTION.md` queue. The startup command did not change with the componentized watchdog: use `scripts/run_runtime_watchdog.py`.
+
+To create the default runtime protocol files:
+```bash
+python scripts/init_runtime_workspace.py --workspace /tmp/paos_runtime_smoke
+```
+
+Run one supervisor pass with:
 ```bash
 python scripts/run_runtime_watchdog.py --workspace /tmp/paos_runtime_smoke --once
 ```
-On success, the session is marked `succeeded` and an episode summary is written under `artifacts/runtime/<session_id>/episode.json`.
+For a continuous serial polling loop, omit `--once`:
+```bash
+python scripts/run_runtime_watchdog.py --workspace /tmp/paos_runtime_smoke
+```
+On success, the selected pending session is marked `succeeded` and an episode summary is written under `artifacts/runtime/<session_id>/episode.json`. When multiple sessions are pending, the serial scheduler chooses `high` priority before `normal` before `low`, preserving file order within the same priority.
 
 ### 4. Interaction Example
 In the `paos agent` CLI, input:

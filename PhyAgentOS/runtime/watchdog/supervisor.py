@@ -9,15 +9,17 @@ from pydantic import ValidationError
 
 from PhyAgentOS.runtime.adapters.factory import build_adapter
 from PhyAgentOS.runtime.policy.factory import build_policy_client
-from PhyAgentOS.runtime.schemas import SkillsDocument, TargetsDocument
-from PhyAgentOS.runtime.schemas.common import strip_ref
-from PhyAgentOS.runtime.skills.vla.openpi_sim_runtime import OpenPISimSkillRuntime
+from PhyAgentOS.runtime.schemas import SessionsDocument, SkillsDocument, TargetsDocument
 from PhyAgentOS.runtime.state_io.markdown_yaml import read_yaml_block
 from PhyAgentOS.runtime.state_io.workspace_paths import RuntimeWorkspacePaths
-from PhyAgentOS.runtime.targets.factory import build_target
 from PhyAgentOS.runtime.watchdog.errors import SchemaValidationError
+from PhyAgentOS.runtime.watchdog.failure import FailureEscalator
+from PhyAgentOS.runtime.watchdog.health import HealthMonitor
 from PhyAgentOS.runtime.watchdog.registry import SessionRegistry
 from PhyAgentOS.runtime.watchdog.result_writer import ResultWriter
+from PhyAgentOS.runtime.watchdog.runtime_registry import SkillRuntimeRegistry, TargetRuntimeRegistry
+from PhyAgentOS.runtime.watchdog.scheduler import SessionScheduleError, SessionScheduler
+from PhyAgentOS.runtime.watchdog.watcher import WorkspaceWatcher
 
 
 class WatchdogSupervisor:
@@ -29,45 +31,68 @@ class WatchdogSupervisor:
         self.worker_id = worker_id or f"runtime-watchdog@{socket.gethostname()}"
         self.registry = SessionRegistry(self.paths.sessions)
         self.result_writer = ResultWriter(self.workspace)
+        self.watcher = WorkspaceWatcher(self.paths)
+        self.scheduler = SessionScheduler()
+        self.target_registry = TargetRuntimeRegistry()
+        self.skill_registry = SkillRuntimeRegistry()
+        self.health_monitor = HealthMonitor()
+        self.failure_escalator = FailureEscalator()
 
     def run_once(self) -> bool:
-        session = self.registry.first_pending()
-        if session is None:
-            return False
-        if not self.registry.try_claim(session.session_id, self.worker_id):
-            return False
-
-        session = self.registry.get_session(session.session_id)
+        sessions_doc, targets_doc, skills_doc = self._load_runtime_documents()
         try:
-            targets_doc, skills_doc = self._load_registries()
-            target_id = strip_ref(session.target_ref, "target://")
-            skill_id = strip_ref(session.skill_ref, "skill://")
-            target_spec = self._find_target(targets_doc, target_id)
-            skill_spec = self._find_skill(skills_doc, skill_id)
-            if skill_id not in target_spec.supported_skills:
-                raise SchemaValidationError(f"target {target_id} does not support skill {skill_id}")
-            if target_spec.type not in skill_spec.supported_target_types:
-                raise SchemaValidationError(f"skill {skill_id} does not support target type {target_spec.type}")
+            scheduled = self.scheduler.select_next(sessions_doc, targets_doc, skills_doc)
+        except SessionScheduleError as exc:
+            self.failure_escalator.handle(exc.session_id, exc, self.registry)
+            return True
+        if scheduled is None:
+            return False
+        session_id = scheduled.session.session_id
+        if not self.registry.try_claim(session_id, self.worker_id):
+            return False
 
-            self.registry.mark_running(session.session_id)
-            session = self.registry.get_session(session.session_id)
-            target = build_target(target_spec)
-            adapter = build_adapter(session.routing.adapter or target_spec.adapter)
-            policy_client = self._build_policy_client(session, target_spec)
-            runtime = self._build_skill_runtime(skill_spec.runtime)
+        try:
+            session = self.registry.get_session(session_id)
+            _, targets_doc, skills_doc = self._load_runtime_documents()
+            scheduled = self.scheduler.resolve_session(session, targets_doc, skills_doc)
+            health_report = self.health_monitor.preflight(scheduled)
+            if not health_report.ok:
+                raise SchemaValidationError(health_report.summary())
+
+            self.registry.mark_running(session_id)
+            session = self.registry.get_session(session_id)
+            scheduled = self.scheduler.resolve_session(session, targets_doc, skills_doc)
+            target = self.target_registry.build(scheduled.target_spec)
+            adapter = build_adapter(session.routing.adapter or scheduled.target_spec.adapter)
+            policy_client = self._build_policy_client(session, scheduled.target_spec)
+            runtime = self.skill_registry.build(scheduled.skill_spec.runtime)
             try:
                 result = runtime.run(session, target, adapter, policy_client)
             finally:
                 policy_client.close()
                 target.close()
 
-            result = self.result_writer.write_episode(session, target_spec, skill_id, result)
-            self.result_writer.write_environment_summary(session, target_spec, result)
-            self.registry.mark_finished(session.session_id, result)
+            result = self.result_writer.write_episode(
+                session,
+                scheduled.target_spec,
+                scheduled.skill_id,
+                result,
+            )
+            self.result_writer.write_environment_summary(session, scheduled.target_spec, result)
+            self.registry.mark_finished(session_id, result)
             return True
         except Exception as exc:
-            self.registry.mark_failed(session.session_id, exc)
+            self.failure_escalator.handle(session_id, exc, self.registry)
             return True
+
+    def _load_runtime_documents(self) -> tuple[SessionsDocument, TargetsDocument, SkillsDocument]:
+        try:
+            sessions_doc = SessionsDocument.model_validate(read_yaml_block(self.paths.sessions))
+            targets_doc = TargetsDocument.model_validate(read_yaml_block(self.paths.targets))
+            skills_doc = SkillsDocument.model_validate(read_yaml_block(self.paths.skills))
+            return sessions_doc, targets_doc, skills_doc
+        except ValidationError as exc:
+            raise SchemaValidationError(str(exc)) from exc
 
     def _load_registries(self) -> tuple[TargetsDocument, SkillsDocument]:
         try:
@@ -76,23 +101,6 @@ class WatchdogSupervisor:
             return targets_doc, skills_doc
         except ValidationError as exc:
             raise SchemaValidationError(str(exc)) from exc
-
-    def _find_target(self, document: TargetsDocument, target_id: str):
-        for target in document.targets:
-            if target.id == target_id and target.enabled:
-                return target
-        raise SchemaValidationError(f"enabled target not found: {target_id}")
-
-    def _find_skill(self, document: SkillsDocument, skill_id: str):
-        for skill in document.skills:
-            if skill.id == skill_id:
-                return skill
-        raise SchemaValidationError(f"skill not found: {skill_id}")
-
-    def _build_skill_runtime(self, runtime_name: str):
-        if runtime_name == "OpenPISimSkillRuntime":
-            return OpenPISimSkillRuntime()
-        raise SchemaValidationError(f"unsupported skill runtime: {runtime_name}")
 
     def _build_policy_client(self, session, target_spec):
         action_cfg = target_spec.config.get("action", {})

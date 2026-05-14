@@ -131,3 +131,38 @@ def test_supervisor_merges_environment_runtime_summary(tmp_path) -> None:
     assert environment["runtime"]["last_session_id"] == "sess_dummy_001"
     assert environment["runtime"]["last_status"] == "succeeded"
     assert environment["runtime"]["sessions"]["sess_dummy_001"]["success"] is True
+
+
+def test_supervisor_uses_priority_scheduler(tmp_path) -> None:
+    _write_workspace(tmp_path)
+    sessions = read_yaml_block(tmp_path / "SESSIONS.md")
+    sessions["sessions"] = [
+        {
+            "session_id": "sess_normal",
+            "target_ref": "target://dummy_sim",
+            "skill_ref": "skill://openpi_sim_vla",
+            "task_description": "normal priority task",
+            "status": "pending",
+            "priority": "normal",
+            "routing": {"policy_endpoint": "dummy://local", "adapter": "dummy_openpi_adapter"},
+            "execution": {"max_steps": 10, "replan_every": 4, "action_chunk_mode": "open_loop"},
+        },
+        {
+            "session_id": "sess_high",
+            "target_ref": "target://dummy_sim",
+            "skill_ref": "skill://openpi_sim_vla",
+            "task_description": "high priority task",
+            "status": "pending",
+            "priority": "high",
+            "routing": {"policy_endpoint": "dummy://local", "adapter": "dummy_openpi_adapter"},
+            "execution": {"max_steps": 10, "replan_every": 4, "action_chunk_mode": "open_loop"},
+        },
+    ]
+    write_yaml_block(tmp_path / "SESSIONS.md", "Runtime Sessions", sessions)
+
+    assert WatchdogSupervisor(tmp_path, worker_id="test-worker").run_once() is True
+
+    updated = read_yaml_block(tmp_path / "SESSIONS.md")
+    by_id = {session["session_id"]: session for session in updated["sessions"]}
+    assert by_id["sess_high"]["status"] == SessionStatus.SUCCEEDED.value
+    assert by_id["sess_normal"]["status"] == SessionStatus.PENDING.value
