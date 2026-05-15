@@ -11,6 +11,10 @@ skills:
     policy_client: dummy
     supports_chunk: true
     default_replan_every: 4
+    requires:
+      sensors: []
+      environment_outputs: []
+      strict_environment_contract: true
     input_contract:
       images:
         - observation/image

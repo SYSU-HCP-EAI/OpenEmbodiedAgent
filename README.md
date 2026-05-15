@@ -24,7 +24,7 @@ Next Steps:
 - **Expand** runtime registries to real benchmark and robot targets
 - **Add** concurrent multi-target scheduling and resource arbitration
 - **Implement** the protocol
-- **Refine** the perception plugin to complete the closed loop
+- **Test** the perception plugin to complete the closed loop
 
 ## Long Demo    
 [![Watch the video](https://img.youtube.com/vi/LtUWamZRyhM/maxresdefault.jpg)](https://youtu.be/LtUWamZRyhM?si=UjKNdqFnO1knfWbX)

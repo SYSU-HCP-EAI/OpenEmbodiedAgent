@@ -8,6 +8,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from PhyAgentOS.runtime.adapters.factory import build_adapter
+from PhyAgentOS.runtime.perception import PerceptionRuntime
 from PhyAgentOS.runtime.policy.factory import build_policy_client
 from PhyAgentOS.runtime.schemas import SessionsDocument, SkillsDocument, TargetsDocument
 from PhyAgentOS.runtime.state_io.markdown_yaml import read_yaml_block
@@ -25,9 +26,17 @@ from PhyAgentOS.runtime.watchdog.watcher import WorkspaceWatcher
 class WatchdogSupervisor:
     """Claim and execute runtime sessions from a workspace."""
 
-    def __init__(self, workspace: str | Path, worker_id: str | None = None):
+    def __init__(
+        self,
+        workspace: str | Path,
+        worker_id: str | None = None,
+        environment_workspace: str | Path | None = None,
+    ):
         self.paths = RuntimeWorkspacePaths.from_path(workspace)
         self.workspace = self.paths.workspace
+        self.environment_workspace = (
+            Path(environment_workspace).expanduser() if environment_workspace is not None else self.workspace
+        )
         self.worker_id = worker_id or f"runtime-watchdog@{socket.gethostname()}"
         self.registry = SessionRegistry(self.paths.sessions)
         self.result_writer = ResultWriter(self.workspace)
@@ -35,6 +44,7 @@ class WatchdogSupervisor:
         self.scheduler = SessionScheduler()
         self.target_registry = TargetRuntimeRegistry()
         self.skill_registry = SkillRuntimeRegistry()
+        self.perception_runtime = PerceptionRuntime(self.workspace, self.environment_workspace)
         self.health_monitor = HealthMonitor()
         self.failure_escalator = FailureEscalator()
 
@@ -59,6 +69,23 @@ class WatchdogSupervisor:
             if not health_report.ok:
                 raise SchemaValidationError(health_report.summary())
 
+            perception_plan = self.perception_runtime.resolve_and_check(scheduled)
+            if perception_plan is not None:
+                preflight_target = self.target_registry.build(scheduled.target_spec)
+                try:
+                    preflight_target.build()
+                    preflight_observation = preflight_target.reset(
+                        {"session_id": session_id, "perception_preflight": True}
+                    )
+                    self.perception_runtime.frame_builder.build(perception_plan, preflight_observation)
+                    self.perception_runtime.refresh_environment(
+                        perception_plan,
+                        preflight_target,
+                        observation=preflight_observation,
+                    )
+                finally:
+                    preflight_target.close()
+
             self.registry.mark_running(session_id)
             session = self.registry.get_session(session_id)
             scheduled = self.scheduler.resolve_session(session, targets_doc, skills_doc)
@@ -78,7 +105,7 @@ class WatchdogSupervisor:
                 scheduled.skill_id,
                 result,
             )
-            self.result_writer.write_environment_summary(session, scheduled.target_spec, result)
+            self.result_writer.write_session_history(session, scheduled.target_spec, result)
             self.registry.mark_finished(session_id, result)
             return True
         except Exception as exc:

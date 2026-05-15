@@ -1,54 +1,13 @@
-"""Write runtime results to artifacts and ENVIRONMENT.md."""
+"""Write runtime results to artifacts."""
 
 from __future__ import annotations
 
-import json
-import re
 from pathlib import Path
-from typing import Any
-
-import yaml
 
 from PhyAgentOS.runtime.artifacts.episode_writer import EpisodeWriter
 from PhyAgentOS.runtime.schemas import SessionResult, SessionSpec, TargetSpec
 from PhyAgentOS.runtime.schemas.common import utc_now
-from PhyAgentOS.runtime.state_io.atomic_file import atomic_write_text
-
-_ENV_BLOCK_RE = re.compile(
-    r"(?P<fence>`{3,}|~{3,})\s*(?P<lang>json|yaml|yml)\s*\n(?P<body>.*?)(?:\n(?P=fence)\s*)",
-    re.DOTALL | re.IGNORECASE,
-)
-
-
-def _load_environment_doc(path: Path) -> dict[str, Any]:
-    """Load an ENVIRONMENT.md JSON/YAML fenced block, preserving unknown fields."""
-    if not path.exists():
-        return {}
-    match = _ENV_BLOCK_RE.search(path.read_text(encoding="utf-8"))
-    if match is None:
-        return {}
-
-    body = match.group("body")
-    lang = match.group("lang").lower()
-    try:
-        if lang == "json":
-            payload = json.loads(body)
-        else:
-            payload = yaml.safe_load(body) or {}
-    except (json.JSONDecodeError, yaml.YAMLError):
-        return {}
-    return payload if isinstance(payload, dict) else {}
-
-
-def _dump_environment_doc(data: dict[str, Any]) -> str:
-    """Serialize an environment document as Markdown with a JSON fenced block."""
-    env_json = json.dumps(data, indent=2, ensure_ascii=False, sort_keys=False)
-    return (
-        "# Environment State\n\n"
-        "Auto-updated by PhyAgentOS runtime and perception services.\n"
-        "The JSON block below is merged by runtime writers; unrelated sections are preserved.\n\n"
-        f"```json\n{env_json}\n```\n"
-    )
+from PhyAgentOS.runtime.state_io.markdown_yaml import read_yaml_block, write_yaml_block
 
 
 class ResultWriter:
@@ -67,19 +26,20 @@ class ResultWriter:
         result.artifact_dir = str(artifact_dir.relative_to(self.workspace))
         return result
 
-    def write_environment_summary(
+    def write_session_history(
         self,
         session: SessionSpec,
         target: TargetSpec,
         result: SessionResult,
     ) -> None:
-        environment_path = self.workspace / "ENVIRONMENT.md"
-        environment = _load_environment_doc(environment_path)
-        runtime = environment.get("runtime")
-        if not isinstance(runtime, dict):
-            runtime = {}
+        """Write transient runtime session history outside ENVIRONMENT.md."""
+        path = self.workspace / "LOG.md"
+        history = self._load_session_history(path)
+        sessions = history.get("sessions")
+        if not isinstance(sessions, dict):
+            sessions = {}
 
-        session_summary = {
+        summary = {
             "session_id": session.session_id,
             "target_id": target.id,
             "status": result.status,
@@ -87,18 +47,17 @@ class ResultWriter:
             "artifact_dir": result.artifact_dir or "",
             "num_steps": result.num_steps,
             "return_value": result.return_value,
+            "mean_policy_latency_ms": result.mean_policy_latency_ms,
             "error_code": result.error_code,
             "error_message": result.error_message,
+            "trace_path": result.trace_path,
             "updated_at": utc_now().isoformat(),
         }
-
-        sessions = runtime.get("sessions")
-        if not isinstance(sessions, dict):
-            sessions = {}
-        sessions[session.session_id] = session_summary
-
-        runtime.update(
+        sessions[session.session_id] = {key: value for key, value in summary.items() if value is not None}
+        history.update(
             {
+                "version": "runtime_session_history_v1",
+                "updated_at": utc_now().isoformat(),
                 "last_session_id": session.session_id,
                 "last_target_id": target.id,
                 "last_status": result.status,
@@ -107,6 +66,15 @@ class ResultWriter:
                 "sessions": sessions,
             }
         )
-        environment["runtime"] = runtime
-        environment["updated_at"] = utc_now().isoformat()
-        atomic_write_text(environment_path, _dump_environment_doc(environment))
+        write_yaml_block(path, "Runtime Session History", history)
+
+    def _load_session_history(self, path: Path) -> dict:
+        if not path.exists():
+            return {"version": "runtime_session_history_v1", "sessions": {}}
+        try:
+            payload = read_yaml_block(path)
+        except Exception:
+            return {"version": "runtime_session_history_v1", "sessions": {}}
+        if payload.get("version") != "runtime_session_history_v1":
+            return {"version": "runtime_session_history_v1", "sessions": {}}
+        return payload

@@ -7,6 +7,15 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 
+class SkillRequirements(BaseModel):
+    sensors: list[str] = Field(default_factory=list)
+    environment_outputs: list[str] = Field(default_factory=list)
+    object_queries_from_task: bool = False
+    min_confidence: float | None = None
+    require_metric_geometry: bool = False
+    strict_environment_contract: bool = True
+
+
 class SkillSpec(BaseModel):
     id: str
     category: Literal["vla", "builtin", "hybrid", "debug"]
@@ -17,6 +26,7 @@ class SkillSpec(BaseModel):
     default_replan_every: int = 1
     input_contract: dict[str, Any] = Field(default_factory=dict)
     output_contract: dict[str, Any] = Field(default_factory=dict)
+    requires: SkillRequirements = Field(default_factory=SkillRequirements)
 
 
 class SkillsDocument(BaseModel):

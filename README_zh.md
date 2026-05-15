@@ -24,7 +24,7 @@
 - 扩展 runtime registry 到真实 benchmark 与机器人 target
 - 增加并发多 target 调度与资源仲裁
 - 协议落实
-- 感知插件完善闭环
+- 测试感知插件闭环
 
 ## 👾长程任务演示
 

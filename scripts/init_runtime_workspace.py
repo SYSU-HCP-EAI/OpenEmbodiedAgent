@@ -13,6 +13,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 RUNTIME_TEMPLATE_NAMES = ("TARGETS.md", "SKILLS.md", "SESSIONS.md")
+RUNTIME_CONFIG_TEMPLATE_NAMES = (
+    "configs/runtime/sensors/dummy_sim.sensors.yaml",
+    "configs/runtime/perception/dummy_sim.perception.yaml",
+)
 
 
 def init_runtime_workspace(workspace: Path, force: bool = False) -> dict[str, list[str]]:
@@ -29,6 +33,15 @@ def init_runtime_workspace(workspace: Path, force: bool = False) -> dict[str, li
             result["skipped"].append(name)
             continue
 
+        dest.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        result["overwritten" if dest.exists() and force else "created"].append(name)
+    for name in RUNTIME_CONFIG_TEMPLATE_NAMES:
+        src = templates.joinpath(*Path(name).parts)
+        dest = workspace / name
+        if dest.exists() and not force:
+            result["skipped"].append(name)
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
         result["overwritten" if dest.exists() and force else "created"].append(name)
     return result

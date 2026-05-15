@@ -95,10 +95,14 @@ def test_supervisor_single_session_succeeds(tmp_path) -> None:
     episode = json.loads(episode_path.read_text(encoding="utf-8"))
     assert episode["status"] == "succeeded"
     assert episode["num_steps"] == 3
-    assert (tmp_path / "ENVIRONMENT.md").exists()
+    assert not (tmp_path / "ENVIRONMENT.md").exists()
+    history = read_yaml_block(tmp_path / "LOG.md")
+    assert history["last_session_id"] == "sess_dummy_001"
+    assert history["last_status"] == "succeeded"
+    assert history["sessions"]["sess_dummy_001"]["artifact_dir"] == "artifacts/runtime/sess_dummy_001"
 
 
-def test_supervisor_merges_environment_runtime_summary(tmp_path) -> None:
+def test_supervisor_does_not_write_runtime_summary_to_environment(tmp_path) -> None:
     _write_workspace(tmp_path)
     (tmp_path / "ENVIRONMENT.md").write_text(
         """# Environment State
@@ -127,10 +131,9 @@ def test_supervisor_merges_environment_runtime_summary(tmp_path) -> None:
     environment = _read_environment_json(tmp_path / "ENVIRONMENT.md")
     assert environment["scene_graph"]["nodes"][0]["id"] == "obj_apple"
     assert environment["objects"]["red_apple"]["location"] == "table"
-    assert environment["runtime"]["perception_status"] == "fresh"
-    assert environment["runtime"]["last_session_id"] == "sess_dummy_001"
-    assert environment["runtime"]["last_status"] == "succeeded"
-    assert environment["runtime"]["sessions"]["sess_dummy_001"]["success"] is True
+    assert environment["runtime"] == {"perception_status": "fresh"}
+    history = read_yaml_block(tmp_path / "LOG.md")
+    assert history["sessions"]["sess_dummy_001"]["success"] is True
 
 
 def test_supervisor_uses_priority_scheduler(tmp_path) -> None:

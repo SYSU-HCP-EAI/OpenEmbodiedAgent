@@ -90,6 +90,7 @@ include = [
     "PhyAgentOS/**/*.py",
     "PhyAgentOS/templates/**/*.md",
     "PhyAgentOS/templates/**/*.json",
+    "PhyAgentOS/templates/**/*.yaml",
     "PhyAgentOS/skills/**/*.md",
     "PhyAgentOS/skills/**/*.sh",
 ]

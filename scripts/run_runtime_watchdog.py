@@ -17,10 +17,14 @@ from PhyAgentOS.runtime.watchdog.supervisor import WatchdogSupervisor
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run PhyAgentOS runtime v2 watchdog")
     parser.add_argument("--workspace", required=True, help="Workspace containing TARGETS/SKILLS/SESSIONS.md")
+    parser.add_argument(
+        "--environment-workspace",
+        help="Agent/shared workspace where perception writes ENVIRONMENT.md. Defaults to --workspace.",
+    )
     parser.add_argument("--once", action="store_true", help="Run one polling pass and exit")
     args = parser.parse_args()
 
-    supervisor = WatchdogSupervisor(args.workspace)
+    supervisor = WatchdogSupervisor(args.workspace, environment_workspace=args.environment_workspace)
     if args.once:
         return 0 if supervisor.run_once() else 1
 
