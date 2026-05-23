@@ -8,12 +8,17 @@ from PhyAgentOS.runtime.schemas import SessionsDocument, SkillsDocument, Targets
 from PhyAgentOS.runtime.skills.vla.openpi_sim_runtime import OpenPISimSkillRuntime
 from PhyAgentOS.runtime.state_io.markdown_yaml import write_yaml_block
 from PhyAgentOS.runtime.state_io.workspace_paths import RuntimeWorkspacePaths
-from PhyAgentOS.runtime.targets.sim.dummy_sim_target import DummySimTarget
+from PhyAgentOS.runtime.targets.local.dummy_sim_target import DummySimTarget
 from PhyAgentOS.runtime.watchdog.errors import SchemaValidationError
 from PhyAgentOS.runtime.watchdog.failure import FailureEscalator
 from PhyAgentOS.runtime.watchdog.health import HealthMonitor
 from PhyAgentOS.runtime.watchdog.registry import SessionRegistry
-from PhyAgentOS.runtime.watchdog.runtime_registry import SkillRuntimeRegistry, TargetRuntimeRegistry
+from PhyAgentOS.runtime.watchdog.runtime_registry import (
+    SkillRuntimeRegistry,
+    TargetRuntimeRegistry,
+    register_skill_runtime,
+    register_target_runtime,
+)
 from PhyAgentOS.runtime.watchdog.scheduler import SessionScheduleError, SessionScheduler
 from PhyAgentOS.runtime.watchdog.watcher import WorkspaceWatcher
 
@@ -30,7 +35,12 @@ def _targets_doc(*, supported_skills=None, enabled=True, target_type="sim"):
                     "enabled": enabled,
                     "workspace": "workspaces/dummy_sim",
                     "supported_skills": supported_skills or ["openpi_sim_vla"],
-                    "adapter": "dummy_openpi_adapter",
+                    "runtime": {
+                        "target_runtime": "DummySimTargetRuntime",
+                        "target_endpoint": "targetws://local/dummy_sim",
+                        "target_adapter": "target_adapter://dummy_sim_adapter",
+                        "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
+                    },
                     "config": {"action": {"action_dim": 7, "chunk_size": 4}},
                 }
             ],
@@ -48,6 +58,7 @@ def _skills_doc(*, supported_target_types=None):
                     "category": "vla",
                     "runtime": "OpenPISimSkillRuntime",
                     "supported_target_types": supported_target_types or ["sim"],
+                    "policy_adapter": "policy_adapter://dummy_openpi_adapter",
                 }
             ],
         }
@@ -66,7 +77,7 @@ def _session(session_id, *, priority="normal", status="pending", max_retries=0, 
         "task_description": "move",
         "status": status,
         "priority": priority,
-        "routing": {"policy_endpoint": "dummy://local", "adapter": "dummy_openpi_adapter"},
+        "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
         "retry": {"max_retries": max_retries, "attempted": attempted},
     }
 
@@ -120,6 +131,23 @@ def test_runtime_registries_build_dummy_runtime() -> None:
 
     assert isinstance(target, DummySimTarget)
     assert isinstance(skill, OpenPISimSkillRuntime)
+
+
+def test_runtime_registries_accept_runtime_extensions() -> None:
+    class TestTarget:
+        pass
+
+    class TestSkill(OpenPISimSkillRuntime):
+        pass
+
+    register_target_runtime("TestLocalTargetRuntime", lambda target_spec: TestTarget())
+    register_skill_runtime("TestSkillRuntime", TestSkill)
+
+    target_doc = _targets_doc()
+    target_doc.targets[0].runtime.target_runtime = "TestLocalTargetRuntime"
+
+    assert isinstance(TargetRuntimeRegistry().build(target_doc.targets[0]), TestTarget)
+    assert isinstance(SkillRuntimeRegistry().build("TestSkillRuntime"), TestSkill)
 
 
 def test_health_monitor_preflight_success_for_dummy_session() -> None:

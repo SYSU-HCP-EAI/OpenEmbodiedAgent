@@ -24,7 +24,7 @@ def test_session_document_defaults() -> None:
                     "target_ref": "target://dummy_sim",
                     "skill_ref": "skill://openpi_sim_vla",
                     "task_description": "move object",
-                    "routing": {"policy_endpoint": "dummy://local", "adapter": "dummy_openpi_adapter"},
+                    "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
                 }
             ]
         }
@@ -43,7 +43,7 @@ def test_missing_required_session_field_fails() -> None:
                 "session_id": "sess_1",
                 "target_ref": "target://dummy_sim",
                 "skill_ref": "skill://openpi_sim_vla",
-                "routing": {"policy_endpoint": "dummy://local", "adapter": "dummy_openpi_adapter"},
+                "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
             }
         )
 
@@ -61,7 +61,12 @@ def test_target_and_skill_schema() -> None:
             "backend": "dummy",
             "workspace": "workspaces/dummy_sim",
             "supported_skills": ["openpi_sim_vla"],
-            "adapter": "dummy_openpi_adapter",
+            "runtime": {
+                "target_runtime": "DummySimTargetRuntime",
+                "target_endpoint": "targetws://local/dummy_sim",
+                "target_adapter": "target_adapter://dummy_sim_adapter",
+                "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
+            },
         }
     )
     skill = SkillSpec.model_validate(
@@ -78,5 +83,5 @@ def test_target_and_skill_schema() -> None:
 
 
 def test_routing_required() -> None:
-    routing = SessionRouting(policy_endpoint="dummy://local", adapter="dummy_openpi_adapter")
+    routing = SessionRouting(target_endpoint="targetws://local/dummy_sim", policy_endpoint="dummy://local")
     assert routing.policy_endpoint == "dummy://local"

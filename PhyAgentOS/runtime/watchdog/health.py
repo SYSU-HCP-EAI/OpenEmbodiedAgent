@@ -44,19 +44,20 @@ class HealthMonitor:
             HealthCheck("robot_heartbeat", "unknown", "not implemented in serial MVP"),
             HealthCheck("chunk_buffer", "unknown", "not implemented in serial MVP"),
         ]
-        if session.execution.action_chunk_mode not in {"open_loop", "single_step"}:
+        if session.execution.action_chunk_mode not in {"chunk_buffer", "open_loop", "single_step"}:
             checks.append(HealthCheck("action_chunk_mode", "failed", "unsupported action chunk mode"))
         return HealthReport(checks=checks)
 
     def _check_target_enabled(self, scheduled: ScheduledSession) -> HealthCheck:
         if scheduled.target_spec.enabled:
             return HealthCheck("target_enabled", "passed")
-        return HealthCheck("target_enabled", "failed", f"target {scheduled.target_id} is disabled")
+        return HealthCheck("target_enabled", "unknown", "handled by runtime compatibility preflight")
 
     def _check_timeouts(self, scheduled: ScheduledSession) -> HealthCheck:
         timeouts = scheduled.session.timeouts
         values = {
             "queue_timeout_s": timeouts.queue_timeout_s,
+            "preflight_timeout_s": timeouts.preflight_timeout_s,
             "execute_timeout_s": timeouts.execute_timeout_s,
             "policy_timeout_s": timeouts.policy_timeout_s,
         }
@@ -69,11 +70,16 @@ class HealthMonitor:
         execution = scheduled.session.execution
         if execution.max_steps <= 0:
             return HealthCheck("execution", "failed", "max_steps must be positive")
-        if execution.replan_every <= 0:
+        replan_every = execution.replan_every_steps or execution.replan_every
+        if replan_every <= 0:
             return HealthCheck("execution", "failed", "replan_every must be positive")
         return HealthCheck("execution", "passed")
 
     def _check_policy_endpoint(self, scheduled: ScheduledSession) -> HealthCheck:
+        if scheduled.skill_spec.category != "vla":
+            return HealthCheck("policy_endpoint", "passed")
+        if not scheduled.session.routing.policy_endpoint:
+            return HealthCheck("policy_endpoint", "failed", "policy_endpoint is required for VLA skills")
         try:
             parse_policy_endpoint(scheduled.session.routing.policy_endpoint)
         except Exception as exc:

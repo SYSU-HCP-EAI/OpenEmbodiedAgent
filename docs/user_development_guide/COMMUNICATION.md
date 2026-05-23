@@ -11,13 +11,13 @@ It is a bilingual architectural guide, not a live protocol bus by itself.
 Physical Agent Operating System follows a Markdown-first design:
 
 - Track A (Agent side) plans, reasons, and validates.
-- Track B (HAL side) executes through drivers and watchdogs.
+- Track B (Runtime / HAL side) executes through watchdog-supervised targets and skills.
 - Shared state is exposed through Markdown files instead of direct cross-layer Python calls.
 
 Physical Agent Operating System 采用 Markdown-first 设计：
 
 - Track A（Agent 侧）负责理解、规划、校验。
-- Track B（HAL 侧）负责通过 driver 和 watchdog 执行。
+- Track B（Runtime / HAL 侧）负责通过 watchdog 监督的 target 与 skill 执行。
 - 跨层共享状态优先通过 Markdown 文件暴露，而不是直接跨层 Python 调用。
 
 ## 2. Workspaces / 工作区拓扑
@@ -58,6 +58,9 @@ Fleet 模式：
   - Summarizes robot id, driver, type, concise capability summary, workspace, enablement, connection state, and nav state
 - `LESSONS.md`
   - Shared failure memory and action rejection notes
+- `TARGETS.md`, `SKILLS.md`, `SESSIONS.md`
+  - Runtime target registry, skill registry, and session queue
+  - Used by the session-centered runtime instead of direct Agent-to-target calls
 - `TASK.md`
   - Multi-step task decomposition state
 - `ORCHESTRATOR.md`
@@ -73,6 +76,9 @@ Shared workspace 文件：
   - 摘要记录 robot id、driver、类型、简要能力、workspace、启用状态、连接状态、导航状态
 - `LESSONS.md`
   - 共享失败经验和动作拒绝记录
+- `TARGETS.md`、`SKILLS.md`、`SESSIONS.md`
+  - Runtime target registry、skill registry 与 session 队列
+  - 被 session-centered runtime 使用，避免 Agent 直接调用 target
 - `TASK.md`
   - 多步骤任务拆解状态
 - `ORCHESTRATOR.md`
@@ -142,16 +148,20 @@ This means capability-specific validation happens at dispatch time.
 
 ### Watchdog
 
-Each watchdog instance reads:
+The session-centered `WatchdogSupervisor` reads:
 
-- its own robot workspace `ACTION.md`
-- shared `ENVIRONMENT.md`
+- `TARGETS.md`
+- `SKILLS.md`
+- `SESSIONS.md`
+- external runtime YAML under `configs/runtime/`
 
-Each watchdog writes:
+It writes:
 
-- runtime profile copy into its robot workspace `EMBODIED.md`
-- robot runtime state back into shared `ENVIRONMENT.md`
-- refreshed summary into shared `ROBOTS.md`
+- session status and result back to `SESSIONS.md`
+- perception deltas to `ENVIRONMENT.md`
+- reusable preflight failures to `LESSONS.md`
+- transient runtime history to `LOG.md`
+- episode artifacts under `artifacts/runtime/<session_id>/`
 
 Planner / 主 Agent：
 
@@ -173,39 +183,75 @@ Critic（通过 `EmbodiedActionTool`）：
 
 Watchdog：
 
-- 每个 watchdog 实例读取：
-  - 自己 robot workspace 里的 `ACTION.md`
-  - shared `ENVIRONMENT.md`
-- 每个 watchdog 写入：
-  - 自己 robot workspace 里的 runtime `EMBODIED.md`
-  - shared `ENVIRONMENT.md` 里的本机器人运行态
-  - shared `ROBOTS.md` 里的摘要目录
+- session-centered `WatchdogSupervisor` 读取：
+  - `TARGETS.md`
+  - `SKILLS.md`
+  - `SESSIONS.md`
+  - `configs/runtime/` 下的外部 runtime YAML
+- 它写入：
+  - `SESSIONS.md` 中的 session 状态与结果
+  - `ENVIRONMENT.md` 中的感知增量
+  - `LESSONS.md` 中可复用的 preflight 失败经验
+  - `LOG.md` 中的临时 runtime history
+  - `artifacts/runtime/<session_id>/` 下的 episode artifacts
 
-## 6. Typical Runtime Pipeline / 典型运行流程
+## 6. Runtime Session Protocol / Runtime Session 协议
+
+The runtime protocol keeps the upper/lower boundary file-based while moving execution to sessions:
+
+- `TARGETS.md` answers which targets exist, whether they are enabled, which skills they support, and which target runtime endpoint, target adapter, sensor config, perception config, and runtime contract they use.
+- `SKILLS.md` declares skill runtime, policy adapter, required sensors/environment outputs, input contract, output action contract, and allowed deterministic bridges.
+- `SESSIONS.md` declares a task, target, skill, timeout, priority, and routing hints. It does not bind pair adapters.
+- `configs/runtime/contracts/<target_id>.runtime.yaml` declares target action contract and safety limits.
+- Adapter and bridge references use explicit URI namespaces such as `target_adapter://`, `policy_adapter://`, and `bridge://`.
+
+Runtime status flow:
+
+```text
+pending -> claimed -> preflight_checking -> running -> succeeded / failed / timed_out / cancelled
+preflight_checking -> rejected
+```
+
+`RuntimeCompatibilityPreflight` resolves an `AdapterPlan` before execution. It validates protocol files, target/skill compatibility, adapter/bridge availability, sensor config declarations, perception config declarations, and runtime contracts. Actual target observation channels are checked when runtime reads an observation for environment refresh or skill execution. A policy-backed session flows through target observation, target adapter, policy adapter, policy inference, action bridges, target adapter, and target action chunk. Target runtimes and policy servers do not call each other directly; the PhyAgentOS runtime supervises both channels.
+
+Runtime 协议继续保持文件边界，但执行单位变成 session：
+
+- `TARGETS.md` 描述有哪些 target、是否启用、支持哪些 skill，以及 target runtime endpoint、target adapter、sensor config、perception config、runtime contract。
+- `SKILLS.md` 声明 skill runtime、policy adapter、所需 sensors/environment outputs、输入契约、输出动作契约和允许的确定性 bridge。
+- `SESSIONS.md` 声明任务、target、skill、timeout、priority 和 routing hints，不绑定 pair adapter。
+- `configs/runtime/contracts/<target_id>.runtime.yaml` 声明 target action contract 与安全限制。
+- Adapter 与 bridge 引用使用 `target_adapter://`、`policy_adapter://`、`bridge://` 等显式 URI 命名空间。
+
+运行状态流：
+
+```text
+pending -> claimed -> preflight_checking -> running -> succeeded / failed / timed_out / cancelled
+preflight_checking -> rejected
+```
+
+`RuntimeCompatibilityPreflight` 会在执行前解析 `AdapterPlan`，并校验协议文件、target/skill 兼容性、adapter/bridge 可用性、sensor config 声明、perception config 声明和 runtime contract。真实 target observation 的 channel 会在 runtime 为环境刷新或技能执行读取 observation 时校验。Policy-backed session 的路径是 target observation、target adapter、policy adapter、policy inference、action bridges、target adapter、target action chunk。Target runtime 与 policy server 不直接互相调用，二者由 PhyAgentOS runtime 统一监督。
+
+## 7. Typical Runtime Pipeline / 典型运行流程
 
 1. `paos onboard` prepares workspaces.
-2. Fleet config defines which robots exist.
-3. Shared `ROBOTS.md` is generated from config plus runtime summary.
-4. User starts one watchdog per robot instance.
-5. Watchdog installs that robot's profile as runtime `EMBODIED.md`.
-6. User starts `paos agent`.
-7. Agent plans from shared state and chooses a robot.
-8. `EmbodiedActionTool` validates against the target robot's runtime `EMBODIED.md`.
-9. The action is written to that robot workspace's `ACTION.md`.
-10. The matching watchdog executes it and writes runtime updates back to shared files.
+2. Runtime protocol files define targets, skills, sessions, and external configs.
+3. User starts the runtime watchdog.
+4. User starts `paos agent`.
+5. Agent plans from shared state and writes or updates a session.
+6. Watchdog claims a pending session and runs compatibility preflight.
+7. If accepted, watchdog enters `running`, refreshes required environment outputs from a read-only target observation when needed, then starts the skill runtime.
+8. Runtime writes session results, environment deltas, lessons, and artifacts.
 
 1. `paos onboard` 准备工作区。
-2. Fleet 配置定义有哪些机器人实例。
-3. shared `ROBOTS.md` 根据配置和运行摘要自动生成。
-4. 用户为每个机器人实例启动一个 watchdog。
-5. watchdog 将该机器人的 profile 安装为 runtime `EMBODIED.md`。
-6. 用户启动 `paos agent`。
-7. Agent 基于 shared 状态规划并选择机器人。
-8. `EmbodiedActionTool` 使用目标机器人的 runtime `EMBODIED.md` 做校验。
-9. 动作被写入该机器人 workspace 的 `ACTION.md`。
-10. 对应 watchdog 执行动作，并把运行结果回写到 shared 文件。
+2. Runtime 协议文件定义 targets、skills、sessions 与外部配置。
+3. 用户启动 runtime watchdog。
+4. 用户启动 `paos agent`。
+5. Agent 基于 shared state 规划并写入或更新 session。
+6. Watchdog claim pending session 并执行 compatibility preflight。
+7. 如通过，watchdog 进入 `running`；如 session 需要环境输出，会先基于只读 target observation 刷新环境，再启动 skill runtime。
+8. Runtime 写回 session result、environment delta、lessons 与 artifacts。
 
-## 7. Design Intent / 设计意图
+## 8. Design Intent / 设计意图
 
 - Keep shared context concise enough for planning
 - Keep robot-specific validation precise

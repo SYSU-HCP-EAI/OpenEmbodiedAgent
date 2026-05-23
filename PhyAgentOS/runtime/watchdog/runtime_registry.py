@@ -7,49 +7,54 @@ from collections.abc import Callable
 from PhyAgentOS.runtime.schemas import TargetSpec
 from PhyAgentOS.runtime.skills.base import BaseSkillRuntime
 from PhyAgentOS.runtime.skills.vla.openpi_sim_runtime import OpenPISimSkillRuntime
-from PhyAgentOS.runtime.targets.factory import build_target
-from PhyAgentOS.runtime.watchdog.errors import SchemaValidationError, TargetBuildError
+from PhyAgentOS.runtime.communication.target_ws_client import TargetWSClient
+from PhyAgentOS.runtime.targets.base import BaseRolloutTarget
+from PhyAgentOS.runtime.targets.factory import (
+    build_target,
+    register_local_target_runtime,
+    register_remote_target_runtime,
+)
+from PhyAgentOS.runtime.watchdog.errors import SchemaValidationError
 
 
-TargetFactory = Callable[[TargetSpec], object]
 SkillFactory = Callable[[], BaseSkillRuntime]
+LocalTargetFactory = Callable[[TargetSpec], BaseRolloutTarget]
+RemoteTargetFactory = Callable[[TargetSpec, TargetWSClient], BaseRolloutTarget]
+
+
+_SKILL_FACTORIES: dict[str, SkillFactory] = {}
+
+
+def register_target_runtime(runtime_name: str, factory: LocalTargetFactory) -> None:
+    register_local_target_runtime(runtime_name, factory)
+
+
+def register_remote_target(runtime_name: str, factory: RemoteTargetFactory) -> None:
+    register_remote_target_runtime(runtime_name, factory)
+
+
+def register_skill_runtime(name: str, factory: SkillFactory) -> None:
+    _SKILL_FACTORIES[name] = factory
 
 
 class TargetRuntimeRegistry:
-    """Map target runtime keys to target factories."""
+    """Build local or remote targets from target runtime specs."""
 
-    def __init__(self):
-        self._factories: dict[str, TargetFactory] = {}
-        self.register("sim:dummy", build_target)
-
-    def register(self, name: str, factory: TargetFactory) -> None:
-        self._factories[name] = factory
-
-    def build(self, target_spec: TargetSpec):
-        key = self._key_for(target_spec)
-        factory = self._factories.get(key)
-        if factory is None:
-            raise TargetBuildError(
-                f"unsupported target: {target_spec.id} ({target_spec.type}/{target_spec.backend})"
-            )
-        return factory(target_spec)
-
-    def _key_for(self, target_spec: TargetSpec) -> str:
-        return f"{target_spec.type}:{target_spec.backend or ''}"
+    def build(self, target_spec: TargetSpec, *, target_endpoint: str | None = None):
+        return build_target(target_spec, target_endpoint=target_endpoint)
 
 
 class SkillRuntimeRegistry:
     """Map skill runtime names to skill runtime factories."""
 
     def __init__(self):
-        self._factories: dict[str, SkillFactory] = {}
-        self.register("OpenPISimSkillRuntime", OpenPISimSkillRuntime)
-
-    def register(self, name: str, factory: SkillFactory) -> None:
-        self._factories[name] = factory
+        self._factories = _SKILL_FACTORIES
 
     def build(self, runtime_name: str) -> BaseSkillRuntime:
         factory = self._factories.get(runtime_name)
         if factory is None:
             raise SchemaValidationError(f"unsupported skill runtime: {runtime_name}")
         return factory()
+
+
+register_skill_runtime("OpenPISimSkillRuntime", OpenPISimSkillRuntime)

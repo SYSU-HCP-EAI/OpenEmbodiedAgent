@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from PhyAgentOS.runtime.schemas.result import SessionResult
 
@@ -14,6 +14,7 @@ from PhyAgentOS.runtime.schemas.result import SessionResult
 class SessionStatus(StrEnum):
     PENDING = "pending"
     CLAIMED = "claimed"
+    PREFLIGHT_CHECKING = "preflight_checking"
     RUNNING = "running"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
@@ -33,7 +34,8 @@ TERMINAL_SESSION_STATUSES = {
 
 ALLOWED_STATUS_TRANSITIONS: dict[SessionStatus, set[SessionStatus]] = {
     SessionStatus.PENDING: {SessionStatus.CLAIMED, SessionStatus.REJECTED, SessionStatus.CANCELLED},
-    SessionStatus.CLAIMED: {SessionStatus.RUNNING, SessionStatus.FAILED, SessionStatus.REJECTED},
+    SessionStatus.CLAIMED: {SessionStatus.PREFLIGHT_CHECKING, SessionStatus.FAILED, SessionStatus.REJECTED},
+    SessionStatus.PREFLIGHT_CHECKING: {SessionStatus.RUNNING, SessionStatus.FAILED, SessionStatus.REJECTED},
     SessionStatus.RUNNING: {
         SessionStatus.SUCCEEDED,
         SessionStatus.FAILED,
@@ -58,6 +60,7 @@ def validate_status_transition(current: SessionStatus, next_status: SessionStatu
 
 class SessionTimeouts(BaseModel):
     queue_timeout_s: float = 30
+    preflight_timeout_s: float = 20
     execute_timeout_s: float = 300
     policy_timeout_s: float = 5
 
@@ -68,19 +71,40 @@ class SessionRetry(BaseModel):
 
 
 class SessionRouting(BaseModel):
-    policy_endpoint: str
-    adapter: str
+    model_config = ConfigDict(extra="forbid")
+
+    target_endpoint: str | None = None
+    policy_endpoint: str | None = None
+    adapter_resolution: Literal["strict_auto", "strict_override"] = "strict_auto"
+    adapter_overrides: dict[str, Any] | None = None
 
 
 class SessionExecution(BaseModel):
     max_steps: int = 600
+    control_hz: float | None = None
     replan_every: int = 8
-    action_chunk_mode: Literal["open_loop", "single_step"] = "open_loop"
+    replan_every_steps: int | None = None
+    action_chunk_mode: Literal["chunk_buffer", "open_loop", "single_step"] = "chunk_buffer"
+    chunk_switch_mode: Literal["soft_blend", "hard_switch"] = "hard_switch"
+
+
+class SessionRuntimeHints(BaseModel):
+    perception_queries: list[dict[str, Any]] = Field(default_factory=list)
+    force_environment_refresh: bool = False
+    preferred_replan_every_steps: int | None = None
+
+
+class SessionSafetyProfile(BaseModel):
+    profile: str = "default"
+    workspace_bounds: str | None = None
+    stop_on_policy_timeout: bool = True
 
 
 class SessionSpec(BaseModel):
     session_id: str
     goal_id: str | None = None
+    parent_goal_id: str | None = None
+    horizon: Literal["short_term", "long_term"] | None = None
     target_ref: str
     skill_ref: str
     task_description: str
@@ -92,8 +116,11 @@ class SessionSpec(BaseModel):
     claim_token: str | None = None
     timeouts: SessionTimeouts = Field(default_factory=SessionTimeouts)
     retry: SessionRetry = Field(default_factory=SessionRetry)
-    routing: SessionRouting
+    depends_on: list[str] = Field(default_factory=list)
+    routing: SessionRouting = Field(default_factory=SessionRouting)
     execution: SessionExecution = Field(default_factory=SessionExecution)
+    runtime_hints: SessionRuntimeHints = Field(default_factory=SessionRuntimeHints)
+    safety_profile: SessionSafetyProfile = Field(default_factory=SessionSafetyProfile)
     result: SessionResult = Field(default_factory=SessionResult)
 
 

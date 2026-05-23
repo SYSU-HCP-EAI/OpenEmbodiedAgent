@@ -119,6 +119,28 @@ def _perception_config(target_id: str = "dummy_sim") -> dict:
     }
 
 
+def _runtime_contract() -> dict:
+    return {
+        "version": "runtime_target_contract_v1",
+        "target_id": "dummy_sim",
+        "target_adapter": "target_adapter://dummy_sim_adapter",
+        "action_contract": {
+            "id": "dummy_delta_eef_gripper_v1",
+            "accepted_representations": ["delta_eef_pose_gripper"],
+            "shape": ["T", 7],
+            "dtype": "float32",
+            "normalized": False,
+            "frame": "base",
+            "control_mode": "cartesian_delta_position",
+            "control_hz": 20,
+            "components": [],
+            "chunk": {"max_chunk_size": 4, "preferred_chunk_size": 4, "switch_policy": "hard_switch"},
+        },
+        "safety": {"require_target_side_validation": True, "stop_on_nan": True, "stop_on_timeout": True},
+        "capabilities": {"available_bridges": ["bridge://safety_clamp"]},
+    }
+
+
 def _scheduled(
     tmp_path: Path,
     *,
@@ -132,6 +154,7 @@ def _scheduled(
         tmp_path / "configs/runtime/perception/dummy_sim.perception.yaml",
         perception_config or _perception_config(),
     )
+    _write_yaml(tmp_path / "configs/runtime/contracts/dummy_sim.runtime.yaml", _runtime_contract())
     target = TargetSpec.model_validate(
         {
             "id": "dummy_sim",
@@ -140,7 +163,12 @@ def _scheduled(
             "enabled": True,
             "workspace": "workspaces/dummy_sim",
             "supported_skills": ["perception_skill"],
-            "adapter": "dummy_openpi_adapter",
+            "runtime": {
+                "target_runtime": "DummySimTargetRuntime",
+                "target_endpoint": "targetws://local/dummy_sim",
+                "target_adapter": "target_adapter://dummy_sim_adapter",
+                "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
+            },
             "perception": {
                 "enabled": True,
                 "sensor_config_ref": "configs/runtime/sensors/dummy_sim.sensors.yaml",
@@ -153,9 +181,10 @@ def _scheduled(
     skill = SkillSpec.model_validate(
         {
             "id": "perception_skill",
-            "category": "debug",
+            "category": "vla",
             "runtime": "OpenPISimSkillRuntime",
             "supported_target_types": ["sim"],
+            "policy_adapter": "policy_adapter://dummy_openpi_adapter",
             "requires": {
                 "sensors": sensors or ["front_rgb", "proprio"],
                 "environment_outputs": outputs or [],
@@ -168,7 +197,7 @@ def _scheduled(
         "target_ref": "target://dummy_sim",
         "skill_ref": "skill://perception_skill",
         "task_description": "inspect",
-        "routing": {"policy_endpoint": "dummy://local", "adapter": "dummy_openpi_adapter"},
+        "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
     }
     from PhyAgentOS.runtime.schemas import SessionSpec
 
@@ -188,13 +217,18 @@ def test_perception_schema_defaults_validate() -> None:
             "type": "sim",
             "workspace": "workspaces/dummy_sim",
             "supported_skills": [],
-            "adapter": "dummy_openpi_adapter",
+            "runtime": {
+                "target_runtime": "DummySimTargetRuntime",
+                "target_endpoint": "targetws://local/dummy_sim",
+                "target_adapter": "target_adapter://dummy_sim_adapter",
+                "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
+            },
         }
     )
     skill = SkillSpec.model_validate(
         {
             "id": "noop",
-            "category": "debug",
+            "category": "vla",
             "runtime": "NoopRuntime",
             "supported_target_types": ["sim"],
         }
@@ -408,7 +442,7 @@ def test_supervisor_rejects_missing_plugin_required_observation_before_episode(t
     assert WatchdogSupervisor(tmp_path, worker_id="test-worker").run_once() is True
 
     session = read_yaml_block(tmp_path / "SESSIONS.md")["sessions"][0]
-    assert session["status"] == "rejected"
+    assert session["status"] == "failed"
     assert "observation channel missing for sensor front_depth" in session["result"]["error_message"]
     assert not (tmp_path / "ENVIRONMENT.md").exists()
     assert not (tmp_path / "artifacts" / "runtime" / "sess_perception" / "episode.json").exists()
@@ -427,7 +461,7 @@ def test_supervisor_rejects_pipeline_that_does_not_generate_requested_outputs(tm
     assert WatchdogSupervisor(tmp_path, worker_id="test-worker").run_once() is True
 
     session = read_yaml_block(tmp_path / "SESSIONS.md")["sessions"][0]
-    assert session["status"] == "rejected"
+    assert session["status"] == "failed"
     assert "did not generate required outputs" in session["result"]["error_message"]
     assert "objects_3d" in session["result"]["error_message"]
     assert not (tmp_path / "ENVIRONMENT.md").exists()
@@ -481,6 +515,7 @@ def _write_workspace(
         tmp_path / "configs/runtime/perception/dummy_sim.perception.yaml",
         perception_config or _perception_config(),
     )
+    _write_yaml(tmp_path / "configs/runtime/contracts/dummy_sim.runtime.yaml", _runtime_contract())
     write_yaml_block(
         tmp_path / "TARGETS.md",
         "Runtime Targets",
@@ -494,7 +529,12 @@ def _write_workspace(
                     "enabled": True,
                     "workspace": "workspaces/dummy_sim",
                     "supported_skills": ["perception_skill"],
-                    "adapter": "dummy_openpi_adapter",
+                    "runtime": {
+                        "target_runtime": "DummySimTargetRuntime",
+                        "target_endpoint": "targetws://local/dummy_sim",
+                        "target_adapter": "target_adapter://dummy_sim_adapter",
+                        "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
+                    },
                     "perception": {
                         "enabled": True,
                         "sensor_config_ref": "configs/runtime/sensors/dummy_sim.sensors.yaml",
@@ -518,9 +558,10 @@ def _write_workspace(
             "skills": [
                 {
                     "id": "perception_skill",
-                    "category": "debug",
+                    "category": "vla",
                     "runtime": "OpenPISimSkillRuntime",
                     "supported_target_types": ["sim"],
+                    "policy_adapter": "policy_adapter://dummy_openpi_adapter",
                     "requires": {
                         "sensors": sensors,
                         "environment_outputs": outputs,
@@ -541,8 +582,8 @@ def _write_workspace(
                     "target_ref": "target://dummy_sim",
                     "skill_ref": "skill://perception_skill",
                     "task_description": "inspect",
-                    "routing": {"policy_endpoint": "dummy://local", "adapter": "dummy_openpi_adapter"},
-                    "execution": {"max_steps": 5, "replan_every": 1, "action_chunk_mode": "open_loop"},
+                    "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
+                    "execution": {"max_steps": 5, "replan_every_steps": 1, "action_chunk_mode": "chunk_buffer"},
                 }
             ],
         },

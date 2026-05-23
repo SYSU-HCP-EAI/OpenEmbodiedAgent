@@ -22,10 +22,12 @@ class SkillSpec(BaseModel):
     runtime: str
     supported_target_types: list[Literal["sim", "real_robot"]]
     policy_client: str | None = None
+    policy_adapter: str | None = None
     supports_chunk: bool = False
     default_replan_every: int = 1
     input_contract: dict[str, Any] = Field(default_factory=dict)
     output_contract: dict[str, Any] = Field(default_factory=dict)
+    adapter_requirements: dict[str, Any] = Field(default_factory=dict)
     requires: SkillRequirements = Field(default_factory=SkillRequirements)
 
 

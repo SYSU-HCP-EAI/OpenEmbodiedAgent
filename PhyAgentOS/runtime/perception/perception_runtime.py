@@ -38,7 +38,11 @@ class PerceptionRuntime:
         started = perf_counter()
         run_id = f"perc_{uuid4().hex[:12]}"
         if observation is None:
-            observation = target.reset({"session_id": plan.session_id, "perception_preflight": True})
+            observation_getter = getattr(target, "observe_for_environment", None)
+            if callable(observation_getter):
+                observation = observation_getter({"session_id": plan.session_id, "environment_refresh": True})
+            else:
+                observation = target.observe()
         frame = self.frame_builder.build(plan, observation)
         delta = self.pipeline.run(plan, frame)
         self._check_generated_outputs(plan, delta.generated_outputs)

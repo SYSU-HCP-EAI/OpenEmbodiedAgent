@@ -18,7 +18,7 @@ def _write_sessions(path):
                     "skill_ref": "skill://openpi_sim_vla",
                     "task_description": "move",
                     "status": "pending",
-                    "routing": {"policy_endpoint": "dummy://local", "adapter": "dummy_openpi_adapter"},
+                    "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
                 }
             ],
         },
@@ -40,12 +40,27 @@ def test_claim_and_double_claim_prevention(tmp_path) -> None:
     assert claimed.claim_token
 
 
+def test_claim_lock_prevents_competing_registry_claims(tmp_path) -> None:
+    sessions = tmp_path / "SESSIONS.md"
+    _write_sessions(sessions)
+    registry_a = SessionRegistry(sessions)
+    registry_b = SessionRegistry(sessions)
+
+    assert registry_a.try_claim("sess_1", "worker-a") is True
+    assert registry_b.try_claim("sess_1", "worker-b") is False
+    assert (tmp_path / "SESSIONS.md.lock").exists()
+
+    claimed = registry_b.get_session("sess_1")
+    assert claimed.claimed_by == "worker-a"
+
+
 def test_running_and_succeeded(tmp_path) -> None:
     sessions = tmp_path / "SESSIONS.md"
     _write_sessions(sessions)
     registry = SessionRegistry(sessions)
 
     assert registry.try_claim("sess_1", "worker-a")
+    registry.mark_preflight_checking("sess_1")
     registry.mark_running("sess_1")
     registry.mark_succeeded("sess_1", SessionResult(num_steps=3, return_value=1.0))
 
@@ -61,6 +76,7 @@ def test_mark_failed(tmp_path) -> None:
     registry = SessionRegistry(sessions)
 
     assert registry.try_claim("sess_1", "worker-a")
+    registry.mark_preflight_checking("sess_1")
     registry.mark_running("sess_1")
     registry.mark_failed("sess_1", RuntimeError("boom"))
 

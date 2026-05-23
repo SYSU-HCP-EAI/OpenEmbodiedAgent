@@ -68,16 +68,25 @@ class EnvironmentWriter:
         }
         if not scoped_global_ids:
             scoped_global_ids = set(incoming)
+        deleted_ids: set[str] = set()
+        authoritative_delete = scope.mode in {"full_scene", "query_scope"}
         for object_id, existing in list(objects.items()):
             source = existing.source
             if source.target_id == target_id and object_id in scoped_global_ids and object_id not in incoming:
-                del objects[object_id]
+                if authoritative_delete:
+                    del objects[object_id]
+                    deleted_ids.add(object_id)
+                else:
+                    existing.state = "stale"
         objects.update(incoming)
 
         relations = [
             self._rewrite_relation_ids(relation, local_to_global)
             for relation in document.scene_graph.get("relations", [])
-            if relation.get("subject") in objects and relation.get("object") in objects
+            if relation.get("subject") not in deleted_ids
+            and relation.get("object") not in deleted_ids
+            and relation.get("subject") in objects
+            and relation.get("object") in objects
         ]
         if delta.relations:
             relations.extend(self._rewrite_relation_ids(relation, local_to_global) for relation in delta.relations)

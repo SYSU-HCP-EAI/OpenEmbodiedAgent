@@ -12,17 +12,29 @@ sessions:
     priority: normal
     timeouts:
       queue_timeout_s: 30
+      preflight_timeout_s: 20
       execute_timeout_s: 120
       policy_timeout_s: 5
     retry:
       max_retries: 0
       attempted: 0
     routing:
+      target_endpoint: targetws://local/dummy_sim
       policy_endpoint: dummy://local
-      adapter: dummy_openpi_adapter
+      adapter_resolution: strict_auto
+      adapter_overrides: null
     execution:
       max_steps: 10
-      replan_every: 4
-      action_chunk_mode: open_loop
+      replan_every_steps: 4
+      action_chunk_mode: chunk_buffer
+      chunk_switch_mode: hard_switch
+    runtime_hints:
+      perception_queries: []
+      force_environment_refresh: false
+      preferred_replan_every_steps: 4
+    safety_profile:
+      profile: default_simulation
+      workspace_bounds: default
+      stop_on_policy_timeout: true
     result: {}
 ```

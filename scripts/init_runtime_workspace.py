@@ -16,6 +16,7 @@ RUNTIME_TEMPLATE_NAMES = ("TARGETS.md", "SKILLS.md", "SESSIONS.md")
 RUNTIME_CONFIG_TEMPLATE_NAMES = (
     "configs/runtime/sensors/dummy_sim.sensors.yaml",
     "configs/runtime/perception/dummy_sim.perception.yaml",
+    "configs/runtime/contracts/dummy_sim.runtime.yaml",
 )
 
 

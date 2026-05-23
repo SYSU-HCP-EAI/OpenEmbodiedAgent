@@ -10,9 +10,13 @@ targets:
     workspace: workspaces/dummy_sim
     supported_skills:
       - openpi_sim_vla
-    adapter: dummy_openpi_adapter
+    runtime:
+      target_runtime: DummySimTargetRuntime
+      target_endpoint: targetws://local/dummy_sim
+      target_adapter: target_adapter://dummy_sim_adapter
+      runtime_contract_ref: configs/runtime/contracts/dummy_sim.runtime.yaml
     perception:
-      enabled: false
+      enabled: true
       strict_preflight: true
       sensor_config_ref: configs/runtime/sensors/dummy_sim.sensors.yaml
       perception_config_ref: configs/runtime/perception/dummy_sim.perception.yaml
@@ -23,6 +27,8 @@ targets:
         image_size: 16
         state_dim: 8
       action:
+        id: dummy_delta_eef_gripper_v1
         action_dim: 7
         chunk_size: 4
+        max_chunk_size: 4
 ```

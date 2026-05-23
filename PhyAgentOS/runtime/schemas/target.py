@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TargetPerceptionRefs(BaseModel):
@@ -17,7 +17,16 @@ class TargetPerceptionRefs(BaseModel):
     config_version: str | None = None
 
 
+class TargetRuntimeSpec(BaseModel):
+    target_runtime: str
+    target_endpoint: str
+    target_adapter: str
+    runtime_contract_ref: Path
+
+
 class TargetSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     id: str
     type: Literal["sim", "real_robot"]
     embodiment: str | None = None
@@ -26,7 +35,7 @@ class TargetSpec(BaseModel):
     enabled: bool = True
     workspace: str
     supported_skills: list[str] = Field(default_factory=list)
-    adapter: str
+    runtime: TargetRuntimeSpec
     perception: TargetPerceptionRefs = Field(default_factory=TargetPerceptionRefs)
     config: dict[str, Any] = Field(default_factory=dict)
 

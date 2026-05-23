@@ -9,10 +9,14 @@ skills:
     supported_target_types:
       - sim
     policy_client: dummy
+    policy_adapter: policy_adapter://dummy_openpi_adapter
     supports_chunk: true
     default_replan_every: 4
     requires:
-      sensors: []
+      sensors:
+        - front_rgb
+        - wrist_rgb
+        - proprio
       environment_outputs: []
       strict_environment_contract: true
     input_contract:
@@ -22,8 +26,24 @@ skills:
       state: observation/state
       prompt: prompt
     output_contract:
-      actions: actions
-      shape:
-        - T
-        - A
+      action:
+        action_space_id: dummy_policy_delta_eef_gripper_v1
+        tensor_key: actions
+        shape:
+          - T
+          - 7
+        dtype: float32
+        normalized: false
+        representation: delta_eef_pose_gripper
+        frame: base
+        chunk:
+          variable_T: true
+          default_T: 4
+          policy_hz: 20
+    adapter_requirements:
+      allowed_bridges:
+        - bridge://safety_clamp
+      forbidden:
+        - implicit_shape_truncation
+        - implicit_representation_cast
 ```

@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PhyAgentOS 感知模块结构图</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #667085;
+      --line: #c9d4e5;
+      --bg: #f7f9fc;
+      --panel: #ffffff;
+      --runtime: #e8f3ff;
+      --config: #fff4db;
+      --plugin: #eaf8ec;
+      --state: #f1eafd;
+      --danger: #ffe8e4;
+      --accent: #2563eb;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.5;
+    }
+
+    header {
+      padding: 32px 5vw 18px;
+      background: #0f172a;
+      color: white;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      letter-spacing: 0;
+    }
+
+    header p {
+      max-width: 980px;
+      margin: 0;
+      color: #d5deef;
+    }
+
+    main {
+      width: min(1440px, 96vw);
+      margin: 24px auto 48px;
+    }
+
+    section {
+      margin: 22px 0;
+      padding: 22px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 21px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    p { margin: 6px 0 0; }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #eef2f7;
+      font-size: 0.92em;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .swatch {
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+
+    .swatch.config { background: var(--config); }
+    .swatch.runtime { background: var(--runtime); }
+    .swatch.plugin { background: var(--plugin); }
+    .swatch.state { background: var(--state); }
+    .swatch.danger { background: var(--danger); }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.95fr) 40px minmax(360px, 1.35fr) 40px minmax(280px, 1fr);
+      gap: 14px;
+      align-items: stretch;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .arrow-col {
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .box {
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      min-height: 84px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .box p {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .config { background: var(--config); }
+    .runtime { background: var(--runtime); }
+    .plugin { background: var(--plugin); }
+    .state { background: var(--state); }
+    .danger { background: var(--danger); }
+
+    .lane-title {
+      padding: 7px 10px;
+      border-radius: 6px;
+      background: #111827;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(126px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .step {
+      position: relative;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+      min-height: 124px;
+    }
+
+    .step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -18px;
+      top: 45%;
+      color: var(--accent);
+      font-weight: 800;
+      z-index: 2;
+    }
+
+    .step .num {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      margin-bottom: 8px;
+      border-radius: 999px;
+      color: white;
+      background: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .step p {
+      font-size: 13px;
+    }
+
+    .matrix {
+      display: grid;
+      grid-template-columns: 1.1fr 1.3fr 1.4fr;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .matrix div {
+      padding: 10px 12px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+
+    .matrix div:nth-child(3n) { border-right: 0; }
+    .matrix .head {
+      background: #101828;
+      color: white;
+      font-weight: 700;
+    }
+
+    .note {
+      padding: 12px 14px;
+      border-left: 4px solid var(--accent);
+      background: #eef5ff;
+      border-radius: 6px;
+      color: #28415f;
+    }
+
+    @media (max-width: 980px) {
+      .architecture {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        overflow-x: visible;
+      }
+
+      .arrow-col {
+        transform: rotate(90deg);
+        min-height: 32px;
+      }
+
+      .flow {
+        grid-template-columns: 1fr;
+      }
+
+      .step:not(:last-child)::after {
+        content: "↓";
+        right: 50%;
+        top: auto;
+        bottom: -24px;
+      }
+
+      .matrix {
+        grid-template-columns: 1fr;
+      }
+
+      .matrix div,
+      .matrix div:nth-child(3n) {
+        border-right: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PhyAgentOS 感知模块结构图</h1>
+    <p>基于当前代码实现：runtime workspace 负责协议与执行，agent/shared workspace 接收感知写入的 ENVIRONMENT.md，普通 session 摘要写入 LOG.md。</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>模块总览</h2>
+      <div class="architecture">
+        <div class="stack">
+          <div class="lane-title">协议与配置</div>
+          <div class="box config">
+            <h3>runtime workspace</h3>
+            <p><code>TARGETS.md</code>、<code>SKILLS.md</code>、<code>SESSIONS.md</code>、<code>LOG.md</code></p>
+          </div>
+          <div class="box config">
+            <h3>外部传感器 YAML</h3>
+            <p><code>configs/runtime/sensors/&lt;target&gt;.sensors.yaml</code><br>声明 sensor id、modality、observation_key、shape、calibration。</p>
+          </div>
+          <div class="box config">
+            <h3>外部感知 YAML</h3>
+            <p><code>configs/runtime/perception/&lt;target&gt;.perception.yaml</code><br>声明 models、plugin_candidates、pipelines。</p>
+          </div>
+        </div>
+
+        <div class="arrow-col">→</div>
+
+        <div class="stack">
+          <div class="lane-title">runtime/perception</div>
+          <div class="box runtime">
+            <h3>PerceptionRuntime</h3>
+            <p><code>runtime/perception/perception_runtime.py</code><br>协调 resolver、preflight、frame builder、pipeline、writer。</p>
+          </div>
+          <div class="box runtime">
+            <h3>ConfigResolver + Preflight</h3>
+            <p>解析 YAML；严格检查 sensor、pipeline、plugin、model、checkpoint、endpoint。</p>
+          </div>
+          <div class="box runtime">
+            <h3>SensorFrameBuilder</h3>
+            <p>从 target observation 中按 <code>observation_key</code> 取通道，并校验 dtype/shape。</p>
+          </div>
+          <div class="box runtime">
+            <h3>PluginPipeline</h3>
+            <p>按 pipeline 的 <code>use_plugins</code> 顺序执行插件，生成 <code>EnvironmentDelta</code>。</p>
+          </div>
+          <div class="box runtime">
+            <h3>EnvironmentWriter</h3>
+            <p>负责全局 object id、refresh scope、关系重写、原子写入 <code>ENVIRONMENT.md</code>。</p>
+          </div>
+        </div>
+
+        <div class="arrow-col">→</div>
+
+        <div class="stack">
+          <div class="lane-title">插件与状态输出</div>
+          <div class="box plugin">
+            <h3>perception_plugins</h3>
+            <p><code>BasePerceptionPlugin</code>、<code>dummy_segmenter</code>、<code>rgbd_object_builder</code>、<code>sim_oracle</code>。</p>
+          </div>
+          <div class="box plugin">
+            <h3>重模型懒加载插件</h3>
+            <p>SAM、YOLO、Open3D、ROS、LiDAR SDK 只能在 <code>preflight()</code> 或 <code>run()</code> 中懒加载。</p>
+          </div>
+          <div class="box state">
+            <h3>agent/shared workspace</h3>
+            <p><code>ENVIRONMENT.md</code> 写入这里。上层 Agent 应读取同一个 shared workspace。</p>
+          </div>
+          <div class="box state">
+            <h3>runtime workspace</h3>
+            <p><code>LOG.md</code> 保存 session history，<code>artifacts/runtime</code> 保存 episode。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><i class="swatch config"></i>协议/配置文件</span>
+        <span><i class="swatch runtime"></i>runtime/perception 代码</span>
+        <span><i class="swatch plugin"></i>感知插件</span>
+        <span><i class="swatch state"></i>状态输出</span>
+        <span><i class="swatch danger"></i>严格拒绝路径</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Session 进入感知的执行链路</h2>
+      <div class="flow">
+        <div class="step">
+          <span class="num">1</span>
+          <h3>Watchdog claim</h3>
+          <p><code>WatchdogSupervisor.run_once()</code> 选中 pending session 并 claim。</p>
+        </div>
+        <div class="step">
+          <span class="num">2</span>
+          <h3>Health preflight</h3>
+          <p>检查 target enabled、timeout、execution、policy endpoint 等轻量 runtime 条件。</p>
+        </div>
+        <div class="step">
+          <span class="num">3</span>
+          <h3>Resolve perception plan</h3>
+          <p>根据 skill requirements 决定是否需要感知，并解析 sensor/perception YAML。</p>
+        </div>
+        <div class="step">
+          <span class="num">4</span>
+          <h3>Strict preflight</h3>
+          <p>缺 sensor、model、pipeline、checkpoint、endpoint 时直接 reject，不进入 running。</p>
+        </div>
+        <div class="step">
+          <span class="num">5</span>
+          <h3>Build frame + plugins</h3>
+          <p>从 target observation 构造 SensorFrame，按 pipeline 顺序执行插件。</p>
+        </div>
+        <div class="step">
+          <span class="num">6</span>
+          <h3>Write state</h3>
+          <p>感知结果写入 shared <code>ENVIRONMENT.md</code>；session 结果写入 runtime <code>LOG.md</code>。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>关键文件职责</h2>
+      <div class="matrix">
+        <div class="head">文件</div>
+        <div class="head">职责</div>
+        <div class="head">用户需要关注什么</div>
+
+        <div><code>runtime/watchdog/supervisor.py</code></div>
+        <div>串起 session 调度、health preflight、perception preflight、target/policy/skill execution。</div>
+        <div>启动时可传 <code>--environment-workspace</code>，确保 Agent 能读到环境文件。</div>
+
+        <div><code>runtime/perception/config_resolver.py</code></div>
+        <div>读取 target/skill，并加载 sensor/perception YAML，选择满足 outputs 的 pipeline。</div>
+        <div>确认 <code>TARGETS.md</code> 中 config ref 路径正确。</div>
+
+        <div><code>runtime/perception/preflight.py</code></div>
+        <div>执行严格准入检查，失败时构造可操作错误。</div>
+        <div>根据 reject 信息修 sensor、模型、pipeline 或 endpoint。</div>
+
+        <div><code>runtime/perception/sensor_frame_builder.py</code></div>
+        <div>把 target observation 映射为插件可读的 SensorFrame。</div>
+        <div><code>observation_key</code> 必须和 target observation 实际字段匹配。</div>
+
+        <div><code>runtime/perception/plugin_pipeline.py</code></div>
+        <div>实例化并按顺序运行 perception plugins。</div>
+        <div>插件 id 必须是内置插件，或提供 importable module/class。</div>
+
+        <div><code>runtime/perception/environment_writer.py</code></div>
+        <div>合并对象、分配全局 id、处理 refresh scope、重写关系并写 ENVIRONMENT.md。</div>
+        <div>插件应输出稳定 local id 和可用于锚定的 <code>pose.frame_id/position_m</code>。</div>
+
+        <div><code>plugins/perception_plugins/base.py</code></div>
+        <div>插件基类，定义 <code>preflight()</code> 和 <code>run()</code>。</div>
+        <div>重依赖必须懒加载，插件输出 <code>EnvironmentDelta</code>。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>当前实现边界</h2>
+      <div class="note">
+        <p>当前版本是 dependency-free MVP：可以验证协议、preflight、插件流水线和 ENVIRONMENT.md 写入。真实模型服务、3D 几何重建、跨 target 高级 identity fusion 需要通过插件继续扩展。</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

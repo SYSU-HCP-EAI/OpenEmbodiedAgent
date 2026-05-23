@@ -23,6 +23,14 @@ class TargetStepError(RuntimeErrorBase):
     pass
 
 
+class TargetConnectionError(RuntimeErrorBase):
+    pass
+
+
+class TargetProtocolError(RuntimeErrorBase):
+    pass
+
+
 class AdapterError(RuntimeErrorBase):
     pass
 
@@ -54,6 +62,8 @@ def error_code_for(exc: Exception) -> str:
         TargetBuildError: "TARGET_BUILD",
         TargetResetError: "TARGET_RESET",
         TargetStepError: "TARGET_STEP",
+        TargetConnectionError: "TARGET_CONNECTION",
+        TargetProtocolError: "TARGET_PROTOCOL",
         AdapterError: "ADAPTER",
         PolicyTimeoutError: "POLICY_TIMEOUT",
         PolicyProtocolError: "POLICY_PROTOCOL",

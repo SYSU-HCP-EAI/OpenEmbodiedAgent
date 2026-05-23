@@ -1,6 +1,6 @@
 # PhyAgentOS Perception Runtime
 
-This directory contains the Target-Configured Perception Runtime. It lets a runtime target declare external sensor and perception YAML files, runs strict preflight before a session starts, executes dependency-lazy perception plugins, and writes compact environment state to `ENVIRONMENT.md`.
+This directory contains the Target-Configured Perception Runtime. It lets a runtime target declare external sensor and perception YAML files, runs strict config and contract preflight before a session starts, executes dependency-lazy perception plugins after the session enters `running`, and writes compact environment state to `ENVIRONMENT.md`.
 
 The current implementation is a dependency-free MVP. Built-in dummy plugins work without physical sensors or model SDKs. Heavy integrations such as SAM, YOLO, Open3D, ROS, RealSense, and LiDAR SDKs must be added as lazy-loaded plugins and must not be imported at module import time.
 
@@ -57,7 +57,11 @@ targets:
     supported_skills:
       - rekep_grasp
       - openpi_pick_place
-    adapter: franka_real_adapter
+    runtime:
+      target_runtime: FrankaTargetRuntime
+      target_endpoint: targetws://192.168.10.31:9001
+      target_adapter: target_adapter://franka_real_adapter
+      runtime_contract_ref: configs/runtime/contracts/franka_lab_a.runtime.yaml
 
     perception:
       enabled: true
@@ -74,7 +78,9 @@ Important rules:
 - `strict_preflight` is currently required to be `true`.
 - `sensor_config_ref` is required for any skill with `requires.sensors` or `requires.environment_outputs`.
 - `perception_config_ref` is required when `requires.environment_outputs` is non-empty.
+- `runtime.runtime_contract_ref` is the target action/safety contract used by compatibility preflight.
 - Relative config paths are resolved relative to the runtime workspace.
+- Adapter identifiers must use explicit URI namespaces such as `target_adapter://franka_real_adapter`.
 
 ### SKILLS.md
 
@@ -98,15 +104,32 @@ skills:
       strict_environment_contract: true
 ```
 
+Policy-backed skills also declare a policy adapter and output action contract:
+
+```yaml
+policy_adapter: policy_adapter://openpi_adapter
+output_contract:
+  action:
+    tensor_key: actions
+    shape: [T, 7]
+    dtype: float32
+    normalized: false
+    representation: delta_eef_pose_gripper
+    frame: base
+adapter_requirements:
+  allowed_bridges: [bridge://safety_clamp]
+```
+
 Behavior:
 
 - `requires.sensors: []` and `requires.environment_outputs: []` means perception is not used.
-- If `requires.sensors` is non-empty but `environment_outputs` is empty, runtime validates sensor config and target observation channels, but does not write `ENVIRONMENT.md`.
-- If `environment_outputs` is non-empty, runtime loads the perception YAML, selects a pipeline that declares full coverage for those outputs, runs the plugin pipeline, verifies that the actual `EnvironmentDelta.generated_outputs` covers every requested output, and only then writes `ENVIRONMENT.md`.
+- If `requires.sensors` is non-empty but `environment_outputs` is empty, preflight validates sensor config and observation schema declarations, but does not write `ENVIRONMENT.md`.
+- If `environment_outputs` is non-empty, preflight validates sensor/perception config and selects a pipeline that declares full coverage for those outputs. After the session enters `running`, runtime reads a target observation, checks required channels against the declared schema, runs the plugin pipeline, verifies that the actual `EnvironmentDelta.generated_outputs` covers every requested output, and only then writes `ENVIRONMENT.md`.
 
 ### SESSIONS.md
 
 Sessions select a target and a skill. They do not select perception plugins and cannot weaken strict preflight.
+They also do not bind pair adapters; runtime preflight resolves an `AdapterPlan`.
 
 Example:
 
@@ -119,8 +142,10 @@ sessions:
     task_description: "pick up the red apple on the table"
     status: pending
     routing:
-      policy_endpoint: dummy://local
-      adapter: franka_real_adapter
+      target_endpoint: targetws://192.168.10.31:9001
+      policy_endpoint: policyws://10.0.0.8:8800/openpi
+      adapter_resolution: strict_auto
+      adapter_overrides: null
 ```
 
 ## Sensor Config YAML
@@ -264,7 +289,7 @@ Pipeline selection is strict:
 - Selected plugin `requires_sensors` entries are merged into the required sensor set and checked during preflight.
 - Plugin `requires_plugins`, `requires_sensors`, `model_ref`, and importable plugin module references are checked during preflight.
 - `plugin_candidates[].requires_outputs` is currently documentation for plugin authors; the runtime does not yet validate per-plugin intermediate outputs.
-- A pipeline declaration is not enough to succeed. After execution, the merged `EnvironmentDelta.generated_outputs` must cover every requested output or the session is rejected before environment state is written.
+- A pipeline declaration is not enough to succeed. After execution, the merged `EnvironmentDelta.generated_outputs` must cover every requested output or the environment refresh fails before environment state is written.
 
 Supported model providers:
 
@@ -473,7 +498,7 @@ sessions:
 
 `LOG.md` is a temporary runtime history file. It is intentionally separate from `ENVIRONMENT.md`.
 
-## Strict Preflight Failure Behavior
+## Failure Behavior
 
 If perception preflight fails:
 
@@ -483,7 +508,12 @@ If perception preflight fails:
 - Skill runtime is not started.
 - No perception objects are written to `ENVIRONMENT.md`.
 
-The same failure behavior applies if a pipeline runs but does not actually generate all requested outputs.
+If a target observation is missing a required channel, has a mismatched dtype/shape, or a pipeline runs but does not actually generate all requested outputs:
+
+- Session is marked `failed`.
+- The failure happens after the session has entered `running`.
+- Skill runtime is not started.
+- No partial perception objects are written to `ENVIRONMENT.md`.
 
 Common rejection causes:
 

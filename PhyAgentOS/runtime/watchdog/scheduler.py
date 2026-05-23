@@ -85,9 +85,9 @@ class SessionScheduler:
 
     def _find_target(self, document: TargetsDocument, target_id: str) -> TargetSpec:
         for target in document.targets:
-            if target.id == target_id and target.enabled:
+            if target.id == target_id:
                 return target
-        raise SchemaValidationError(f"enabled target not found: {target_id}")
+        raise SchemaValidationError(f"target not found: {target_id}")
 
     def _find_skill(self, document: SkillsDocument, skill_id: str) -> SkillSpec:
         for skill in document.skills:

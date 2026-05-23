@@ -7,10 +7,12 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from PhyAgentOS.runtime.adapters.factory import build_adapter
+from PhyAgentOS.runtime.adapters.factory import build_adapter_stack
 from PhyAgentOS.runtime.perception import PerceptionRuntime
 from PhyAgentOS.runtime.policy.factory import build_policy_client
+from PhyAgentOS.runtime.preflight import RuntimeCompatibilityPreflight
 from PhyAgentOS.runtime.schemas import SessionsDocument, SkillsDocument, TargetsDocument
+from PhyAgentOS.runtime.schemas.result import SessionResult
 from PhyAgentOS.runtime.state_io.markdown_yaml import read_yaml_block
 from PhyAgentOS.runtime.state_io.workspace_paths import RuntimeWorkspacePaths
 from PhyAgentOS.runtime.watchdog.errors import SchemaValidationError
@@ -47,6 +49,7 @@ class WatchdogSupervisor:
         self.perception_runtime = PerceptionRuntime(self.workspace, self.environment_workspace)
         self.health_monitor = HealthMonitor()
         self.failure_escalator = FailureEscalator()
+        self.preflight = RuntimeCompatibilityPreflight(self.workspace, self.skill_registry)
 
     def run_once(self) -> bool:
         sessions_doc, targets_doc, skills_doc = self._load_runtime_documents()
@@ -65,38 +68,69 @@ class WatchdogSupervisor:
             session = self.registry.get_session(session_id)
             _, targets_doc, skills_doc = self._load_runtime_documents()
             scheduled = self.scheduler.resolve_session(session, targets_doc, skills_doc)
+            self.registry.mark_preflight_checking(session_id)
+            session = self.registry.get_session(session_id)
+            scheduled = self.scheduler.resolve_session(session, targets_doc, skills_doc)
             health_report = self.health_monitor.preflight(scheduled)
             if not health_report.ok:
                 raise SchemaValidationError(health_report.summary())
 
             perception_plan = self.perception_runtime.resolve_and_check(scheduled)
-            if perception_plan is not None:
-                preflight_target = self.target_registry.build(scheduled.target_spec)
-                try:
-                    preflight_target.build()
-                    preflight_observation = preflight_target.reset(
-                        {"session_id": session_id, "perception_preflight": True}
-                    )
-                    self.perception_runtime.frame_builder.build(perception_plan, preflight_observation)
-                    self.perception_runtime.refresh_environment(
-                        perception_plan,
-                        preflight_target,
-                        observation=preflight_observation,
-                    )
-                finally:
-                    preflight_target.close()
+            preflight_result = self.preflight.check(scheduled, perception_plan)
+            if preflight_result.verdict == "rejected":
+                result = SessionResult(
+                    status="rejected",
+                    success=False,
+                    error_code="RUNTIME_PREFLIGHT_FAILED",
+                    error_message=self._preflight_error_message(preflight_result),
+                    metadata={"preflight": preflight_result.model_dump(mode="json", exclude_none=True)},
+                )
+                self.result_writer.write_lesson(
+                    session,
+                    scheduled.target_spec.id,
+                    scheduled.skill_id,
+                    "preflight_checking",
+                    result.error_code,
+                    result.error_message or "runtime compatibility preflight failed",
+                    preflight_result.model_dump(mode="json", exclude_none=True),
+                )
+                self.registry.mark_rejected(session_id, result)
+                return True
+
+            self._write_preflight_metadata(session_id, preflight_result)
 
             self.registry.mark_running(session_id)
             session = self.registry.get_session(session_id)
             scheduled = self.scheduler.resolve_session(session, targets_doc, skills_doc)
-            target = self.target_registry.build(scheduled.target_spec)
-            adapter = build_adapter(session.routing.adapter or scheduled.target_spec.adapter)
-            policy_client = self._build_policy_client(session, scheduled.target_spec)
-            runtime = self.skill_registry.build(scheduled.skill_spec.runtime)
+            target_endpoint = session.routing.target_endpoint or scheduled.target_spec.runtime.target_endpoint
+            target = self.target_registry.build(scheduled.target_spec, target_endpoint=target_endpoint)
+            policy_client = None
             try:
-                result = runtime.run(session, target, adapter, policy_client)
+                if perception_plan is not None:
+                    target.build()
+                    observation = target.observe_for_environment(
+                        {"session_id": session_id, "environment_refresh": True}
+                    )
+                    self.perception_runtime.refresh_environment(
+                        perception_plan,
+                        target,
+                        observation=observation,
+                    )
+                target_adapter, policy_adapter, action_bridges = build_adapter_stack(preflight_result.adapter_plan)
+                policy_client = self._build_policy_client(session, scheduled.target_spec)
+                runtime = self.skill_registry.build(scheduled.skill_spec.runtime)
+                result = runtime.run(
+                    session,
+                    target,
+                    target_adapter,
+                    policy_adapter,
+                    action_bridges,
+                    policy_client,
+                    preflight_result.adapter_plan,
+                )
             finally:
-                policy_client.close()
+                if policy_client is not None:
+                    policy_client.close()
                 target.close()
 
             result = self.result_writer.write_episode(
@@ -134,8 +168,28 @@ class WatchdogSupervisor:
         action_dim = target_spec.config.get("action_dim", action_cfg.get("action_dim", 7))
         chunk_size = target_spec.config.get("chunk_size", action_cfg.get("chunk_size", 4))
         return build_policy_client(
-            session.routing.policy_endpoint,
+            session.routing.policy_endpoint or "dummy://local",
             timeout_s=session.timeouts.policy_timeout_s,
             action_dim=int(action_dim),
             chunk_size=int(chunk_size),
         )
+
+    def _preflight_error_message(self, preflight_result) -> str:
+        if not preflight_result.missing_items:
+            return "runtime compatibility preflight failed"
+        return "; ".join(
+            f"{item.code}: {item.field} expected {item.expected}"
+            + (f", found {item.found}" if item.found is not None else "")
+            for item in preflight_result.missing_items
+        )
+
+    def _write_preflight_metadata(self, session_id: str, preflight_result) -> None:
+        document = self.registry.load()
+        for session in document.sessions:
+            if session.session_id != session_id:
+                continue
+            metadata = dict(session.result.metadata)
+            metadata["preflight"] = preflight_result.model_dump(mode="json", exclude_none=True)
+            session.result.metadata = metadata
+            self.registry.save(document)
+            return

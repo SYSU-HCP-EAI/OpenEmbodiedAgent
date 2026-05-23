@@ -78,3 +78,48 @@ class ResultWriter:
         if payload.get("version") != "runtime_session_history_v1":
             return {"version": "runtime_session_history_v1", "sessions": {}}
         return payload
+
+    def write_lesson(
+        self,
+        session: SessionSpec,
+        target_id: str,
+        skill_id: str,
+        phase: str,
+        error_code: str | None,
+        summary: str,
+        metadata: dict,
+    ) -> None:
+        path = self.workspace / "LESSONS.md"
+        payload = self._load_lessons(path)
+        lessons = payload.get("lessons")
+        if not isinstance(lessons, list):
+            lessons = []
+        lessons.append(
+            {
+                "id": f"lesson_{session.session_id}_{len(lessons) + 1}",
+                "timestamp": utc_now().isoformat(),
+                "session_id": session.session_id,
+                "phase": phase,
+                "error_code": error_code,
+                "target_id": target_id,
+                "skill_id": skill_id,
+                "summary": summary,
+                "metadata": metadata,
+            }
+        )
+        write_yaml_block(
+            path,
+            "Runtime Lessons",
+            {"version": "runtime_lessons_v1", "updated_at": utc_now().isoformat(), "lessons": lessons},
+        )
+
+    def _load_lessons(self, path: Path) -> dict:
+        if not path.exists():
+            return {"version": "runtime_lessons_v1", "lessons": []}
+        try:
+            payload = read_yaml_block(path)
+        except Exception:
+            return {"version": "runtime_lessons_v1", "lessons": []}
+        if not isinstance(payload.get("lessons"), list):
+            payload["lessons"] = []
+        return payload

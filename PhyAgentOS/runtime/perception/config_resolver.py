@@ -55,6 +55,10 @@ class PerceptionConfigResolver:
             raise SchemaValidationError(
                 f"target {target.id} perception.enabled must be true for skill {scheduled.skill_id}"
             )
+        if perception_refs.strict_preflight is not True:
+            raise SchemaValidationError(
+                f"target {target.id} perception.strict_preflight must be true"
+            )
         if perception_refs.sensor_config_ref is None:
             raise SchemaValidationError(
                 f"TARGETS.md targets[{target.id}].perception.sensor_config_ref is required"
@@ -82,6 +86,10 @@ class PerceptionConfigResolver:
                 )
             perception_path = self.resolve_path(perception_refs.perception_config_ref)
             perception_config = self._load_perception_config(perception_path)
+            if perception_config.strict_preflight is not True:
+                raise SchemaValidationError(
+                    f"{perception_path} strict_preflight must be true"
+                )
             if perception_config.target_id != target.id:
                 raise SchemaValidationError(
                     f"{perception_path} target_id {perception_config.target_id!r} does not match target {target.id!r}"

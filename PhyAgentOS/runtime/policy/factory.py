@@ -16,6 +16,8 @@ def parse_policy_endpoint(endpoint: str) -> tuple[str, str, int]:
         return ("dummy", "local", 0)
     if parsed.scheme == "openpi" and parsed.hostname and parsed.port:
         return ("openpi", parsed.hostname, int(parsed.port))
+    if parsed.scheme == "policyws" and parsed.hostname and parsed.port:
+        return ("policyws", parsed.hostname, int(parsed.port))
     raise PolicyConnectionError(f"unsupported policy endpoint: {endpoint}")
 
 
@@ -29,6 +31,6 @@ def build_policy_client(
     kind, host, port = parse_policy_endpoint(endpoint)
     if kind == "dummy":
         return DummyPolicyClient(action_dim=action_dim, chunk_size=chunk_size)
-    if kind == "openpi":
+    if kind in {"openpi", "policyws"}:
         return OpenPIClientPolicyWrapper(host=host, port=port, timeout_s=timeout_s)
     raise PolicyConnectionError(f"unsupported policy endpoint kind: {kind}")

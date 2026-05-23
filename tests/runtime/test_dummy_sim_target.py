@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from PhyAgentOS.runtime.targets.base import BaseRolloutTarget
-from PhyAgentOS.runtime.targets.sim.dummy_sim_target import DummySimTarget
+from PhyAgentOS.runtime.targets.local.dummy_sim_target import DummySimTarget
 
 
 class IncompleteTarget(BaseRolloutTarget):

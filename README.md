@@ -17,14 +17,14 @@
 
 ## Current Status
 
-New framework implementation supporting debugging for DummySimTarget, DummyOpenPIAdapter, and DummyPolicyClient, with a componentized serial runtime watchdog for session scheduling, preflight health checks, runtime registries, and retry/failure escalation.
+New framework implementation supporting a session-centered runtime with DummySimTarget, DummyOpenPIAdapter, and DummyPolicyClient smoke paths. The serial `WatchdogSupervisor` claims sessions with a workspace lock, runs strict compatibility preflight, resolves an `AdapterPlan`, supervises execution, and writes results, lessons, and artifacts back to the workspace. Runtime targets, skill runtimes, adapters, and bridges are registered through lightweight Python registries; adapter and bridge identifiers use explicit URI namespaces such as `target_adapter://`, `policy_adapter://`, and `bridge://`.
 
 Next Steps:
 
 - **Expand** runtime registries to real benchmark and robot targets
 - **Add** concurrent multi-target scheduling and resource arbitration
-- **Implement** the protocol
-- **Test** the perception plugin to complete the closed loop
+- **Expand** runtime communication clients to real WebSocket target and policy services
+- **Harden** perception plugins across RGB-D, point cloud, and real camera deployments
 
 ## Long Demo    
 [![Watch the video](https://img.youtube.com/vi/LtUWamZRyhM/maxresdefault.jpg)](https://youtu.be/LtUWamZRyhM?si=UjKNdqFnO1knfWbX)
@@ -44,7 +44,7 @@ PhyAgentOS utilizes a **"State-as-a-File"** protocol matrix, natively supporting
 *   🔌 **Dynamic Plugin Mechanism**: Supports dynamic loading of external hardware drivers via `hal/drivers/`, allowing for new hardware support without modifying core code.
 *   🛡️ **Safety Correction Mechanism**: Strict action verification and `LESSONS.md` experience library prevent Agent workflows from going out of control.
 *   🎮 **Simulation Loop**: Built-in lightweight simulation support allows verification of the full chain from natural language instructions to physical state changes without real hardware.
-*   🧪 **Runtime Session Loop**: A session-centered runtime (`SESSIONS.md` → componentized `WatchdogSupervisor` → policy client → simulation target → artifacts) is available for dependency-light dummy simulation smoke tests. The current supervisor is serial, chooses pending sessions by priority, runs preflight checks, and writes retry/failure state back to `SESSIONS.md`.
+*   🧪 **Runtime Session Loop**: A session-centered runtime (`TARGETS.md` / `SKILLS.md` / `SESSIONS.md` → `WatchdogSupervisor` → `AdapterPlan` → target/policy execution → artifacts) is available for dependency-light smoke tests. The supervisor is serial, chooses pending sessions by priority, runs strict config and contract preflight before `running`, and writes results and reusable preflight failures back to `SESSIONS.md` and `LESSONS.md`.
 *   🗺️ **Semantic Navigation & Perception**: Built-in `SemanticNavigationTool` and `PerceptionService` support resolving high-level semantic goals into physical coordinates and constructing scene graphs by fusing geometric and semantic information.
 
 ## 🦾 Showcase
@@ -148,7 +148,7 @@ paos agent
 ```
 
 **Optional: Runtime dummy session smoke test**
-Runtime uses `TARGETS.md`, `SKILLS.md`, and `SESSIONS.md` instead of the old `ACTION.md` queue. The startup command did not change with the componentized watchdog: use `scripts/run_runtime_watchdog.py`.
+Runtime uses `TARGETS.md`, `SKILLS.md`, `SESSIONS.md`, and external YAML under `configs/runtime/` instead of the old `ACTION.md` queue. `TARGETS.md` points to a target runtime endpoint, target adapter, sensor config, and runtime contract. `SKILLS.md` declares runtime and policy adapter requirements. `SESSIONS.md` selects a target and skill; adapter plans are resolved by preflight. Sensor YAML and perception YAML are checked before execution, while actual target observation channels are validated when the runtime reads a target observation for environment refresh or skill execution.
 
 To create the default runtime protocol files:
 ```bash
@@ -163,7 +163,7 @@ For a continuous serial polling loop, omit `--once`:
 ```bash
 python scripts/run_runtime_watchdog.py --workspace /tmp/paos_runtime_smoke
 ```
-On success, the selected pending session is marked `succeeded` and an episode summary is written under `artifacts/runtime/<session_id>/episode.json`. When multiple sessions are pending, the serial scheduler chooses `high` priority before `normal` before `low`, preserving file order within the same priority.
+On success, the selected pending session is marked `succeeded` and an episode summary is written under `artifacts/runtime/<session_id>/episode.json`. Preflight failures are marked `rejected` before runtime execution starts and are recorded in `LESSONS.md`. Observation or perception pipeline failures after the session enters `running` are marked `failed` without writing a partial environment update. When multiple sessions are pending, the serial scheduler chooses `high` priority before `normal` before `low`, preserving file order within the same priority.
 
 ### 4. Interaction Example
 In the `paos agent` CLI, input:
@@ -204,6 +204,7 @@ Physical Agent Operating System/
 │   ├── SESSIONS.md         # Runtime session queue (optional)
 │   ├── TARGETS.md          # Runtime target registry (optional)
 │   ├── SKILLS.md           # Runtime skill registry (optional)
+│   ├── configs/runtime/    # Target sensor, perception, and runtime contract YAML
 │   ├── LESSONS.md          # Failure Experience Records
 │   └── SKILL.md            # Successful Workflow SOP
 ├── workspaces/             # Fleet Topology

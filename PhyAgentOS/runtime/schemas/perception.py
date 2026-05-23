@@ -84,7 +84,7 @@ class RefreshScope(BaseModel):
     target_id: str
     sensor_ids: list[str] = Field(default_factory=list)
     frame_id: str | None = None
-    mode: str = "authoritative_object_ids"
+    mode: str = "local_view"
     object_ids: list[str] = Field(default_factory=list)
     position_threshold_m: float = 0.25
 

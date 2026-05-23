@@ -1,4 +1,4 @@
-"""Dependency-free simulation target used for runtime smoke tests."""
+"""Dependency-free local target used for runtime smoke tests."""
 
 from __future__ import annotations
 
@@ -6,21 +6,23 @@ from typing import Any
 
 import numpy as np
 
-from PhyAgentOS.runtime.targets.sim.base_sim_target import BaseSimTarget
+from PhyAgentOS.runtime.targets.local.base import BaseLocalTarget
 from PhyAgentOS.runtime.watchdog.errors import TargetStepError
 
 
-class DummySimTarget(BaseSimTarget):
+class DummySimTarget(BaseLocalTarget):
     def __init__(self, config: dict[str, Any] | None = None):
         self.config = dict(config or {})
         self.step_idx = 0
         self._built = False
+        self._last_status: dict[str, Any] = {"accepted": True, "safety_status": "idle", "executed_steps": 0}
 
     def build(self) -> None:
         self._built = True
 
     def reset(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
         self.step_idx = 0
+        self._last_status = {"accepted": True, "safety_status": "ok", "executed_steps": 0}
         return self.observe()
 
     def observe(self) -> dict[str, Any]:
@@ -45,6 +47,38 @@ class DummySimTarget(BaseSimTarget):
             "done": done,
             "info": {"success": done, "step_idx": self.step_idx},
         }
+
+    def action_chunk(self, executable_action_chunk: dict[str, Any]) -> dict[str, Any]:
+        actions = np.asarray(executable_action_chunk.get("actions"), dtype=np.float32)
+        if actions.ndim != 2:
+            raise TargetStepError(f"expected action chunk [T,A], got {actions.shape}")
+        chunk_id = executable_action_chunk.get("chunk_id", "dummy_chunk")
+        total_reward = 0.0
+        last_transition: dict[str, Any] | None = None
+        for action in actions:
+            last_transition = self.step(action)
+            total_reward += float(last_transition.get("reward", 0.0))
+            if bool(last_transition.get("done", False)) or bool(last_transition.get("info", {}).get("success", False)):
+                break
+        executed_steps = int(self.step_idx)
+        success = bool(last_transition and last_transition.get("info", {}).get("success", False))
+        self._last_status = {
+            "chunk_id": chunk_id,
+            "accepted": True,
+            "buffered_steps": max(0, int(actions.shape[0]) - executed_steps),
+            "executed_steps": executed_steps,
+            "target_step_index": self.step_idx,
+            "need_replan": not success,
+            "safety_status": "ok",
+            "success": success,
+            "done": bool(last_transition and last_transition.get("done", False)),
+            "reward": total_reward,
+            "obs": last_transition["obs"] if last_transition else self.observe(),
+        }
+        return self._last_status
+
+    def execution_status(self) -> dict[str, Any]:
+        return dict(self._last_status)
 
     def close(self) -> None:
         self._built = False

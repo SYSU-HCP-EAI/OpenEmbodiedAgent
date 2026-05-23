@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PhyAgentOS ENVIRONMENT.md 写入更新设计图</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #667085;
+      --line: #c9d4e5;
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --blue: #e8f3ff;
+      --green: #eaf8ec;
+      --yellow: #fff4db;
+      --purple: #f1eafd;
+      --red: #ffe8e4;
+      --accent: #2563eb;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.5;
+    }
+
+    header {
+      padding: 32px 5vw 18px;
+      background: #111827;
+      color: white;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      letter-spacing: 0;
+    }
+
+    header p {
+      max-width: 1000px;
+      margin: 0;
+      color: #d5deef;
+    }
+
+    main {
+      width: min(1240px, 94vw);
+      margin: 24px auto 48px;
+    }
+
+    section {
+      margin: 22px 0;
+      padding: 22px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 21px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    p { margin: 6px 0 0; }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #eef2f7;
+      font-size: 0.92em;
+    }
+
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 1fr 46px 1fr;
+      gap: 0;
+      align-items: stretch;
+    }
+
+    .column {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .arrow {
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .label {
+      padding: 7px 10px;
+      border-radius: 6px;
+      background: #0f172a;
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .box {
+      min-height: 92px;
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+    }
+
+    .box p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .blue { background: var(--blue); }
+    .green { background: var(--green); }
+    .yellow { background: var(--yellow); }
+    .purple { background: var(--purple); }
+    .red { background: var(--red); }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(112px, 1fr));
+      gap: 9px;
+    }
+
+    .stage {
+      position: relative;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+      min-height: 132px;
+    }
+
+    .stage:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -17px;
+      top: 43%;
+      z-index: 2;
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    .stage .num {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      margin-bottom: 8px;
+      border-radius: 999px;
+      color: white;
+      background: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .stage p {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .decision {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .rule {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: white;
+      min-height: 168px;
+    }
+
+    .rule strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    .rule ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .schema {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+      color: #17202a;
+      font-size: 13px;
+      line-height: 1.45;
+      box-shadow: inset 0 0 0 1px #eef2f7;
+      white-space: pre;
+    }
+
+    pre code {
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      color: inherit;
+      font-size: inherit;
+    }
+
+    .note {
+      padding: 12px 14px;
+      border-left: 4px solid var(--accent);
+      background: #eef5ff;
+      border-radius: 6px;
+      color: #28415f;
+    }
+
+    @media (max-width: 1060px) {
+      .pipeline,
+      .decision,
+      .schema {
+        grid-template-columns: 1fr;
+      }
+
+      .stage:not(:last-child)::after {
+        content: "↓";
+        top: auto;
+        right: 50%;
+        bottom: -24px;
+      }
+
+      .workspace-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .arrow {
+        transform: rotate(90deg);
+        min-height: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ENVIRONMENT.md 写入更新设计图</h1>
+    <p>基于当前实现：感知结果写入 agent/shared workspace 的 ENVIRONMENT.md；普通 runtime session 摘要写入 runtime workspace 的 LOG.md，不污染环境状态。</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Workspace 写入边界</h2>
+      <div class="workspace-grid">
+        <div class="column">
+          <div class="label">runtime workspace</div>
+          <div class="box yellow">
+            <h3>输入协议</h3>
+            <p><code>TARGETS.md</code>、<code>SKILLS.md</code>、<code>SESSIONS.md</code>、sensor/perception YAML。</p>
+          </div>
+          <div class="box blue">
+            <h3>WatchdogSupervisor</h3>
+            <p>执行 session 调度、preflight、target reset、policy/skill runtime。</p>
+          </div>
+          <div class="box purple">
+            <h3>LOG.md</h3>
+            <p>保存 runtime session history：last session、status、artifact_dir、num_steps 等。</p>
+          </div>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="column">
+          <div class="label">agent/shared workspace</div>
+          <div class="box green">
+            <h3>ENVIRONMENT.md</h3>
+            <p>仅由 perception v2 writer 写入环境对象、关系、map、tf、perception runs。</p>
+          </div>
+          <div class="box green">
+            <h3>Agent 读取入口</h3>
+            <p>上层 Agent、scene graph tool、embodied critic 应读取这个 shared workspace。</p>
+          </div>
+          <div class="box yellow">
+            <h3>启动参数</h3>
+            <p><code>--environment-workspace</code> 指向 shared workspace；不传则默认等于 runtime workspace。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>ENVIRONMENT.md 更新流水线</h2>
+      <div class="pipeline">
+        <div class="stage">
+          <span class="num">1</span>
+          <h3>读取现有文件</h3>
+          <p>如果不存在，创建空 v2 文档；如果不是 <code>PhyAgentOS.environment.v2</code>，旧内容不迁移。</p>
+        </div>
+        <div class="stage">
+          <span class="num">2</span>
+          <h3>解析 delta</h3>
+          <p>插件输出 <code>EnvironmentDelta.objects</code>，key 是插件本地 object id。</p>
+        </div>
+        <div class="stage">
+          <span class="num">3</span>
+          <h3>解析 scope</h3>
+          <p>优先使用 <code>delta.scope</code>，否则使用 <code>delta.refresh_scope</code> 或本次 object ids。</p>
+        </div>
+        <div class="stage">
+          <span class="num">4</span>
+          <h3>全局 id 匹配</h3>
+          <p>同 label、同 frame、3D 距离小于阈值时复用已有 global id。</p>
+        </div>
+        <div class="stage">
+          <span class="num">5</span>
+          <h3>对象合并</h3>
+          <p>匹配则 update；不匹配则生成 <code>target_id::local_id</code> 并 insert。</p>
+        </div>
+        <div class="stage">
+          <span class="num">6</span>
+          <h3>关系重写</h3>
+          <p>关系中的 local id 会尽量改写为 global id；引用缺失对象的旧关系会被移除。</p>
+        </div>
+        <div class="stage">
+          <span class="num">7</span>
+          <h3>原子写入</h3>
+          <p>写 JSON fenced block 到 <code>ENVIRONMENT.md</code>，使用临时文件 + replace。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>对象更新决策</h2>
+      <div class="decision">
+        <div class="rule green">
+          <strong>Update：重复物体</strong>
+          <ul>
+            <li>已有对象和新对象 label 相同。</li>
+            <li><code>pose.frame_id</code> 相同。</li>
+            <li><code>position_m</code> 距离 ≤ <code>position_threshold_m</code>，默认 0.25m。</li>
+            <li>复用已有 global id，更新对象内容与 source。</li>
+          </ul>
+        </div>
+        <div class="rule yellow">
+          <strong>Insert：新物体</strong>
+          <ul>
+            <li>没有可用 3D anchor，或没有命中已有对象。</li>
+            <li>生成 <code>&lt;target_id&gt;::&lt;local_object_id&gt;</code>。</li>
+            <li>若命名冲突，追加数字后缀。</li>
+          </ul>
+        </div>
+        <div class="rule red">
+          <strong>Delete：scope 内确认缺失</strong>
+          <ul>
+            <li>只考虑同一 <code>target_id</code> 来源的对象。</li>
+            <li>对象在 resolved refresh scope 内。</li>
+            <li>本次 delta 没有再输出该对象。</li>
+            <li>删除对象后，引用它的关系也会被清理。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>写入后的 ENVIRONMENT.md 结构</h2>
+      <div class="schema">
+        <pre><code>{
+  "schema_version": "PhyAgentOS.environment.v2",
+  "updated_at": "...",
+  "targets": {
+    "dummy_sim": {
+      "latest_observation_at": "...",
+      "available_sensors": [],
+      "sensor_config_ref": "...",
+      "active_perception_pipeline": [
+        "dummy_segmenter",
+        "rgbd_object_builder"
+      ],
+      "last_perception_run_id": "perc_xxx"
+    }
+  },
+  "objects": {
+    "dummy_sim::obj_cube": {
+      "label": "dummy cube",
+      "confidence": 0.99,
+      "state": "visible",
+      "source": {
+        "target_id": "dummy_sim",
+        "session_id": "sess_001",
+        "perception_run_id": "perc_xxx",
+        "pipeline": ["dummy_segmenter", "rgbd_object_builder"],
+        "local_object_id": "obj_cube"
+      },
+      "pose": {
+        "frame_id": "base_link",
+        "position_m": [0.0, 0.0, 0.0]
+      },
+      "identity": {
+        "global_id": "dummy_sim::obj_cube",
+        "local_object_id": "obj_cube",
+        "position_threshold_m": 0.25
+      }
+    }
+  }
+}</code></pre>
+
+        <pre><code>{
+  "scene_graph": {
+    "relations": [
+      {
+        "subject": "dummy_sim::obj_cube",
+        "type": "near",
+        "object": "dummy_sim::obj_table",
+        "confidence": 0.7
+      }
+    ]
+  },
+  "perception": {
+    "runs": {
+      "perc_xxx": {
+        "target_id": "dummy_sim",
+        "session_id": "sess_001",
+        "pipeline_id": "dummy_object_environment",
+        "requested_outputs": ["objects_3d", "scene_graph"],
+        "generated_outputs": ["objects_3d", "scene_graph"],
+        "refresh_scope": {
+          "target_id": "dummy_sim",
+          "mode": "authoritative_object_ids",
+          "object_ids": ["obj_cube"],
+          "position_threshold_m": 0.25
+        }
+      }
+    }
+  },
+  "map": {},
+  "tf": {}
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>失败路径与不会写入的内容</h2>
+      <div class="decision">
+        <div class="rule red">
+          <strong>Preflight 失败</strong>
+          <ul>
+            <li>session 标记为 rejected。</li>
+            <li>不进入 running。</li>
+            <li>不执行 policy 或 skill runtime。</li>
+            <li>不写入 perception objects。</li>
+          </ul>
+        </div>
+        <div class="rule yellow">
+          <strong>普通 runtime summary</strong>
+          <ul>
+            <li>不再写入 <code>ENVIRONMENT.md</code>。</li>
+            <li>改写到 runtime workspace 的 <code>LOG.md</code>。</li>
+            <li>用于临时 session history。</li>
+          </ul>
+        </div>
+        <div class="rule green">
+          <strong>大文件与 artifact</strong>
+          <ul>
+            <li>不把 raw image、mask、depth、pointcloud、tensor 写进 Markdown。</li>
+            <li>大文件应写到 artifacts。</li>
+            <li>环境文件只保存 compact summary 和 URI。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>当前设计建议</h2>
+      <div class="note">
+        <p>多 target 共享一个 ENVIRONMENT.md 时，插件应尽量输出 metric pose。没有 <code>pose.frame_id</code> 和 <code>pose.position_m</code> 的对象无法通过位置阈值去重，只能按 <code>target_id::local_id</code> 插入。真实机器人接入时应统一 TF frame，例如 <code>map</code> 或 <code>base_link</code>，否则跨 target 物体不会被判定为同一对象。</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
