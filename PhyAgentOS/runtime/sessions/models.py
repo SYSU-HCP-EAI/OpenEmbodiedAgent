@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -42,6 +43,12 @@ class SessionState:
     trace_id: str | None = None
     cancelled: bool = False
     last_status: dict[str, Any] = field(default_factory=dict)
+    started_at_ns: int | None = None
+    last_heartbeat_ns: int | None = None
+    completed_at_ns: int | None = None
+
+    def heartbeat(self) -> None:
+        self.last_heartbeat_ns = time.time_ns()
 
 
 @dataclass

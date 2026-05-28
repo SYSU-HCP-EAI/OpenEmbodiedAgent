@@ -20,6 +20,7 @@ from PhyAgentOS.runtime.watchdog.failure import FailureEscalator
 from PhyAgentOS.runtime.watchdog.health import HealthMonitor
 from PhyAgentOS.runtime.watchdog.registry import SessionRegistry
 from PhyAgentOS.runtime.watchdog.result_writer import ResultWriter
+from PhyAgentOS.runtime.watchdog.runner_thread import RunnerThreadHandle
 from PhyAgentOS.runtime.watchdog.runtime_registry import SkillRuntimeRegistry, TargetRuntimeRegistry
 from PhyAgentOS.runtime.watchdog.scheduler import SessionScheduleError, SessionScheduler
 from PhyAgentOS.runtime.watchdog.watcher import WorkspaceWatcher
@@ -106,6 +107,7 @@ class WatchdogSupervisor:
             target = self.target_registry.build(scheduled.target_spec, target_endpoint=target_endpoint)
             policy_client = None
             runner = None
+            cleanup_in_background = False
             try:
                 if scheduled.skill_spec.runtime_kind == "policy":
                     policy_client = self._build_policy_client(session, scheduled.target_spec)
@@ -122,11 +124,49 @@ class WatchdogSupervisor:
                     perception_plan=perception_plan,
                     target_tool_manifest=preflight_result.target_tool_manifest,
                 )
-                result = runner.start()
+                thread_handle = RunnerThreadHandle(runner)
+                thread_handle.start()
+                while not thread_handle.done:
+                    thread_handle.snapshot()
+                    if thread_handle.elapsed_s() >= float(session.timeouts.execute_timeout_s):
+                        result = SessionResult(
+                            status="timed_out",
+                            success=False,
+                            error_code="EXECUTION_TIMEOUT",
+                            error_message=(
+                                "session exceeded execute_timeout_s="
+                                f"{session.timeouts.execute_timeout_s}"
+                            ),
+                            metadata={
+                                "timeout_s": session.timeouts.execute_timeout_s,
+                                "runner_snapshot": thread_handle.snapshot(),
+                                "cleanup": "best_effort_threaded",
+                            },
+                        )
+                        thread_handle.request_cancel_and_close("execution timeout")
+                        cleanup_in_background = True
+                        self._close_policy_client(policy_client)
+                        self.registry.mark_finalizing(session_id)
+                        result = self.result_writer.write_episode(
+                            session,
+                            scheduled.target_spec,
+                            scheduled.skill_id,
+                            result,
+                        )
+                        self.result_writer.write_session_history(session, scheduled.target_spec, result)
+                        self.registry.mark_timed_out(session_id, result)
+                        return True
+                    self._sleep_runner_poll_interval(session)
+                if thread_handle.exception is not None:
+                    raise thread_handle.exception
+                result = thread_handle.result
+                if result is None:
+                    raise RuntimeError("runner thread finished without a result")
             finally:
-                if policy_client is not None:
-                    policy_client.close()
-                if runner is not None:
+                self._close_policy_client(policy_client)
+                if cleanup_in_background:
+                    pass
+                elif runner is not None:
                     runner.close()
                 else:
                     target.close()
@@ -172,6 +212,20 @@ class WatchdogSupervisor:
             action_dim=int(action_dim),
             chunk_size=int(chunk_size),
         )
+
+    def _close_policy_client(self, policy_client) -> None:
+        if policy_client is None:
+            return
+        try:
+            policy_client.close()
+        except Exception:
+            pass
+
+    def _sleep_runner_poll_interval(self, session) -> None:
+        import time
+
+        timeout_s = float(session.timeouts.execute_timeout_s)
+        time.sleep(max(0.01, min(0.05, timeout_s / 10.0)))
 
     def _preflight_error_message(self, preflight_result) -> str:
         if not preflight_result.missing_items:

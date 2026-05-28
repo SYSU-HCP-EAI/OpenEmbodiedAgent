@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from uuid import uuid4
 
 from PhyAgentOS.runtime.adapters.factory import build_adapter_stack
@@ -44,12 +45,18 @@ class SessionRunner:
         self.state = SessionState(session_id=session.session_id, trace_id=f"trace_{uuid4().hex[:12]}")
 
     def start(self) -> SessionResult:
+        self.state.started_at_ns = time.time_ns()
+        self.state.heartbeat()
         target_adapter, _, action_bridges = build_adapter_stack(self.adapter_plan)
         self.target.build()
+        self.state.heartbeat()
         session_ctx = self._session_context()
         self.target.configure_session(session_ctx)
+        self.state.heartbeat()
         self.target.start_session(session_ctx)
+        self.state.heartbeat()
         initial_observation = self.target.reset(self.session.model_dump(mode="json"))
+        self.state.heartbeat()
         handle = TargetSessionHandle(
             session=self.session,
             target_spec=self.target_spec,
@@ -72,6 +79,7 @@ class SessionRunner:
             metadata={"trace_id": self.state.trace_id},
         )
         self.skill_runtime.start(skill_ctx)
+        self.state.heartbeat()
         if self.skill_spec.runtime_kind == "policy":
             if self.policy_client is None:
                 raise PolicyProtocolError("policy runtime requires a policy client")
@@ -82,10 +90,13 @@ class SessionRunner:
             if not isinstance(self.skill_runtime, BuiltinSkillRuntime):
                 raise PolicyProtocolError("registered skill runtime is not a BuiltinSkillRuntime")
             result = self.skill_runtime.run_builtin_loop(skill_ctx, handle, self.adapter_plan)
+        self.state.completed_at_ns = time.time_ns()
+        self.state.heartbeat()
         return self._to_session_result(result)
 
     def cancel(self, reason: str) -> None:
         self.state.cancelled = True
+        self.state.heartbeat()
         self.target.cancel(reason)
 
     def snapshot(self) -> dict:
@@ -94,6 +105,9 @@ class SessionRunner:
             "step_index": self.state.step_index,
             "cancelled": self.state.cancelled,
             "last_status": self.state.last_status,
+            "started_at_ns": self.state.started_at_ns,
+            "last_heartbeat_ns": self.state.last_heartbeat_ns,
+            "completed_at_ns": self.state.completed_at_ns,
         }
 
     def close(self) -> None:

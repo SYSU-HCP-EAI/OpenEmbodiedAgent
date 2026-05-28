@@ -57,6 +57,7 @@ class TargetWSClient:
         skill_id: str | None = None,
         episode_id: str | None = None,
         trace_id: str | None = None,
+        expected_response_type: str | None = None,
     ) -> dict[str, Any]:
         self.connect()
         self._seq += 1
@@ -81,9 +82,21 @@ class TargetWSClient:
             error_code = response.payload.get("error_code", "TARGET_RPC_ERROR")
             message = response.payload.get("message", "target runtime returned an error")
             raise TargetProtocolError(f"{error_code}: {message}")
-        if response.seq < request.seq:
+        expected_type = expected_response_type or self._default_response_type(message_type)
+        mismatches = []
+        if response.type != expected_type:
+            mismatches.append(f"type {response.type!r} != {expected_type!r}")
+        if response.seq != request.seq:
+            mismatches.append(f"seq {response.seq} != {request.seq}")
+        if response.session_id != request.session_id:
+            mismatches.append(f"session_id {response.session_id!r} != {request.session_id!r}")
+        if response.target_id != request.target_id:
+            mismatches.append(f"target_id {response.target_id!r} != {request.target_id!r}")
+        if response.skill_id != request.skill_id:
+            mismatches.append(f"skill_id {response.skill_id!r} != {request.skill_id!r}")
+        if mismatches:
             raise TargetProtocolError(
-                f"target RPC {message_type} returned stale seq {response.seq}, expected >= {request.seq}"
+                f"target RPC {message_type} returned mismatched response: {', '.join(mismatches)}"
             )
         return response.payload
 
@@ -104,3 +117,9 @@ class TargetWSClient:
         if parsed.scheme != "targetws":
             raise TargetConnectionError(f"expected targetws:// endpoint, got {self.endpoint}")
         return urlunparse(("ws", parsed.netloc, parsed.path, parsed.params, parsed.query, parsed.fragment))
+
+    def _default_response_type(self, message_type: str) -> str:
+        return {
+            "target.observe": "target.observation",
+            "agent_tool.call": "agent_tool.result",
+        }.get(message_type, message_type)

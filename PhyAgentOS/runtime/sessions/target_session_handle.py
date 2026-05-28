@@ -31,7 +31,7 @@ class TargetSessionHandle:
         self.session = session
         self.target_spec = target_spec
         self.skill_spec = skill_spec
-        self.target = target
+        self._target = target
         self.target_adapter = target_adapter
         self.action_bridges = list(action_bridges)
         self.adapter_plan = adapter_plan
@@ -43,6 +43,7 @@ class TargetSessionHandle:
 
     def observe(self) -> RuntimeObservation:
         if self._empty_observation_allowed():
+            self.session_state.heartbeat()
             return RuntimeObservation(
                 observation_type="empty",
                 timestamp_ns=time.time_ns(),
@@ -52,9 +53,10 @@ class TargetSessionHandle:
         raw_observation = self._pending_raw_observation
         self._pending_raw_observation = None
         if raw_observation is None:
-            raw_observation = self.target.observe()
+            raw_observation = self._target.observe()
         target_info = self._target_info()
         runtime_data = self.target_adapter.to_runtime_observation(raw_observation, target_info)
+        self.session_state.heartbeat()
         return RuntimeObservation(
             observation_type=self.target_spec.observation.observation_type,
             timestamp_ns=runtime_data.get("timestamp_ns", time.time_ns()),
@@ -68,8 +70,8 @@ class TargetSessionHandle:
         for bridge in self.action_bridges:
             bridged_chunk = bridge.apply(bridged_chunk, target_info)
         executable_chunk = self.target_adapter.to_executable_action_chunk(bridged_chunk, target_info)
-        status = self.target.action_chunk(executable_chunk)
-        status = {**status, **self.target.execution_status()}
+        status = self._target.action_chunk(executable_chunk)
+        status = {**status, **self._target.execution_status()}
         self.session_state.last_status = status
         self.session_state.step_index = int(
             status.get("target_step_index", status.get("executed_steps", self.session_state.step_index))
@@ -77,34 +79,42 @@ class TargetSessionHandle:
         obs = status.get("obs")
         if isinstance(obs, dict):
             self._pending_raw_observation = obs
+        self.session_state.heartbeat()
         return status
 
     def execution_status(self) -> dict[str, Any]:
-        status = self.target.execution_status()
+        status = self._target.execution_status()
         self.session_state.last_status = status
+        self.session_state.heartbeat()
         return status
 
     def request_environment_refresh(self, request: EnvironmentRequest | None = None) -> EnvironmentSnapshot:
         if self.perception_runtime is None or self.perception_plan is None:
+            self.session_state.heartbeat()
             return EnvironmentSnapshot(metadata={"skipped": "perception_not_configured"})
-        raw_observation = self.target.observe_for_environment(
+        raw_observation = self._target.observe_for_environment(
             {"session_id": self.session.session_id, "environment_refresh": True}
         )
         self.perception_runtime.refresh_environment(
             self.perception_plan,
-            self.target,
+            self._target,
             observation=raw_observation,
         )
+        self.session_state.heartbeat()
         return EnvironmentSnapshot(metadata={"refreshed": True, "requested_outputs": (request or EnvironmentRequest()).requested_outputs})
 
     def call_target_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         if self.target_tool_manifest is None or tool_name not in self.target_tool_manifest.expose:
+            self.session_state.heartbeat()
             return {"status": "rejected", "error_code": "TARGET_TOOL_NOT_EXPOSED", "message": tool_name}
-        return self.target.call_target_tool(tool_name, arguments)
+        result = self._target.call_target_tool(tool_name, arguments)
+        self.session_state.heartbeat()
+        return result
 
     def stop(self, reason: str) -> None:
         self.session_state.cancelled = True
-        self.target.cancel(reason)
+        self._target.cancel(reason)
+        self.session_state.heartbeat()
 
     def _empty_observation_allowed(self) -> bool:
         return (

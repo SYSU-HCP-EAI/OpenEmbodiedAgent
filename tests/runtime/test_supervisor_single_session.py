@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import json
 import re
+import time
 
 from PhyAgentOS.runtime.schemas import SessionStatus
+from PhyAgentOS.runtime.sessions.models import SkillRuntimeResult
+from PhyAgentOS.runtime.skills.policy import OpenPISkillRuntime
 from PhyAgentOS.runtime.state_io.markdown_yaml import read_yaml_block, write_yaml_block
+from PhyAgentOS.runtime.targets.local.dummy_sim_target import DummySimTarget
+from PhyAgentOS.runtime.watchdog.runtime_registry import register_skill_runtime, register_target_runtime
 from PhyAgentOS.runtime.watchdog.supervisor import WatchdogSupervisor
 
 
@@ -235,3 +240,67 @@ def test_supervisor_uses_priority_scheduler(tmp_path) -> None:
     by_id = {session["session_id"]: session for session in updated["sessions"]}
     assert by_id["sess_high"]["status"] == SessionStatus.SUCCEEDED.value
     assert by_id["sess_normal"]["status"] == SessionStatus.PENDING.value
+
+
+class _SlowPolicyRuntime(OpenPISkillRuntime):
+    def run_policy_loop(self, skill_ctx, target_handle, adapter_plan, policy_client):
+        time.sleep(0.2)
+        return SkillRuntimeResult(status="failed", success=False, error_code="SHOULD_TIMEOUT")
+
+
+class _TrackingDummySimTarget(DummySimTarget):
+    def cancel(self, reason: str) -> None:
+        super().cancel(reason)
+        marker_dir = self.config.get("marker_dir")
+        if marker_dir:
+            from pathlib import Path
+
+            Path(marker_dir, "cancelled").write_text(reason, encoding="utf-8")
+
+    def close(self) -> None:
+        super().close()
+        marker_dir = self.config.get("marker_dir")
+        if marker_dir:
+            from pathlib import Path
+
+            Path(marker_dir, "closed").write_text("closed", encoding="utf-8")
+
+
+def test_supervisor_times_out_runner_and_writes_result(tmp_path) -> None:
+    _write_workspace(tmp_path)
+    marker_dir = tmp_path / "markers"
+    marker_dir.mkdir()
+    register_skill_runtime("SlowPolicyRuntimeForTimeoutTest", _SlowPolicyRuntime)
+    register_target_runtime(
+        "TrackingDummySimTargetRuntime",
+        lambda target_spec: _TrackingDummySimTarget(target_spec.config),
+    )
+
+    targets = read_yaml_block(tmp_path / "TARGETS.md")
+    targets["targets"][0]["runtime"]["target_runtime"] = "TrackingDummySimTargetRuntime"
+    targets["targets"][0]["config"]["marker_dir"] = str(marker_dir)
+    write_yaml_block(tmp_path / "TARGETS.md", "Runtime Targets", targets)
+
+    skills = read_yaml_block(tmp_path / "SKILLS.md")
+    skills["skills"][0]["runtime"] = "SlowPolicyRuntimeForTimeoutTest"
+    write_yaml_block(tmp_path / "SKILLS.md", "Runtime Skills", skills)
+
+    sessions = read_yaml_block(tmp_path / "SESSIONS.md")
+    sessions["sessions"][0]["timeouts"] = {"execute_timeout_s": 0.02, "policy_timeout_s": 5}
+    write_yaml_block(tmp_path / "SESSIONS.md", "Runtime Sessions", sessions)
+
+    assert WatchdogSupervisor(tmp_path, worker_id="test-worker").run_once() is True
+
+    session = read_yaml_block(tmp_path / "SESSIONS.md")["sessions"][0]
+    assert session["status"] == SessionStatus.TIMED_OUT.value
+    assert session["result"]["status"] == "timed_out"
+    assert session["result"]["success"] is False
+    assert session["result"]["error_code"] == "EXECUTION_TIMEOUT"
+    assert (tmp_path / "artifacts" / "runtime" / "sess_dummy_001" / "episode.json").exists()
+    history = read_yaml_block(tmp_path / "LOG.md")
+    assert history["sessions"]["sess_dummy_001"]["status"] == "timed_out"
+
+    deadline = time.time() + 1.0
+    while time.time() < deadline and not (marker_dir / "cancelled").exists():
+        time.sleep(0.01)
+    assert (marker_dir / "cancelled").read_text(encoding="utf-8") == "execution timeout"

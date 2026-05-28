@@ -25,10 +25,13 @@ class RuntimeEnvelope(BaseModel):
         "target.execution_status",
         "target.heartbeat",
         "target.cancel",
+        "target.stop_session",
         "target.close",
         "agent_tool.describe",
         "agent_tool.call",
         "agent_tool.result",
+        "agent_loop.status",
+        "agent_loop.close",
         "policy.hello",
         "policy.describe",
         "policy.infer",
@@ -36,6 +39,9 @@ class RuntimeEnvelope(BaseModel):
         "policy.heartbeat",
         "runtime.preflight_request",
         "runtime.preflight_result",
+        "runtime.runner_started",
+        "runtime.runner_heartbeat",
+        "runtime.runner_result",
         "runtime.error",
     }
 

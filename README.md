@@ -17,7 +17,7 @@
 
 ## Current Status
 
-New framework implementation supporting a session-centered runtime with DummySimTarget, DummyOpenPIAdapter, and DummyPolicyClient smoke paths. The serial `WatchdogSupervisor` claims sessions with a workspace lock, runs strict compatibility preflight, creates a `SessionRunner`, and writes results, lessons, and artifacts back to the workspace. The runner owns target lifecycle, while `PolicySkillRuntime` and `BuiltinSkillRuntime` execute through `TargetSessionHandle`. Runtime targets, skill runtimes, adapters, and bridges are registered through lightweight Python registries; adapter and bridge identifiers use explicit URI namespaces such as `target_adapter://`, `policy_adapter://`, and `bridge://`.
+New framework implementation supporting a session-centered runtime with DummySimTarget, DummyOpenPIAdapter, and DummyPolicyClient smoke paths. The `WatchdogSupervisor` claims sessions with a workspace lock, runs strict compatibility preflight, supervises a `SessionRunner` with heartbeat and execution timeout tracking, and writes results, lessons, and artifacts back to the workspace. The runner owns target lifecycle, while `PolicySkillRuntime` and `BuiltinSkillRuntime` execute through `TargetSessionHandle` without receiving raw target objects. Runtime targets, skill runtimes, adapters, and bridges are registered through lightweight Python registries; adapter and bridge identifiers use explicit URI namespaces such as `target_adapter://`, `policy_adapter://`, and `bridge://`.
 
 Next Steps:
 
@@ -44,7 +44,7 @@ PhyAgentOS utilizes a **"State-as-a-File"** protocol matrix, natively supporting
 *   🔌 **Dynamic Plugin Mechanism**: Supports dynamic loading of external hardware drivers via `hal/drivers/`, allowing for new hardware support without modifying core code.
 *   🛡️ **Safety Correction Mechanism**: Strict action verification and `LESSONS.md` experience library prevent Agent workflows from going out of control.
 *   🎮 **Simulation Loop**: Built-in lightweight simulation support allows verification of the full chain from natural language instructions to physical state changes without real hardware.
-*   🧪 **Runtime Session Loop**: A session-centered runtime (`TARGETS.md` / `SKILLS.md` / `SESSIONS.md` → `WatchdogSupervisor` → preflight → `SessionRunner` → `TargetSessionHandle` → skill runtime → artifacts) is available for dependency-light smoke tests. The supervisor is serial, chooses pending sessions by priority, runs strict config and contract preflight before `running`, and writes results and reusable preflight failures back to `SESSIONS.md` and `LESSONS.md`.
+*   🧪 **Runtime Session Loop**: A session-centered runtime (`TARGETS.md` / `SKILLS.md` / `SESSIONS.md` → `WatchdogSupervisor` → preflight → `SessionRunner` → `TargetSessionHandle` → skill runtime → artifacts) is available for dependency-light smoke tests. The supervisor schedules sessions serially by priority, runs strict config and contract preflight before `running`, supervises runner heartbeat and `execute_timeout_s`, and writes results and reusable preflight failures back to `SESSIONS.md` and `LESSONS.md`.
 *   🗺️ **Semantic Navigation & Perception**: Built-in `SemanticNavigationTool` and `PerceptionService` support resolving high-level semantic goals into physical coordinates and constructing scene graphs by fusing geometric and semantic information.
 
 ## 🦾 Showcase

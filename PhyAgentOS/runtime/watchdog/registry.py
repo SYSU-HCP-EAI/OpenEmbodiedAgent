@@ -118,6 +118,11 @@ class SessionRegistry:
         )
         self._update_session_status(session_id, status, result=result)
 
+    def mark_timed_out(self, session_id: str, result: SessionResult) -> None:
+        result.status = SessionStatus.TIMED_OUT.value
+        result.success = False
+        self._update_session_status(session_id, SessionStatus.TIMED_OUT, result=result)
+
     def mark_execution_failed(self, session_id: str, error: Exception) -> None:
         result = SessionResult(
             status=SessionStatus.FAILED.value,

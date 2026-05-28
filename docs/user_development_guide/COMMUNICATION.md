@@ -163,6 +163,8 @@ It writes:
 - transient runtime history to `LOG.md`
 - episode artifacts under `artifacts/runtime/<session_id>/`
 
+During execution, the watchdog schedules sessions serially and supervises each runner through heartbeat snapshots and `execute_timeout_s`. A timed-out session is written as `timed_out` with an episode artifact and transient history entry; cleanup is best-effort because the first runtime implementation uses thread supervision rather than process termination.
+
 Planner / 主 Agent：
 
 - 默认主要读取 shared workspace：
@@ -195,6 +197,8 @@ Watchdog：
   - `LOG.md` 中的临时 runtime history
   - `artifacts/runtime/<session_id>/` 下的 episode artifacts
 
+执行期间，watchdog 会按串行方式调度 session，并通过 runner heartbeat snapshot 与 `execute_timeout_s` 监督单个 runner。超时 session 会以 `timed_out` 写回，并生成 episode artifact 与临时 history；当前 runtime 使用线程监督，因此超时后的资源清理是 best-effort，而不是强制终止进程。
+
 ## 6. Runtime Session Protocol / Runtime Session 协议
 
 The runtime protocol keeps the upper/lower boundary file-based while moving execution to sessions:
@@ -214,6 +218,8 @@ preflight_checking -> rejected
 
 `RuntimeCompatibilityPreflight` resolves an `AdapterPlan` before execution. It validates protocol files, target/skill compatibility, adapter/bridge availability, sensor config declarations, perception config declarations, and runtime contracts. Actual target observation channels are checked when runtime reads an observation for environment refresh or skill execution. After preflight, `WatchdogSupervisor` creates a `SessionRunner`; the runner owns target lifecycle and exposes the target to policy or builtin skills only through `TargetSessionHandle`. Target runtimes and policy servers do not call each other directly.
 
+For remote targets, `targetws://` messages use the runtime envelope and msgpack serialization. RPC responses are correlated with the request by message type, sequence number, session id, target id, and skill id; mismatched responses are treated as target protocol errors.
+
 Runtime 协议继续保持文件边界，但执行单位变成 session：
 
 - `TARGETS.md` 描述有哪些 target、是否启用、支持哪些 skill，以及 target class/kind、runtime endpoint、target adapter、sensor config、perception config、runtime contract。
@@ -231,6 +237,8 @@ preflight_checking -> rejected
 
 `RuntimeCompatibilityPreflight` 会在执行前解析 `AdapterPlan`，并校验协议文件、target/skill 兼容性、adapter/bridge 可用性、sensor config 声明、perception config 声明和 runtime contract。真实 target observation 的 channel 会在 runtime 为环境刷新或技能执行读取 observation 时校验。Preflight 通过后，`WatchdogSupervisor` 创建 `SessionRunner`；runner 负责 target lifecycle，并且只通过 `TargetSessionHandle` 把 target 暴露给 policy 或 builtin skill。Target runtime 与 policy server 不直接互相调用。
 
+对于 remote target，`targetws://` 消息使用 runtime envelope 与 msgpack 序列化。RPC response 会通过 message type、sequence number、session id、target id 和 skill id 与 request 严格关联；关联不匹配会被视为 target protocol error。
+
 ## 7. Typical Runtime Pipeline / 典型运行流程
 
 1. `paos onboard` prepares workspaces.
@@ -239,7 +247,7 @@ preflight_checking -> rejected
 4. User starts `paos agent`.
 5. Agent plans from shared state and writes or updates a session.
 6. Watchdog claims a pending session and runs compatibility preflight.
-7. If accepted, watchdog creates a `SessionRunner`; the runner enters `running`, configures and starts the target session, then runs the selected skill runtime through `TargetSessionHandle`.
+7. If accepted, watchdog creates a `SessionRunner`; the runner enters `running`, configures and starts the target session, then runs the selected skill runtime through `TargetSessionHandle` under heartbeat and execution-timeout supervision.
 8. Runtime writes session results, environment deltas, lessons, and artifacts.
 
 1. `paos onboard` 准备工作区。
@@ -248,7 +256,7 @@ preflight_checking -> rejected
 4. 用户启动 `paos agent`。
 5. Agent 基于 shared state 规划并写入或更新 session。
 6. Watchdog claim pending session 并执行 compatibility preflight。
-7. 如通过，watchdog 创建 `SessionRunner`；runner 进入 `running`，配置并启动 target session，然后通过 `TargetSessionHandle` 运行选定的 skill runtime。
+7. 如通过，watchdog 创建 `SessionRunner`；runner 进入 `running`，配置并启动 target session，然后在 heartbeat 与执行超时监督下通过 `TargetSessionHandle` 运行选定的 skill runtime。
 8. Runtime 写回 session result、environment delta、lessons 与 artifacts。
 
 ## 8. Design Intent / 设计意图

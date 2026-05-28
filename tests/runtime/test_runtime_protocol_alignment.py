@@ -7,6 +7,7 @@ import yaml
 from pydantic import ValidationError
 
 from PhyAgentOS.runtime.communication import RuntimeEnvelope, decode_msgpack, encode_msgpack
+from PhyAgentOS.runtime.communication.target_ws_client import TargetWSClient
 from PhyAgentOS.runtime.adapters.factory import (
     build_action_bridge,
     build_policy_adapter,
@@ -26,6 +27,7 @@ from PhyAgentOS.runtime.schemas import (
 from PhyAgentOS.runtime.watchdog.scheduler import ScheduledSession
 from PhyAgentOS.runtime.targets.remote.proxy import RemoteTargetProxy
 from PhyAgentOS.runtime.watchdog.runtime_registry import TargetRuntimeRegistry, register_remote_target
+from PhyAgentOS.runtime.watchdog.errors import TargetProtocolError
 
 
 def _write_contract(path: Path, *, shape=None) -> None:
@@ -128,6 +130,90 @@ def test_runtime_envelope_msgpack_round_trip() -> None:
 def test_runtime_envelope_rejects_unknown_type() -> None:
     with pytest.raises(ValidationError):
         RuntimeEnvelope(type="target.step", seq=1, timestamp_ns=123, payload={})
+
+
+def test_runtime_envelope_accepts_runner_and_agent_loop_types() -> None:
+    for message_type in [
+        "target.stop_session",
+        "agent_loop.status",
+        "agent_loop.close",
+        "runtime.runner_started",
+        "runtime.runner_heartbeat",
+        "runtime.runner_result",
+    ]:
+        envelope = RuntimeEnvelope(type=message_type, seq=1, timestamp_ns=123, payload={})
+        assert decode_msgpack(encode_msgpack(envelope)).type == message_type
+
+
+class _FakeWebSocket:
+    def __init__(self, response: RuntimeEnvelope):
+        self.response = response
+        self.sent: list[bytes] = []
+
+    def send_binary(self, payload: bytes) -> None:
+        self.sent.append(payload)
+
+    def recv(self) -> bytes:
+        return encode_msgpack(self.response)
+
+    def close(self) -> None:
+        pass
+
+
+def _targetws_client_with_response(response: RuntimeEnvelope) -> TargetWSClient:
+    client = TargetWSClient("targetws://127.0.0.1:9001", target_id="dummy_sim")
+    client._ws = _FakeWebSocket(response)
+    return client
+
+
+def test_targetws_client_accepts_strictly_matching_response() -> None:
+    client = _targetws_client_with_response(
+        RuntimeEnvelope(
+            type="target.observation",
+            session_id="sess_1",
+            target_id="dummy_sim",
+            skill_id="openpi_sim_vla",
+            seq=1,
+            timestamp_ns=123,
+            payload={"ok": True},
+        )
+    )
+
+    assert client.call("target.observe", {}, session_id="sess_1", skill_id="openpi_sim_vla") == {"ok": True}
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        RuntimeEnvelope(type="target.observation", session_id="sess_1", target_id="dummy_sim", skill_id="openpi_sim_vla", seq=2, timestamp_ns=123),
+        RuntimeEnvelope(type="target.describe", session_id="sess_1", target_id="dummy_sim", skill_id="openpi_sim_vla", seq=1, timestamp_ns=123),
+        RuntimeEnvelope(type="target.observation", session_id="other", target_id="dummy_sim", skill_id="openpi_sim_vla", seq=1, timestamp_ns=123),
+        RuntimeEnvelope(type="target.observation", session_id="sess_1", target_id="other", skill_id="openpi_sim_vla", seq=1, timestamp_ns=123),
+        RuntimeEnvelope(type="target.observation", session_id="sess_1", target_id="dummy_sim", skill_id="other", seq=1, timestamp_ns=123),
+    ],
+)
+def test_targetws_client_rejects_mismatched_response(response: RuntimeEnvelope) -> None:
+    client = _targetws_client_with_response(response)
+
+    with pytest.raises(TargetProtocolError, match="mismatched response"):
+        client.call("target.observe", {}, session_id="sess_1", skill_id="openpi_sim_vla")
+
+
+def test_targetws_client_raises_runtime_error_response() -> None:
+    client = _targetws_client_with_response(
+        RuntimeEnvelope(
+            type="runtime.error",
+            session_id="sess_1",
+            target_id="dummy_sim",
+            skill_id="openpi_sim_vla",
+            seq=1,
+            timestamp_ns=123,
+            payload={"error_code": "BAD_TARGET", "message": "boom"},
+        )
+    )
+
+    with pytest.raises(TargetProtocolError, match="BAD_TARGET: boom"):
+        client.call("target.observe", {}, session_id="sess_1", skill_id="openpi_sim_vla")
 
 
 def test_targetws_endpoint_builds_remote_target_proxy(tmp_path: Path) -> None:
