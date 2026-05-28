@@ -92,6 +92,9 @@ class SessionRegistry:
     def mark_running(self, session_id: str) -> None:
         self._update_session_status(session_id, SessionStatus.RUNNING)
 
+    def mark_finalizing(self, session_id: str) -> None:
+        self._update_session_status(session_id, SessionStatus.FINALIZING)
+
     def mark_preflight_checking(self, session_id: str) -> None:
         self._update_session_status(session_id, SessionStatus.PREFLIGHT_CHECKING)
 

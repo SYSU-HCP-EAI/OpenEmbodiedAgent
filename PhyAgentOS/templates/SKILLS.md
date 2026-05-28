@@ -4,12 +4,19 @@
 version: runtime_skill_registry_v1
 skills:
   - id: openpi_sim_vla
-    category: vla
-    runtime: OpenPISimSkillRuntime
-    supported_target_types:
-      - sim
-    policy_client: dummy
-    policy_adapter: policy_adapter://dummy_openpi_adapter
+    runtime: OpenPISkillRuntime
+    runtime_kind: policy
+    loop_mode: policy_closed_loop
+    agent_exposure: none
+    supported_target_kinds:
+      - simulation
+    policy:
+      policy_client: dummy
+      policy_adapter: policy_adapter://dummy_openpi_adapter
+      supports_chunk: true
+    observation_contract:
+      observation_type: multimodal
+      empty_observation_allowed: false
     supports_chunk: true
     default_replan_every: 4
     requires:

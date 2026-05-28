@@ -49,14 +49,14 @@ capabilities:
             "targets": [
                 {
                     "id": "dummy_sim",
-                    "type": "sim",
-                    "backend": "dummy",
+                    "target_class": "local",
+                    "target_kind": "simulation",
                     "enabled": True,
                     "workspace": "workspaces/dummy_sim",
                     "supported_skills": ["openpi_sim_vla"],
                     "runtime": {
                         "target_runtime": "DummySimTargetRuntime",
-                        "target_endpoint": "targetws://local/dummy_sim",
+                        "target_endpoint": None,
                         "target_adapter": "target_adapter://dummy_sim_adapter",
                         "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
                     },
@@ -77,11 +77,15 @@ capabilities:
             "skills": [
                 {
                     "id": "openpi_sim_vla",
-                    "category": "vla",
-                    "runtime": "OpenPISimSkillRuntime",
-                    "supported_target_types": ["sim"],
-                    "policy_client": "dummy",
-                    "policy_adapter": "policy_adapter://dummy_openpi_adapter",
+                    "runtime": "OpenPISkillRuntime",
+                    "runtime_kind": "policy",
+                    "loop_mode": "policy_closed_loop",
+                    "supported_target_kinds": ["simulation"],
+                    "policy": {
+                        "policy_client": "dummy",
+                        "policy_adapter": "policy_adapter://dummy_openpi_adapter",
+                        "supports_chunk": True,
+                    },
                     "supports_chunk": True,
                     "default_replan_every": 4,
                     "output_contract": {
@@ -113,7 +117,7 @@ capabilities:
                     "skill_ref": "skill://openpi_sim_vla",
                     "task_description": "move the object",
                     "status": "pending",
-                    "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
+                    "routing": {"policy_endpoint": "dummy://local"},
                     "execution": {"max_steps": 10, "replan_every_steps": 4, "action_chunk_mode": "chunk_buffer"},
                 }
             ],
@@ -209,7 +213,7 @@ def test_supervisor_uses_priority_scheduler(tmp_path) -> None:
             "task_description": "normal priority task",
             "status": "pending",
             "priority": "normal",
-            "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
+            "routing": {"policy_endpoint": "dummy://local"},
             "execution": {"max_steps": 10, "replan_every_steps": 4, "action_chunk_mode": "chunk_buffer"},
         },
         {
@@ -219,7 +223,7 @@ def test_supervisor_uses_priority_scheduler(tmp_path) -> None:
             "task_description": "high priority task",
             "status": "pending",
             "priority": "high",
-            "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
+            "routing": {"policy_endpoint": "dummy://local"},
             "execution": {"max_steps": 10, "replan_every_steps": 4, "action_chunk_mode": "chunk_buffer"},
         },
     ]

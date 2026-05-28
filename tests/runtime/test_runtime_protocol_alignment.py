@@ -60,28 +60,32 @@ def _write_contract(path: Path, *, shape=None) -> None:
 def _scheduled(tmp_path: Path, *, skill_shape=None) -> ScheduledSession:
     _write_contract(tmp_path / "configs/runtime/contracts/dummy_sim.runtime.yaml")
     target = TargetSpec.model_validate(
-        {
-            "id": "dummy_sim",
-            "type": "sim",
-            "backend": "dummy",
-            "workspace": "workspaces/dummy_sim",
-            "supported_skills": ["openpi_sim_vla"],
-            "runtime": {
-                "target_runtime": "DummySimTargetRuntime",
-                "target_endpoint": "targetws://local/dummy_sim",
-                "target_adapter": "target_adapter://dummy_sim_adapter",
-                "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
-            },
+            {
+                "id": "dummy_sim",
+                "target_class": "local",
+                "target_kind": "simulation",
+                "workspace": "workspaces/dummy_sim",
+                "supported_skills": ["openpi_sim_vla"],
+                "runtime": {
+                    "target_runtime": "DummySimTargetRuntime",
+                    "target_endpoint": None,
+                    "target_adapter": "target_adapter://dummy_sim_adapter",
+                    "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
+                },
         }
     )
     skill = SkillSpec.model_validate(
-        {
-            "id": "openpi_sim_vla",
-            "category": "vla",
-            "runtime": "OpenPISimSkillRuntime",
-            "supported_target_types": ["sim"],
-            "policy_adapter": "policy_adapter://dummy_openpi_adapter",
-            "output_contract": {
+            {
+                "id": "openpi_sim_vla",
+                "runtime": "OpenPISkillRuntime",
+                "runtime_kind": "policy",
+                "loop_mode": "policy_closed_loop",
+                "supported_target_kinds": ["simulation"],
+                "policy": {
+                    "policy_client": "dummy",
+                    "policy_adapter": "policy_adapter://dummy_openpi_adapter",
+                },
+                "output_contract": {
                 "action": {
                     "shape": skill_shape or ["T", 7],
                     "dtype": "float32",
@@ -99,7 +103,7 @@ def _scheduled(tmp_path: Path, *, skill_shape=None) -> ScheduledSession:
             "target_ref": "target://dummy_sim",
             "skill_ref": "skill://openpi_sim_vla",
             "task_description": "move",
-            "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
+            "routing": {"policy_endpoint": "dummy://local"},
         }
     )
     return ScheduledSession(session, target, skill, target.id, skill.id)
@@ -128,6 +132,7 @@ def test_runtime_envelope_rejects_unknown_type() -> None:
 
 def test_targetws_endpoint_builds_remote_target_proxy(tmp_path: Path) -> None:
     scheduled = _scheduled(tmp_path)
+    scheduled.target_spec.target_class = "remote"
     scheduled.target_spec.runtime.target_runtime = "RemoteTargetProxy"
     scheduled.target_spec.runtime.target_endpoint = "targetws://127.0.0.1:9001"
     target = TargetRuntimeRegistry().build(scheduled.target_spec)
@@ -145,8 +150,8 @@ def test_remote_target_uses_registered_remote_runtime(tmp_path: Path) -> None:
         lambda target_spec, client: TestFrankaRemoteTarget(client, config=target_spec.config),
     )
     scheduled = _scheduled(tmp_path)
-    scheduled.target_spec.type = "real_robot"
-    scheduled.target_spec.backend = "franka"
+    scheduled.target_spec.target_class = "remote"
+    scheduled.target_spec.target_kind = "real_robot"
     scheduled.target_spec.runtime.target_runtime = "FrankaTargetRuntime"
     scheduled.target_spec.runtime.target_endpoint = "targetws://192.168.10.31:9001"
 

@@ -6,7 +6,7 @@ from collections.abc import Callable
 
 from PhyAgentOS.runtime.schemas import TargetSpec
 from PhyAgentOS.runtime.skills.base import BaseSkillRuntime
-from PhyAgentOS.runtime.skills.vla.openpi_sim_runtime import OpenPISimSkillRuntime
+from PhyAgentOS.runtime.skills.policy import OpenPISkillRuntime
 from PhyAgentOS.runtime.communication.target_ws_client import TargetWSClient
 from PhyAgentOS.runtime.targets.base import BaseRolloutTarget
 from PhyAgentOS.runtime.targets.factory import (
@@ -57,4 +57,4 @@ class SkillRuntimeRegistry:
         return factory()
 
 
-register_skill_runtime("OpenPISimSkillRuntime", OpenPISimSkillRuntime)
+register_skill_runtime("OpenPISkillRuntime", OpenPISkillRuntime)

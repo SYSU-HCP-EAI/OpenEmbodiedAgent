@@ -158,14 +158,14 @@ def _scheduled(
     target = TargetSpec.model_validate(
         {
             "id": "dummy_sim",
-            "type": "sim",
-            "backend": "dummy",
+            "target_class": "local",
+            "target_kind": "simulation",
             "enabled": True,
             "workspace": "workspaces/dummy_sim",
             "supported_skills": ["perception_skill"],
             "runtime": {
                 "target_runtime": "DummySimTargetRuntime",
-                "target_endpoint": "targetws://local/dummy_sim",
+                "target_endpoint": None,
                 "target_adapter": "target_adapter://dummy_sim_adapter",
                 "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
             },
@@ -181,10 +181,11 @@ def _scheduled(
     skill = SkillSpec.model_validate(
         {
             "id": "perception_skill",
-            "category": "vla",
-            "runtime": "OpenPISimSkillRuntime",
-            "supported_target_types": ["sim"],
-            "policy_adapter": "policy_adapter://dummy_openpi_adapter",
+            "runtime": "OpenPISkillRuntime",
+            "runtime_kind": "policy",
+            "loop_mode": "policy_closed_loop",
+            "supported_target_kinds": ["simulation"],
+            "policy": {"policy_client": "dummy", "policy_adapter": "policy_adapter://dummy_openpi_adapter"},
             "requires": {
                 "sensors": sensors or ["front_rgb", "proprio"],
                 "environment_outputs": outputs or [],
@@ -197,7 +198,7 @@ def _scheduled(
         "target_ref": "target://dummy_sim",
         "skill_ref": "skill://perception_skill",
         "task_description": "inspect",
-        "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
+        "routing": {"policy_endpoint": "dummy://local"},
     }
     from PhyAgentOS.runtime.schemas import SessionSpec
 
@@ -214,12 +215,13 @@ def test_perception_schema_defaults_validate() -> None:
     target = TargetSpec.model_validate(
         {
             "id": "dummy_sim",
-            "type": "sim",
+            "target_class": "local",
+            "target_kind": "simulation",
             "workspace": "workspaces/dummy_sim",
             "supported_skills": [],
             "runtime": {
                 "target_runtime": "DummySimTargetRuntime",
-                "target_endpoint": "targetws://local/dummy_sim",
+                "target_endpoint": None,
                 "target_adapter": "target_adapter://dummy_sim_adapter",
                 "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
             },
@@ -228,9 +230,11 @@ def test_perception_schema_defaults_validate() -> None:
     skill = SkillSpec.model_validate(
         {
             "id": "noop",
-            "category": "vla",
             "runtime": "NoopRuntime",
-            "supported_target_types": ["sim"],
+            "runtime_kind": "policy",
+            "loop_mode": "policy_closed_loop",
+            "supported_target_kinds": ["simulation"],
+            "policy": {"policy_client": "dummy", "policy_adapter": "policy_adapter://dummy_openpi_adapter"},
         }
     )
 
@@ -524,14 +528,14 @@ def _write_workspace(
             "targets": [
                 {
                     "id": "dummy_sim",
-                    "type": "sim",
-                    "backend": "dummy",
+                    "target_class": "local",
+                    "target_kind": "simulation",
                     "enabled": True,
                     "workspace": "workspaces/dummy_sim",
                     "supported_skills": ["perception_skill"],
                     "runtime": {
                         "target_runtime": "DummySimTargetRuntime",
-                        "target_endpoint": "targetws://local/dummy_sim",
+                        "target_endpoint": None,
                         "target_adapter": "target_adapter://dummy_sim_adapter",
                         "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
                     },
@@ -558,10 +562,11 @@ def _write_workspace(
             "skills": [
                 {
                     "id": "perception_skill",
-                    "category": "vla",
-                    "runtime": "OpenPISimSkillRuntime",
-                    "supported_target_types": ["sim"],
-                    "policy_adapter": "policy_adapter://dummy_openpi_adapter",
+                    "runtime": "OpenPISkillRuntime",
+                    "runtime_kind": "policy",
+                    "loop_mode": "policy_closed_loop",
+                    "supported_target_kinds": ["simulation"],
+                    "policy": {"policy_client": "dummy", "policy_adapter": "policy_adapter://dummy_openpi_adapter"},
                     "requires": {
                         "sensors": sensors,
                         "environment_outputs": outputs,
@@ -582,7 +587,7 @@ def _write_workspace(
                     "target_ref": "target://dummy_sim",
                     "skill_ref": "skill://perception_skill",
                     "task_description": "inspect",
-                    "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
+                    "routing": {"policy_endpoint": "dummy://local"},
                     "execution": {"max_steps": 5, "replan_every_steps": 1, "action_chunk_mode": "chunk_buffer"},
                 }
             ],

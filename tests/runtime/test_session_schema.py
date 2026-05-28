@@ -24,7 +24,7 @@ def test_session_document_defaults() -> None:
                     "target_ref": "target://dummy_sim",
                     "skill_ref": "skill://openpi_sim_vla",
                     "task_description": "move object",
-                    "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
+                    "routing": {"policy_endpoint": "dummy://local"},
                 }
             ]
         }
@@ -43,7 +43,7 @@ def test_missing_required_session_field_fails() -> None:
                 "session_id": "sess_1",
                 "target_ref": "target://dummy_sim",
                 "skill_ref": "skill://openpi_sim_vla",
-                "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
+                "routing": {"policy_endpoint": "dummy://local"},
             }
         )
 
@@ -57,13 +57,13 @@ def test_target_and_skill_schema() -> None:
     target = TargetSpec.model_validate(
         {
             "id": "dummy_sim",
-            "type": "sim",
-            "backend": "dummy",
+            "target_class": "local",
+            "target_kind": "simulation",
             "workspace": "workspaces/dummy_sim",
             "supported_skills": ["openpi_sim_vla"],
             "runtime": {
                 "target_runtime": "DummySimTargetRuntime",
-                "target_endpoint": "targetws://local/dummy_sim",
+                "target_endpoint": None,
                 "target_adapter": "target_adapter://dummy_sim_adapter",
                 "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
             },
@@ -72,9 +72,14 @@ def test_target_and_skill_schema() -> None:
     skill = SkillSpec.model_validate(
         {
             "id": "openpi_sim_vla",
-            "category": "vla",
-            "runtime": "OpenPISimSkillRuntime",
-            "supported_target_types": ["sim"],
+            "runtime": "OpenPISkillRuntime",
+            "runtime_kind": "policy",
+            "loop_mode": "policy_closed_loop",
+            "supported_target_kinds": ["simulation"],
+            "policy": {
+                "policy_client": "dummy",
+                "policy_adapter": "policy_adapter://dummy_openpi_adapter",
+            },
         }
     )
 
@@ -83,5 +88,5 @@ def test_target_and_skill_schema() -> None:
 
 
 def test_routing_required() -> None:
-    routing = SessionRouting(target_endpoint="targetws://local/dummy_sim", policy_endpoint="dummy://local")
+    routing = SessionRouting(policy_endpoint="dummy://local")
     assert routing.policy_endpoint == "dummy://local"

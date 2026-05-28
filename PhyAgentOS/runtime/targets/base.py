@@ -14,6 +14,18 @@ class BaseRolloutTarget(ABC):
         """Initialize target resources."""
 
     @abstractmethod
+    def describe(self) -> dict[str, Any]:
+        """Return target runtime capabilities."""
+
+    @abstractmethod
+    def configure_session(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
+        """Configure the target after preflight acceptance."""
+
+    @abstractmethod
+    def start_session(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
+        """Start target-side session state."""
+
+    @abstractmethod
     def reset(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
         """Reset the target for a session and return the initial observation."""
 
@@ -26,20 +38,24 @@ class BaseRolloutTarget(ABC):
         return self.observe()
 
     @abstractmethod
-    def step(self, action: Any) -> dict[str, Any]:
-        """Apply one target-level action and return transition data."""
-
-    def configure_session(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
-        """Configure the target after preflight acceptance."""
-        return {"configured": True, "session_id": session_ctx.get("session_id")}
-
     def action_chunk(self, executable_action_chunk: dict[str, Any]) -> dict[str, Any]:
         """Apply an executable action chunk and return target execution status."""
-        raise NotImplementedError("target does not implement action_chunk")
 
+    @abstractmethod
     def execution_status(self) -> dict[str, Any]:
         """Return the latest target execution status."""
-        return {"accepted": True, "safety_status": "ok"}
+
+    def describe_target_tools(self) -> dict[str, Any]:
+        """Return target tool metadata for builtin runtimes."""
+        return {"tools": []}
+
+    def call_target_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Call an exposed target tool."""
+        raise NotImplementedError(f"target tool is not implemented: {tool_name}")
+
+    @abstractmethod
+    def cancel(self, reason: str) -> None:
+        """Cancel target-side execution."""
 
     @abstractmethod
     def close(self) -> None:

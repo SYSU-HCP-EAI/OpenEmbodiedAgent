@@ -17,7 +17,7 @@
 
 ## Current Status
 
-New framework implementation supporting a session-centered runtime with DummySimTarget, DummyOpenPIAdapter, and DummyPolicyClient smoke paths. The serial `WatchdogSupervisor` claims sessions with a workspace lock, runs strict compatibility preflight, resolves an `AdapterPlan`, supervises execution, and writes results, lessons, and artifacts back to the workspace. Runtime targets, skill runtimes, adapters, and bridges are registered through lightweight Python registries; adapter and bridge identifiers use explicit URI namespaces such as `target_adapter://`, `policy_adapter://`, and `bridge://`.
+New framework implementation supporting a session-centered runtime with DummySimTarget, DummyOpenPIAdapter, and DummyPolicyClient smoke paths. The serial `WatchdogSupervisor` claims sessions with a workspace lock, runs strict compatibility preflight, creates a `SessionRunner`, and writes results, lessons, and artifacts back to the workspace. The runner owns target lifecycle, while `PolicySkillRuntime` and `BuiltinSkillRuntime` execute through `TargetSessionHandle`. Runtime targets, skill runtimes, adapters, and bridges are registered through lightweight Python registries; adapter and bridge identifiers use explicit URI namespaces such as `target_adapter://`, `policy_adapter://`, and `bridge://`.
 
 Next Steps:
 
@@ -44,7 +44,7 @@ PhyAgentOS utilizes a **"State-as-a-File"** protocol matrix, natively supporting
 *   🔌 **Dynamic Plugin Mechanism**: Supports dynamic loading of external hardware drivers via `hal/drivers/`, allowing for new hardware support without modifying core code.
 *   🛡️ **Safety Correction Mechanism**: Strict action verification and `LESSONS.md` experience library prevent Agent workflows from going out of control.
 *   🎮 **Simulation Loop**: Built-in lightweight simulation support allows verification of the full chain from natural language instructions to physical state changes without real hardware.
-*   🧪 **Runtime Session Loop**: A session-centered runtime (`TARGETS.md` / `SKILLS.md` / `SESSIONS.md` → `WatchdogSupervisor` → `AdapterPlan` → target/policy execution → artifacts) is available for dependency-light smoke tests. The supervisor is serial, chooses pending sessions by priority, runs strict config and contract preflight before `running`, and writes results and reusable preflight failures back to `SESSIONS.md` and `LESSONS.md`.
+*   🧪 **Runtime Session Loop**: A session-centered runtime (`TARGETS.md` / `SKILLS.md` / `SESSIONS.md` → `WatchdogSupervisor` → preflight → `SessionRunner` → `TargetSessionHandle` → skill runtime → artifacts) is available for dependency-light smoke tests. The supervisor is serial, chooses pending sessions by priority, runs strict config and contract preflight before `running`, and writes results and reusable preflight failures back to `SESSIONS.md` and `LESSONS.md`.
 *   🗺️ **Semantic Navigation & Perception**: Built-in `SemanticNavigationTool` and `PerceptionService` support resolving high-level semantic goals into physical coordinates and constructing scene graphs by fusing geometric and semantic information.
 
 ## 🦾 Showcase
@@ -148,7 +148,7 @@ paos agent
 ```
 
 **Optional: Runtime dummy session smoke test**
-Runtime uses `TARGETS.md`, `SKILLS.md`, `SESSIONS.md`, and external YAML under `configs/runtime/` instead of the old `ACTION.md` queue. `TARGETS.md` points to a target runtime endpoint, target adapter, sensor config, and runtime contract. `SKILLS.md` declares runtime and policy adapter requirements. `SESSIONS.md` selects a target and skill; adapter plans are resolved by preflight. Sensor YAML and perception YAML are checked before execution, while actual target observation channels are validated when the runtime reads a target observation for environment refresh or skill execution.
+Runtime uses `TARGETS.md`, `SKILLS.md`, `SESSIONS.md`, and external YAML under `configs/runtime/` instead of the old `ACTION.md` queue. `TARGETS.md` declares the target class and kind, runtime endpoint for remote targets, target adapter, sensor config, and runtime contract. `SKILLS.md` declares `runtime_kind`, loop mode, observation contract, policy requirements, and target-tool policy. `SESSIONS.md` selects a target and skill; adapter plans and tool manifests are resolved by preflight. Sensor YAML and perception YAML are checked before execution, while actual target observation channels are validated when the runtime reads a target observation for environment refresh or skill execution.
 
 To create the default runtime protocol files:
 ```bash
@@ -189,7 +189,7 @@ To auto-onboard a new robot into `PhyAgentOS-rekep-real-plugin` with the built-i
 Physical Agent Operating System/
 ├── PhyAgentOS/                # Track A: Software Brain Core
 │   ├── agent/              # Agent Logic (Planner, Critic)
-│   ├── runtime/            # Runtime session supervisor, schemas, policy clients, targets
+│   ├── runtime/            # Session runner, schemas, skill runtimes, policy clients, targets
 │   ├── templates/          # Workspace Markdown Templates  
 │   └── ...
 ├── hal/                    # Track B: Hardware HAL & Simulation

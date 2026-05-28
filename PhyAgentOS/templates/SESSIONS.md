@@ -19,7 +19,7 @@ sessions:
       max_retries: 0
       attempted: 0
     routing:
-      target_endpoint: targetws://local/dummy_sim
+      target_endpoint: null
       policy_endpoint: dummy://local
       adapter_resolution: strict_auto
       adapter_overrides: null

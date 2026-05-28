@@ -20,6 +20,27 @@ class RemoteTargetProxy(BaseRolloutTarget):
     def build(self) -> None:
         self.client.connect()
 
+    def describe(self) -> dict[str, Any]:
+        return self.client.call("target.describe", {})
+
+    def configure_session(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
+        self._remember_session(session_ctx)
+        return self.client.call(
+            "target.configure_session",
+            session_ctx,
+            session_id=self._session_id,
+            skill_id=self._skill_id,
+        )
+
+    def start_session(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
+        self._remember_session(session_ctx)
+        return self.client.call(
+            "target.start_session",
+            session_ctx,
+            session_id=self._session_id,
+            skill_id=self._skill_id,
+        )
+
     def reset(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
         self._remember_session(session_ctx)
         return self.client.call(
@@ -46,23 +67,6 @@ class RemoteTargetProxy(BaseRolloutTarget):
             skill_id=self._skill_id,
         )
 
-    def step(self, action: Any) -> dict[str, Any]:
-        return self.client.call(
-            "target.action_chunk",
-            {"actions": [action]},
-            session_id=self._session_id,
-            skill_id=self._skill_id,
-        )
-
-    def configure_session(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
-        self._remember_session(session_ctx)
-        return self.client.call(
-            "target.configure_session",
-            session_ctx,
-            session_id=self._session_id,
-            skill_id=self._skill_id,
-        )
-
     def action_chunk(self, executable_action_chunk: dict[str, Any]) -> dict[str, Any]:
         return self.client.call(
             "target.action_chunk",
@@ -75,6 +79,30 @@ class RemoteTargetProxy(BaseRolloutTarget):
         return self.client.call(
             "target.execution_status",
             {},
+            session_id=self._session_id,
+            skill_id=self._skill_id,
+        )
+
+    def describe_target_tools(self) -> dict[str, Any]:
+        return self.client.call(
+            "agent_tool.describe",
+            {},
+            session_id=self._session_id,
+            skill_id=self._skill_id,
+        )
+
+    def call_target_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        return self.client.call(
+            "agent_tool.call",
+            {"tool_name": tool_name, "arguments": arguments},
+            session_id=self._session_id,
+            skill_id=self._skill_id,
+        )
+
+    def cancel(self, reason: str) -> None:
+        self.client.call(
+            "target.cancel",
+            {"reason": reason},
             session_id=self._session_id,
             skill_id=self._skill_id,
         )

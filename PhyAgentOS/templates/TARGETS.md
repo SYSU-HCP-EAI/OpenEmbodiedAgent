@@ -4,17 +4,20 @@
 version: runtime_target_registry_v1
 targets:
   - id: dummy_sim
-    type: sim
-    backend: dummy
+    target_class: local
+    target_kind: simulation
     enabled: true
     workspace: workspaces/dummy_sim
     supported_skills:
       - openpi_sim_vla
     runtime:
       target_runtime: DummySimTargetRuntime
-      target_endpoint: targetws://local/dummy_sim
+      target_endpoint: null
       target_adapter: target_adapter://dummy_sim_adapter
       runtime_contract_ref: configs/runtime/contracts/dummy_sim.runtime.yaml
+    observation:
+      observation_type: multimodal
+      empty_observation_allowed: false
     perception:
       enabled: true
       strict_preflight: true

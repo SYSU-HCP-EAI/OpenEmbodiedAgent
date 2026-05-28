@@ -20,6 +20,28 @@ class DummySimTarget(BaseLocalTarget):
     def build(self) -> None:
         self._built = True
 
+    def describe(self) -> dict[str, Any]:
+        action_cfg = self.config.get("action", {})
+        state_dim = self._config_int("state_dim", default=self._nested_int("observation", "state_dim", 8))
+        return {
+            "runtime": "DummySimTargetRuntime",
+            "observation_schema": {
+                "image.front_rgb": {"dtype": "uint8", "layout": "HWC"},
+                "image.wrist_rgb": {"dtype": "uint8", "layout": "HWC"},
+                "state.proprio": {"dtype": "float32", "shape": [state_dim]},
+            },
+            "action_contract": {
+                "id": action_cfg.get("id", "dummy_delta_eef_gripper_v1"),
+                "shape": ["T", self._config_int("action_dim", default=self._nested_int("action", "action_dim", 7))],
+            },
+        }
+
+    def configure_session(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
+        return {"configured": True, "session_id": session_ctx.get("session_id")}
+
+    def start_session(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
+        return {"started": True, "session_id": session_ctx.get("session_id")}
+
     def reset(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
         self.step_idx = 0
         self._last_status = {"accepted": True, "safety_status": "ok", "executed_steps": 0}
@@ -34,7 +56,7 @@ class DummySimTarget(BaseLocalTarget):
             "state": np.zeros((state_dim,), dtype=np.float32),
         }
 
-    def step(self, action: np.ndarray) -> dict[str, Any]:
+    def _step(self, action: np.ndarray) -> dict[str, Any]:
         action_array = np.asarray(action, dtype=np.float32)
         action_dim = self._config_int("action_dim", default=self._nested_int("action", "action_dim", 7))
         if action_array.ndim != 1 or action_array.shape[0] < action_dim:
@@ -56,7 +78,7 @@ class DummySimTarget(BaseLocalTarget):
         total_reward = 0.0
         last_transition: dict[str, Any] | None = None
         for action in actions:
-            last_transition = self.step(action)
+            last_transition = self._step(action)
             total_reward += float(last_transition.get("reward", 0.0))
             if bool(last_transition.get("done", False)) or bool(last_transition.get("info", {}).get("success", False)):
                 break
@@ -79,6 +101,9 @@ class DummySimTarget(BaseLocalTarget):
 
     def execution_status(self) -> dict[str, Any]:
         return dict(self._last_status)
+
+    def cancel(self, reason: str) -> None:
+        self._last_status = {**self._last_status, "cancelled": True, "cancel_reason": reason}
 
     def close(self) -> None:
         self._built = False

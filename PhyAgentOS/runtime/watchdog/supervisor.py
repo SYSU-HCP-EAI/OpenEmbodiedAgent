@@ -7,12 +7,12 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from PhyAgentOS.runtime.adapters.factory import build_adapter_stack
 from PhyAgentOS.runtime.perception import PerceptionRuntime
 from PhyAgentOS.runtime.policy.factory import build_policy_client
 from PhyAgentOS.runtime.preflight import RuntimeCompatibilityPreflight
 from PhyAgentOS.runtime.schemas import SessionsDocument, SkillsDocument, TargetsDocument
 from PhyAgentOS.runtime.schemas.result import SessionResult
+from PhyAgentOS.runtime.sessions.session_runner import SessionRunner
 from PhyAgentOS.runtime.state_io.markdown_yaml import read_yaml_block
 from PhyAgentOS.runtime.state_io.workspace_paths import RuntimeWorkspacePaths
 from PhyAgentOS.runtime.watchdog.errors import SchemaValidationError
@@ -105,34 +105,33 @@ class WatchdogSupervisor:
             target_endpoint = session.routing.target_endpoint or scheduled.target_spec.runtime.target_endpoint
             target = self.target_registry.build(scheduled.target_spec, target_endpoint=target_endpoint)
             policy_client = None
+            runner = None
             try:
-                if perception_plan is not None:
-                    target.build()
-                    observation = target.observe_for_environment(
-                        {"session_id": session_id, "environment_refresh": True}
-                    )
-                    self.perception_runtime.refresh_environment(
-                        perception_plan,
-                        target,
-                        observation=observation,
-                    )
-                target_adapter, policy_adapter, action_bridges = build_adapter_stack(preflight_result.adapter_plan)
-                policy_client = self._build_policy_client(session, scheduled.target_spec)
+                if scheduled.skill_spec.runtime_kind == "policy":
+                    policy_client = self._build_policy_client(session, scheduled.target_spec)
                 runtime = self.skill_registry.build(scheduled.skill_spec.runtime)
-                result = runtime.run(
-                    session,
-                    target,
-                    target_adapter,
-                    policy_adapter,
-                    action_bridges,
-                    policy_client,
-                    preflight_result.adapter_plan,
+                runner = SessionRunner(
+                    session=session,
+                    target_spec=scheduled.target_spec,
+                    skill_spec=scheduled.skill_spec,
+                    adapter_plan=preflight_result.adapter_plan,
+                    target=target,
+                    skill_runtime=runtime,
+                    policy_client=policy_client,
+                    perception_runtime=self.perception_runtime,
+                    perception_plan=perception_plan,
+                    target_tool_manifest=preflight_result.target_tool_manifest,
                 )
+                result = runner.start()
             finally:
                 if policy_client is not None:
                     policy_client.close()
-                target.close()
+                if runner is not None:
+                    runner.close()
+                else:
+                    target.close()
 
+            self.registry.mark_finalizing(session_id)
             result = self.result_writer.write_episode(
                 session,
                 scheduled.target_spec,

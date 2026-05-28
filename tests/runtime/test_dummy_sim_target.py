@@ -13,11 +13,29 @@ class IncompleteTarget(BaseRolloutTarget):
     def build(self) -> None:
         pass
 
+    def describe(self) -> dict[str, Any]:
+        return {}
+
+    def configure_session(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
+        return {}
+
+    def start_session(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
+        return {}
+
     def reset(self, session_ctx: dict[str, Any]) -> dict[str, Any]:
         return {}
 
     def observe(self) -> dict[str, Any]:
         return {}
+
+    def action_chunk(self, executable_action_chunk: dict[str, Any]) -> dict[str, Any]:
+        return {}
+
+    def execution_status(self) -> dict[str, Any]:
+        return {}
+
+    def cancel(self, reason: str) -> None:
+        pass
 
 
 def test_base_rollout_target_requires_full_contract() -> None:
@@ -35,9 +53,9 @@ def test_dummy_sim_reset_observe_and_success() -> None:
     assert obs["image"].shape == (16, 16, 3)
     assert obs["state"].shape == (5,)
 
-    first = target.step(np.zeros((7,), dtype=np.float32))
-    second = target.step(np.zeros((7,), dtype=np.float32))
+    first = target.action_chunk({"actions": np.zeros((1, 7), dtype=np.float32)})
+    second = target.action_chunk({"actions": np.zeros((1, 7), dtype=np.float32)})
 
     assert first["done"] is False
     assert second["done"] is True
-    assert second["info"]["success"] is True
+    assert second["success"] is True

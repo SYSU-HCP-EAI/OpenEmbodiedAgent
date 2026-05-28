@@ -18,7 +18,7 @@ def _write_sessions(path):
                     "skill_ref": "skill://openpi_sim_vla",
                     "task_description": "move",
                     "status": "pending",
-                    "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
+                    "routing": {"policy_endpoint": "dummy://local"},
                 }
             ],
         },

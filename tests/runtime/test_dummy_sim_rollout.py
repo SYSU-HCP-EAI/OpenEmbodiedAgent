@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from PhyAgentOS.runtime.adapters.openpi.dummy_openpi_adapter import DummyOpenPIAdapter
-from PhyAgentOS.runtime.adapters.target_dummy import DummySimTargetAdapter
-from PhyAgentOS.runtime.adapters.bridges import SafetyClampBridge
 from PhyAgentOS.runtime.policy.dummy_client import DummyPolicyClient
-from PhyAgentOS.runtime.schemas import AdapterPlan, SessionSpec
-from PhyAgentOS.runtime.skills.vla.openpi_sim_runtime import OpenPISimSkillRuntime
+from PhyAgentOS.runtime.schemas import AdapterPlan, SessionSpec, SkillSpec, TargetSpec
+from PhyAgentOS.runtime.sessions.session_runner import SessionRunner
+from PhyAgentOS.runtime.skills.policy import OpenPISkillRuntime
 from PhyAgentOS.runtime.targets.local.dummy_sim_target import DummySimTarget
 
 
@@ -16,24 +14,52 @@ def test_dummy_sim_rollout_succeeds() -> None:
             "target_ref": "target://dummy_sim",
             "skill_ref": "skill://openpi_sim_vla",
             "task_description": "move",
-            "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
+            "routing": {"policy_endpoint": "dummy://local"},
             "execution": {"max_steps": 10, "replan_every_steps": 4, "action_chunk_mode": "chunk_buffer"},
         }
     )
+    target_spec = TargetSpec.model_validate(
+        {
+            "id": "dummy_sim",
+            "target_class": "local",
+            "target_kind": "simulation",
+            "workspace": "workspaces/dummy_sim",
+            "supported_skills": ["openpi_sim_vla"],
+            "runtime": {
+                "target_runtime": "DummySimTargetRuntime",
+                "target_endpoint": None,
+                "target_adapter": "target_adapter://dummy_sim_adapter",
+                "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
+            },
+            "config": {"image_size": 16, "state_dim": 8, "action_dim": 7, "success_after_steps": 3},
+        }
+    )
+    skill_spec = SkillSpec.model_validate(
+        {
+            "id": "openpi_sim_vla",
+            "runtime": "OpenPISkillRuntime",
+            "runtime_kind": "policy",
+            "loop_mode": "policy_closed_loop",
+            "supported_target_kinds": ["simulation"],
+            "policy": {"policy_client": "dummy", "policy_adapter": "policy_adapter://dummy_openpi_adapter"},
+        }
+    )
     target = DummySimTarget({"image_size": 16, "state_dim": 8, "action_dim": 7, "success_after_steps": 3})
-    result = OpenPISimSkillRuntime().run(
-        session,
-        target,
-        DummySimTargetAdapter(),
-        DummyOpenPIAdapter(),
-        [SafetyClampBridge()],
-        DummyPolicyClient(action_dim=7, chunk_size=4),
-        AdapterPlan(
+    result = SessionRunner(
+        session=session,
+        target_spec=target_spec,
+        skill_spec=skill_spec,
+        adapter_plan=AdapterPlan(
             target_adapter="target_adapter://dummy_sim_adapter",
             policy_adapter="policy_adapter://dummy_openpi_adapter",
             action_bridges=["bridge://safety_clamp"],
         ),
-    )
+        target=target,
+        skill_runtime=OpenPISkillRuntime(),
+        policy_client=DummyPolicyClient(action_dim=7, chunk_size=4),
+        perception_runtime=None,
+        perception_plan=None,
+    ).start()
 
     assert result.success is True
     assert result.status == "succeeded"

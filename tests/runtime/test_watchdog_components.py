@@ -5,7 +5,7 @@ import time
 import pytest
 
 from PhyAgentOS.runtime.schemas import SessionsDocument, SkillsDocument, TargetsDocument
-from PhyAgentOS.runtime.skills.vla.openpi_sim_runtime import OpenPISimSkillRuntime
+from PhyAgentOS.runtime.skills.policy import OpenPISkillRuntime
 from PhyAgentOS.runtime.state_io.markdown_yaml import write_yaml_block
 from PhyAgentOS.runtime.state_io.workspace_paths import RuntimeWorkspacePaths
 from PhyAgentOS.runtime.targets.local.dummy_sim_target import DummySimTarget
@@ -23,21 +23,21 @@ from PhyAgentOS.runtime.watchdog.scheduler import SessionScheduleError, SessionS
 from PhyAgentOS.runtime.watchdog.watcher import WorkspaceWatcher
 
 
-def _targets_doc(*, supported_skills=None, enabled=True, target_type="sim"):
+def _targets_doc(*, supported_skills=None, enabled=True, target_kind="simulation"):
     return TargetsDocument.model_validate(
         {
             "version": "runtime_target_registry_v1",
             "targets": [
                 {
                     "id": "dummy_sim",
-                    "type": target_type,
-                    "backend": "dummy",
+                    "target_class": "local",
+                    "target_kind": target_kind,
                     "enabled": enabled,
                     "workspace": "workspaces/dummy_sim",
                     "supported_skills": supported_skills or ["openpi_sim_vla"],
                     "runtime": {
                         "target_runtime": "DummySimTargetRuntime",
-                        "target_endpoint": "targetws://local/dummy_sim",
+                        "target_endpoint": None,
                         "target_adapter": "target_adapter://dummy_sim_adapter",
                         "runtime_contract_ref": "configs/runtime/contracts/dummy_sim.runtime.yaml",
                     },
@@ -48,17 +48,21 @@ def _targets_doc(*, supported_skills=None, enabled=True, target_type="sim"):
     )
 
 
-def _skills_doc(*, supported_target_types=None):
+def _skills_doc(*, supported_target_kinds=None):
     return SkillsDocument.model_validate(
         {
             "version": "runtime_skill_registry_v1",
             "skills": [
                 {
                     "id": "openpi_sim_vla",
-                    "category": "vla",
-                    "runtime": "OpenPISimSkillRuntime",
-                    "supported_target_types": supported_target_types or ["sim"],
-                    "policy_adapter": "policy_adapter://dummy_openpi_adapter",
+                    "runtime": "OpenPISkillRuntime",
+                    "runtime_kind": "policy",
+                    "loop_mode": "policy_closed_loop",
+                    "supported_target_kinds": supported_target_kinds or ["simulation"],
+                    "policy": {
+                        "policy_client": "dummy",
+                        "policy_adapter": "policy_adapter://dummy_openpi_adapter",
+                    },
                 }
             ],
         }
@@ -77,7 +81,7 @@ def _session(session_id, *, priority="normal", status="pending", max_retries=0, 
         "task_description": "move",
         "status": status,
         "priority": priority,
-        "routing": {"target_endpoint": "targetws://local/dummy_sim", "policy_endpoint": "dummy://local"},
+        "routing": {"policy_endpoint": "dummy://local"},
         "retry": {"max_retries": max_retries, "attempted": attempted},
     }
 
@@ -121,23 +125,23 @@ def test_session_scheduler_rejects_incompatible_target_skill() -> None:
     with pytest.raises(SessionScheduleError, match="does not support skill"):
         SessionScheduler().select_next(sessions, _targets_doc(supported_skills=["other_skill"]), _skills_doc())
 
-    with pytest.raises(SessionScheduleError, match="does not support target type"):
-        SessionScheduler().select_next(sessions, _targets_doc(), _skills_doc(supported_target_types=["real_robot"]))
+    with pytest.raises(SessionScheduleError, match="does not support target kind"):
+        SessionScheduler().select_next(sessions, _targets_doc(), _skills_doc(supported_target_kinds=["real_robot"]))
 
 
 def test_runtime_registries_build_dummy_runtime() -> None:
     target = TargetRuntimeRegistry().build(_targets_doc().targets[0])
-    skill = SkillRuntimeRegistry().build("OpenPISimSkillRuntime")
+    skill = SkillRuntimeRegistry().build("OpenPISkillRuntime")
 
     assert isinstance(target, DummySimTarget)
-    assert isinstance(skill, OpenPISimSkillRuntime)
+    assert isinstance(skill, OpenPISkillRuntime)
 
 
 def test_runtime_registries_accept_runtime_extensions() -> None:
     class TestTarget:
         pass
 
-    class TestSkill(OpenPISimSkillRuntime):
+    class TestSkill(OpenPISkillRuntime):
         pass
 
     register_target_runtime("TestLocalTargetRuntime", lambda target_spec: TestTarget())

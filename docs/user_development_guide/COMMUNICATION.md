@@ -199,8 +199,8 @@ Watchdog：
 
 The runtime protocol keeps the upper/lower boundary file-based while moving execution to sessions:
 
-- `TARGETS.md` answers which targets exist, whether they are enabled, which skills they support, and which target runtime endpoint, target adapter, sensor config, perception config, and runtime contract they use.
-- `SKILLS.md` declares skill runtime, policy adapter, required sensors/environment outputs, input contract, output action contract, and allowed deterministic bridges.
+- `TARGETS.md` answers which targets exist, whether they are enabled, which skills they support, and which target class/kind, runtime endpoint, target adapter, sensor config, perception config, and runtime contract they use.
+- `SKILLS.md` declares `runtime_kind`, loop mode, agent exposure, supported target kinds, policy requirements, observation contract, required sensors/environment outputs, output action contract, target-tool policy, and allowed deterministic bridges.
 - `SESSIONS.md` declares a task, target, skill, timeout, priority, and routing hints. It does not bind pair adapters.
 - `configs/runtime/contracts/<target_id>.runtime.yaml` declares target action contract and safety limits.
 - Adapter and bridge references use explicit URI namespaces such as `target_adapter://`, `policy_adapter://`, and `bridge://`.
@@ -212,12 +212,12 @@ pending -> claimed -> preflight_checking -> running -> succeeded / failed / time
 preflight_checking -> rejected
 ```
 
-`RuntimeCompatibilityPreflight` resolves an `AdapterPlan` before execution. It validates protocol files, target/skill compatibility, adapter/bridge availability, sensor config declarations, perception config declarations, and runtime contracts. Actual target observation channels are checked when runtime reads an observation for environment refresh or skill execution. A policy-backed session flows through target observation, target adapter, policy adapter, policy inference, action bridges, target adapter, and target action chunk. Target runtimes and policy servers do not call each other directly; the PhyAgentOS runtime supervises both channels.
+`RuntimeCompatibilityPreflight` resolves an `AdapterPlan` before execution. It validates protocol files, target/skill compatibility, adapter/bridge availability, sensor config declarations, perception config declarations, and runtime contracts. Actual target observation channels are checked when runtime reads an observation for environment refresh or skill execution. After preflight, `WatchdogSupervisor` creates a `SessionRunner`; the runner owns target lifecycle and exposes the target to policy or builtin skills only through `TargetSessionHandle`. Target runtimes and policy servers do not call each other directly.
 
 Runtime 协议继续保持文件边界，但执行单位变成 session：
 
-- `TARGETS.md` 描述有哪些 target、是否启用、支持哪些 skill，以及 target runtime endpoint、target adapter、sensor config、perception config、runtime contract。
-- `SKILLS.md` 声明 skill runtime、policy adapter、所需 sensors/environment outputs、输入契约、输出动作契约和允许的确定性 bridge。
+- `TARGETS.md` 描述有哪些 target、是否启用、支持哪些 skill，以及 target class/kind、runtime endpoint、target adapter、sensor config、perception config、runtime contract。
+- `SKILLS.md` 声明 `runtime_kind`、loop mode、agent exposure、支持的 target kinds、policy 需求、observation contract、所需 sensors/environment outputs、输出动作契约、target-tool policy 和允许的确定性 bridge。
 - `SESSIONS.md` 声明任务、target、skill、timeout、priority 和 routing hints，不绑定 pair adapter。
 - `configs/runtime/contracts/<target_id>.runtime.yaml` 声明 target action contract 与安全限制。
 - Adapter 与 bridge 引用使用 `target_adapter://`、`policy_adapter://`、`bridge://` 等显式 URI 命名空间。
@@ -229,7 +229,7 @@ pending -> claimed -> preflight_checking -> running -> succeeded / failed / time
 preflight_checking -> rejected
 ```
 
-`RuntimeCompatibilityPreflight` 会在执行前解析 `AdapterPlan`，并校验协议文件、target/skill 兼容性、adapter/bridge 可用性、sensor config 声明、perception config 声明和 runtime contract。真实 target observation 的 channel 会在 runtime 为环境刷新或技能执行读取 observation 时校验。Policy-backed session 的路径是 target observation、target adapter、policy adapter、policy inference、action bridges、target adapter、target action chunk。Target runtime 与 policy server 不直接互相调用，二者由 PhyAgentOS runtime 统一监督。
+`RuntimeCompatibilityPreflight` 会在执行前解析 `AdapterPlan`，并校验协议文件、target/skill 兼容性、adapter/bridge 可用性、sensor config 声明、perception config 声明和 runtime contract。真实 target observation 的 channel 会在 runtime 为环境刷新或技能执行读取 observation 时校验。Preflight 通过后，`WatchdogSupervisor` 创建 `SessionRunner`；runner 负责 target lifecycle，并且只通过 `TargetSessionHandle` 把 target 暴露给 policy 或 builtin skill。Target runtime 与 policy server 不直接互相调用。
 
 ## 7. Typical Runtime Pipeline / 典型运行流程
 
@@ -239,7 +239,7 @@ preflight_checking -> rejected
 4. User starts `paos agent`.
 5. Agent plans from shared state and writes or updates a session.
 6. Watchdog claims a pending session and runs compatibility preflight.
-7. If accepted, watchdog enters `running`, refreshes required environment outputs from a read-only target observation when needed, then starts the skill runtime.
+7. If accepted, watchdog creates a `SessionRunner`; the runner enters `running`, configures and starts the target session, then runs the selected skill runtime through `TargetSessionHandle`.
 8. Runtime writes session results, environment deltas, lessons, and artifacts.
 
 1. `paos onboard` 准备工作区。
@@ -248,7 +248,7 @@ preflight_checking -> rejected
 4. 用户启动 `paos agent`。
 5. Agent 基于 shared state 规划并写入或更新 session。
 6. Watchdog claim pending session 并执行 compatibility preflight。
-7. 如通过，watchdog 进入 `running`；如 session 需要环境输出，会先基于只读 target observation 刷新环境，再启动 skill runtime。
+7. 如通过，watchdog 创建 `SessionRunner`；runner 进入 `running`，配置并启动 target session，然后通过 `TargetSessionHandle` 运行选定的 skill runtime。
 8. Runtime 写回 session result、environment delta、lessons 与 artifacts。
 
 ## 8. Design Intent / 设计意图

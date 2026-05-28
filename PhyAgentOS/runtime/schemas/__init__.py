@@ -8,7 +8,7 @@ from PhyAgentOS.runtime.schemas.perception import (
     EnvironmentObjectSource,
     PerceptionConfigDocument,
 )
-from PhyAgentOS.runtime.schemas.preflight import MissingItem, RuntimeCompatibilityPreflightResult
+from PhyAgentOS.runtime.schemas.preflight import MissingItem, RuntimeCompatibilityPreflightResult, TargetToolManifest
 from PhyAgentOS.runtime.schemas.result import SessionResult
 from PhyAgentOS.runtime.schemas.runtime_contract import (
     ActionChunkSpec,
@@ -28,8 +28,21 @@ from PhyAgentOS.runtime.schemas.session import (
     SessionSpec,
     SessionStatus,
 )
-from PhyAgentOS.runtime.schemas.skill import SkillRequirements, SkillSpec, SkillsDocument
-from PhyAgentOS.runtime.schemas.target import TargetPerceptionRefs, TargetRuntimeSpec, TargetSpec, TargetsDocument
+from PhyAgentOS.runtime.schemas.skill import (
+    SkillObservationContract,
+    SkillPolicySpec,
+    SkillRequirements,
+    SkillSpec,
+    SkillsDocument,
+    TargetToolPolicy,
+)
+from PhyAgentOS.runtime.schemas.target import (
+    TargetObservationContract,
+    TargetPerceptionRefs,
+    TargetRuntimeSpec,
+    TargetSpec,
+    TargetsDocument,
+)
 
 __all__ = [
     "ActionChunkSpec",
@@ -59,9 +72,14 @@ __all__ = [
     "SkillSpec",
     "SkillsDocument",
     "TargetActionContract",
+    "TargetObservationContract",
     "TargetPerceptionRefs",
     "TargetRuntimeContractDocument",
     "TargetRuntimeSpec",
     "TargetSpec",
+    "TargetToolManifest",
+    "TargetToolPolicy",
     "TargetsDocument",
+    "SkillObservationContract",
+    "SkillPolicySpec",
 ]

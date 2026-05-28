@@ -16,6 +16,7 @@ class SessionStatus(StrEnum):
     CLAIMED = "claimed"
     PREFLIGHT_CHECKING = "preflight_checking"
     RUNNING = "running"
+    FINALIZING = "finalizing"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     TIMED_OUT = "timed_out"
@@ -37,10 +38,17 @@ ALLOWED_STATUS_TRANSITIONS: dict[SessionStatus, set[SessionStatus]] = {
     SessionStatus.CLAIMED: {SessionStatus.PREFLIGHT_CHECKING, SessionStatus.FAILED, SessionStatus.REJECTED},
     SessionStatus.PREFLIGHT_CHECKING: {SessionStatus.RUNNING, SessionStatus.FAILED, SessionStatus.REJECTED},
     SessionStatus.RUNNING: {
+        SessionStatus.FINALIZING,
         SessionStatus.SUCCEEDED,
         SessionStatus.FAILED,
         SessionStatus.TIMED_OUT,
         SessionStatus.CANCELLING,
+    },
+    SessionStatus.FINALIZING: {
+        SessionStatus.SUCCEEDED,
+        SessionStatus.FAILED,
+        SessionStatus.TIMED_OUT,
+        SessionStatus.CANCELLED,
     },
     SessionStatus.CANCELLING: {SessionStatus.CANCELLED, SessionStatus.FAILED},
 }

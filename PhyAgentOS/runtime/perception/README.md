@@ -51,7 +51,8 @@ Example:
 version: runtime_target_registry_v1
 targets:
   - id: franka_lab_a
-    type: real_robot
+    target_class: remote
+    target_kind: real_robot
     enabled: true
     workspace: workspaces/franka_lab_a
     supported_skills:
@@ -92,9 +93,14 @@ Example:
 version: runtime_skill_registry_v1
 skills:
   - id: rekep_grasp
-    category: builtin
-    runtime: ReKepRuntime
-    supported_target_types: [real_robot, sim]
+    runtime: ReKepBuiltinSkillRuntime
+    runtime_kind: builtin
+    loop_mode: builtin_algorithm_loop
+    agent_exposure: none
+    supported_target_kinds: [real_robot, simulation]
+    observation_contract:
+      observation_type: multimodal
+      empty_observation_allowed: false
     requires:
       sensors: [front_rgb, front_depth]
       environment_outputs: [objects_3d, scene_graph]
@@ -107,7 +113,9 @@ skills:
 Policy-backed skills also declare a policy adapter and output action contract:
 
 ```yaml
-policy_adapter: policy_adapter://openpi_adapter
+policy:
+  policy_client: openpi
+  policy_adapter: policy_adapter://openpi_adapter
 output_contract:
   action:
     tensor_key: actions
@@ -512,7 +520,7 @@ If a target observation is missing a required channel, has a mismatched dtype/sh
 
 - Session is marked `failed`.
 - The failure happens after the session has entered `running`.
-- Skill runtime is not started.
+- The skill runtime fails through `TargetSessionHandle` before committing a partial environment update.
 - No partial perception objects are written to `ENVIRONMENT.md`.
 
 Common rejection causes:

@@ -73,8 +73,10 @@ class SessionScheduler:
         skill_spec = self._find_skill(skills_doc, skill_id)
         if skill_id not in target_spec.supported_skills:
             raise SchemaValidationError(f"target {target_id} does not support skill {skill_id}")
-        if target_spec.type not in skill_spec.supported_target_types:
-            raise SchemaValidationError(f"skill {skill_id} does not support target type {target_spec.type}")
+        if target_spec.target_kind not in skill_spec.supported_target_kinds:
+            raise SchemaValidationError(
+                f"skill {skill_id} does not support target kind {target_spec.target_kind}"
+            )
         return ScheduledSession(
             session=session,
             target_spec=target_spec,

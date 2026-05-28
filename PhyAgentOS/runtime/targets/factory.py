@@ -30,13 +30,15 @@ def register_remote_target_runtime(runtime_name: str, factory: RemoteTargetFacto
 
 def build_target(target: TargetSpec, *, target_endpoint: str | None = None) -> BaseRolloutTarget:
     endpoint = target_endpoint or target.runtime.target_endpoint
-    if not endpoint:
-        raise TargetBuildError(f"target {target.id} does not define target_endpoint")
-    if _is_local_target_endpoint(endpoint):
+    if target.target_class == "local":
         return build_local_target(target)
-    if _is_targetws_endpoint(endpoint):
+    if target.target_class == "remote":
+        if not endpoint:
+            raise TargetBuildError(f"remote target {target.id} does not define target_endpoint")
+        if not _is_targetws_endpoint(endpoint):
+            raise TargetBuildError(f"unsupported remote target endpoint for {target.id}: {endpoint}")
         return build_remote_target(target, endpoint)
-    raise TargetBuildError(f"unsupported target endpoint for {target.id}: {endpoint}")
+    raise TargetBuildError(f"unsupported target_class for {target.id}: {target.target_class}")
 
 
 def build_local_target(target: TargetSpec) -> BaseRolloutTarget:
@@ -60,11 +62,6 @@ def build_dummy_sim_target(target: TargetSpec) -> DummySimTarget:
 
 def build_remote_target_proxy(target: TargetSpec, client: TargetWSClient) -> RemoteTargetProxy:
     return RemoteTargetProxy(client, config=target.config)
-
-
-def _is_local_target_endpoint(endpoint: str) -> bool:
-    parsed = urlparse(endpoint)
-    return parsed.scheme == "targetws" and parsed.netloc == "local"
 
 
 def _is_targetws_endpoint(endpoint: str) -> bool:
