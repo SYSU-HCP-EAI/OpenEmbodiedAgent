@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from PhyAgentOS.agent.tools.base import Tool
-from hal.simulation.scene_io import load_environment_doc
+from PhyAgentOS.utils.helpers import load_environment_doc
 
 
 class SceneGraphQueryTool(Tool):

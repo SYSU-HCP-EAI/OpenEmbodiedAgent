@@ -6,10 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 from PhyAgentOS.config.schema import Config, EmbodimentInstanceConfig
-from PhyAgentOS.utils.helpers import ensure_dir, sync_workspace_templates
-from hal.simulation.scene_io import load_environment_doc
+from PhyAgentOS.utils.helpers import ensure_dir, load_environment_doc, sync_workspace_templates
 
-_PROFILES_DIR = Path(__file__).resolve().parent.parent / "hal" / "profiles"
+_PROFILES_DIR = Path(__file__).resolve().parent.parent / "profiles"
 
 
 @dataclass(frozen=True)

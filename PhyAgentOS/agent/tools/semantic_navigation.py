@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 from PhyAgentOS.agent.tools.base import Tool
 from PhyAgentOS.agent.tools.embodied import EmbodiedActionTool
 from PhyAgentOS.embodiment_registry import EmbodimentRegistry
-from hal.simulation.scene_io import load_environment_doc
+from PhyAgentOS.utils.helpers import load_environment_doc
 
 if TYPE_CHECKING:
     from PhyAgentOS.embodiment_registry import EmbodimentRegistry

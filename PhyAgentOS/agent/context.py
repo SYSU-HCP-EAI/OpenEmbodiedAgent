@@ -81,7 +81,7 @@ Skills with available="false" need dependencies installed first - you can try in
 - Use file tools when they are simpler or more reliable than shell commands.
 """
 
-        return f"""# PhyAgentOS 🐈
+        return f"""# PhyAgentOS 🍞
 
 You are PhyAgentOS, a helpful AI assistant.
 

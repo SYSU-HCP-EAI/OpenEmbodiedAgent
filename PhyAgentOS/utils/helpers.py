@@ -7,6 +7,36 @@ from pathlib import Path
 from typing import Any
 
 import tiktoken
+import yaml
+
+_YAML_BLOCK_RE = re.compile(
+    r"(?P<fence>`{3,}|~{3,})\s*(?P<lang>json|yaml|yml)\s*\n(?P<body>.*?)(?:\n(?P=fence)\s*)",
+    re.DOTALL | re.IGNORECASE,
+)
+
+
+def load_environment_doc(path: Path) -> dict[str, Any]:
+    """Load ENVIRONMENT.md and extract the fenced YAML/JSON block as a dict.
+
+    Supports both the v2 format (fenced JSON/YAML block) and falls back
+    gracefully to an empty dict if the file is missing or unparseable.
+    """
+    if not path.exists():
+        return {}
+    text = path.read_text(encoding="utf-8")
+    match = _YAML_BLOCK_RE.search(text)
+    if match is None:
+        return {}
+    body = match.group("body")
+    try:
+        lang = match.group("lang").lower()
+        if lang == "json":
+            data = json.loads(body)
+        else:
+            data = yaml.safe_load(body) or {}
+    except Exception:
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 def detect_image_mime(data: bytes) -> str | None:
