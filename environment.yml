@@ -6,7 +6,6 @@ channels:
 dependencies:
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=5.1=1_gnu
-  - _x86_64-microarch-level=3=3_skylake
   - ampl-asl=1.0.0=h5888daf_2
   - assimp=6.0.3=hecf2907_0
   - bzip2=1.0.8=h5eee18b_6
@@ -219,7 +218,6 @@ dependencies:
       - params-proto==2.13.2
       - parso==0.8.5
       - pexpect==4.9.0
-      - phyagentos-ai==0.1.4.post4
       - pillow==12.0.0
       - platformdirs==4.9.6
       - progressbar==2.5

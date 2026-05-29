@@ -6,11 +6,11 @@ from collections.abc import Callable
 from typing import Any
 
 from PhyAgentOS.runtime.adapters.bridges import SafetyClampBridge
+from PhyAgentOS.runtime.adapters.minecraft.minecraft_adapter import MinecraftTargetAdapter
 from PhyAgentOS.runtime.adapters.openpi.dummy_openpi_adapter import DummyOpenPIAdapter
 from PhyAgentOS.runtime.adapters.target_dummy import DummySimTargetAdapter
 from PhyAgentOS.runtime.schemas.adapter_plan import AdapterPlan
 from PhyAgentOS.runtime.watchdog.errors import AdapterError
-
 
 AdapterFactory = Callable[[], Any]
 
@@ -72,5 +72,6 @@ def _require_uri(value: str, prefix: str) -> str:
 
 
 register_target_adapter("target_adapter://dummy_sim_adapter", DummySimTargetAdapter)
+register_target_adapter("target_adapter://minecraft_adapter", MinecraftTargetAdapter)
 register_policy_adapter("policy_adapter://dummy_openpi_adapter", DummyOpenPIAdapter)
 register_action_bridge("bridge://safety_clamp", SafetyClampBridge)

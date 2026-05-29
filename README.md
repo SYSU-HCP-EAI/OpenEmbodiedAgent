@@ -1,268 +1,244 @@
 <div align="center">
-  <img src="docs/imgs/logo_en.png" alt="Physical Agent Operating System" width="700">
-  <h1>Physical Agent Operation System</h1>
-  <p><b>A Decoupled Protocol-Based Framework for Self-Evolving and Cross-Embodiment Agents</b></p>
+  <img src="docs/imgs/logo_en.png" alt="PhyAgentOS" width="560">
+
+  <h3>Cognitive-Physical Decoupling — A Session-Centered Runtime for Embodied Intelligence</h3>
+
   <p>
-    <a href="./README.md">English</a> | <a href="./README_zh.md">中文</a>
-  </p>
-  <p>
-    <img src="https://img.shields.io/badge/version-0.0.5-blue" alt="Version">
-    <img src="https://img.shields.io/badge/python-≥3.11-blue" alt="Python">
-    <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
-    <a href="https://sysu-hcp-eai.github.io/PhyAgentOS-website/">
-        <img src="https://img.shields.io/badge/🔗_Website-online-orange" alt="Website">
+    <a href="https://github.com/PhyAgentOS/PhyAgentOS/stargazers">
+      <img src="https://img.shields.io/github/stars/PhyAgentOS/PhyAgentOS?style=social" alt="Stars">
+    </a>
+    <a href="https://github.com/PhyAgentOS/PhyAgentOS/network/members">
+      <img src="https://img.shields.io/github/forks/PhyAgentOS/PhyAgentOS?style=social" alt="Forks">
     </a>
   </p>
+  <p>
+    <img src="https://img.shields.io/badge/Python-≥3.11-3776AB?logo=python&logoColor=white" alt="Python">
+    <img src="https://img.shields.io/badge/License-MIT-3DA639" alt="License">
+    <a href="https://phy-agent-os.net/">
+      <img src="https://img.shields.io/badge/🌐_Website-online-FF6B35" alt="Website">
+    </a>
+    <a href="https://github.com/PhyAgentOS/PhyAgentOS">
+      <img src="https://img.shields.io/badge/PRs-Welcome-2EA44F" alt="PRs">
+    </a>
+  </p>
+  <p>
+    <sub><a href="./README.md">English</a> · <a href="./README_zh.md">中文</a></sub>
+  </p>
 </div>
-
-## Current Status
-
-New framework implementation supporting a session-centered runtime with DummySimTarget, DummyOpenPIAdapter, and DummyPolicyClient smoke paths. The `WatchdogSupervisor` claims sessions with a workspace lock, runs strict compatibility preflight, supervises a `SessionRunner` with heartbeat and execution timeout tracking, and writes results, lessons, and artifacts back to the workspace. The runner owns target lifecycle, while `PolicySkillRuntime` and `BuiltinSkillRuntime` execute through `TargetSessionHandle` without receiving raw target objects. Runtime targets, skill runtimes, adapters, and bridges are registered through lightweight Python registries; adapter and bridge identifiers use explicit URI namespaces such as `target_adapter://`, `policy_adapter://`, and `bridge://`.
-
-Next Steps:
-
-- **Expand** runtime registries to real benchmark and robot targets
-- **Add** concurrent multi-target scheduling and resource arbitration
-- **Expand** runtime communication clients to real WebSocket target and policy services
-- **Harden** perception plugins across RGB-D, point cloud, and real camera deployments
-
-## Long Demo    
-[![Watch the video](https://img.youtube.com/vi/LtUWamZRyhM/maxresdefault.jpg)](https://youtu.be/LtUWamZRyhM?si=UjKNdqFnO1knfWbX)
-
-## 📖 Introduction
-
-**Physical Agent Operation System (PhyAgentOS)** is a self-evolving embodied AI framework based on Agentic workflows. Moving away from the "black-box" model of traditional "large models directly controlling hardware," PhyAgentOS pioneers a **"Cognitive-Physical Decoupling"** architectural paradigm. By constructing a Language-Action Interface, it completely decouples action representation from embodiment morphology, enabling standardized mapping from high-reasoning cloud models to edge physical execution layers.
-
-PhyAgentOS utilizes a **"State-as-a-File"** protocol matrix, natively supporting zero-code migration across hardware platforms, sandbox-driven tool self-generation, and safety correction mechanisms based on Multi-Agent Critic verification.
-
-## ✨ Core Features
-
-*   📝 **State-as-a-File**: Software and hardware communicate by reading/writing local Markdown files (e.g., `ENVIRONMENT.md`, `ACTION.md`), ensuring complete decoupling and extreme transparency.
-*   🧠 **Dual-Track Multi-Agent System**:
-    *   **Track A (Cognitive Core)**: Includes Planner and Critic mechanisms. Large models do not issue commands directly; they must be verified by the Critic against the current robot's runtime `EMBODIED.md` (copied from profiles) before being committed.
-    *   **Track B (Physical Execution)**: An independent hardware watchdog (`hal_watchdog.py`) monitors and executes commands. Supports both single-instance mode and **Fleet mode** for multi-robot coordination.
-*   🔌 **Dynamic Plugin Mechanism**: Supports dynamic loading of external hardware drivers via `hal/drivers/`, allowing for new hardware support without modifying core code.
-*   🛡️ **Safety Correction Mechanism**: Strict action verification and `LESSONS.md` experience library prevent Agent workflows from going out of control.
-*   🎮 **Simulation Loop**: Built-in lightweight simulation support allows verification of the full chain from natural language instructions to physical state changes without real hardware.
-*   🧪 **Runtime Session Loop**: A session-centered runtime (`TARGETS.md` / `SKILLS.md` / `SESSIONS.md` → `WatchdogSupervisor` → preflight → `SessionRunner` → `TargetSessionHandle` → skill runtime → artifacts) is available for dependency-light smoke tests. The supervisor schedules sessions serially by priority, runs strict config and contract preflight before `running`, supervises runner heartbeat and `execute_timeout_s`, and writes results and reusable preflight failures back to `SESSIONS.md` and `LESSONS.md`.
-*   🗺️ **Semantic Navigation & Perception**: Built-in `SemanticNavigationTool` and `PerceptionService` support resolving high-level semantic goals into physical coordinates and constructing scene graphs by fusing geometric and semantic information.
-
-## 🦾 Showcase
-
-<div align="center">
-  <img src="docs/imgs/setup.gif" alt="rekep" width="900">
-  <br>
-  PhyAgentOS deploys robot arms with one click, no coding required (AgileX PIPER).
-</div>
-
-<div align="center">
-  <img src="docs/imgs/XLeRobot.gif" alt="rekep" width="900">
-  <br>
-  PhyAgentOS quickly connects to XLeRobot, automatically checks the robot's status, and after confirming safety, performs basic chassis movement and dual-arm motion.
-</div>
-
-<div align="center">
-  <img src="docs/imgs/SAM3.gif" alt="rekep" width="900">
-  <br>
-  PhyAgentOS achieves natural language-driven grasping tasks through SAM3 (AgileX PIPER).
-</div>
-
-<div align="center">
-  <img src="docs/imgs/ReKep.gif" alt="rekep" width="900">
-  <br>
-  PhyAgentOS achieves natural language-driven grasping tasks through ReKep (Dobot Nova 2).
-</div>
-
-<div align="center">
-  <img src="docs/imgs/Franka_QA_Pick&Up.gif" alt="rekep" width="900">
-  <br>
-  PhyAgentOS achieves realtime dialog and natural language-driven pick&up task through ReKep (Franka Research 3).
-</div>
-
-## 🏗️ Architecture
-
-PhyAgentOS's core is a local workspace where software and hardware operate as independent daemons reading/writing files:
-
-<div align="center">
-  <img src="docs/imgs/PhyAgentOS_en.png" alt="PhyAgentOS" width="900">
-</div>
-
-## 🚀 Quick Start
-
-### 1. Install Dependencies
-```bash
-git clone https://github.com/PhyAgentOS/PhyAgentOS.git
-cd PhyAgentOS
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
-```
-
-PhyAgentOS requires Python 3.11 or newer. For development and tests, install the dev extras:
-```bash
-pip install -e ".[dev]"
-```
-
-For the fuller robotics-oriented Conda environment used by the repository maintainers:
-```bash
-conda env create -f environment.yml
-conda activate paos
-pip install -e .
-```
-
-Runtime's dummy simulation path is intentionally lightweight and is covered by the base install. Heavy benchmark stacks such as OpenPI, LIBERO, RoboCasa, and RoboLab are optional and should be installed in separate environments when needed.
-
-Optional: install the external ReKep real-world plugin:
-```bash
-python scripts/deploy_rekep_real_plugin.py \
-  --repo-url https://github.com/baiyu858/PhyAgentOS-rekep-real-plugin.git
-```
-
-### 2. Initialize Workspace
-```bash
-paos onboard
-```
-This generates core Markdown protocol files in the current workspace. Single-instance mode defaults to `~/.PhyAgentOS/workspace/`; Fleet mode uses a shared workspace and multiple robot workspaces under `~/.PhyAgentOS/workspaces/`.
-
-### 3. Start the System
-Open two terminals:
-
-**Terminal 1: Start Hardware Watchdog & Simulation (Track B)**
-```bash
-python hal/hal_watchdog.py
-```
-To pass driver-specific runtime configuration without specializing the watchdog CLI, use:
-```bash
-python hal/hal_watchdog.py --driver <driver_name> --driver-config path/to/driver.json
-```
-The config file must be a JSON object and its keys are passed through to the selected driver constructor unchanged.
-
-To use real-world ReKep instead of simulation, install the plugin and run:
-```bash
-python hal/hal_watchdog.py --driver rekep_real
-```
-
-**Terminal 2: Start Brain Agent (Track A)**
-```bash
-paos agent
-```
-
-**Optional: Runtime dummy session smoke test**
-Runtime uses `TARGETS.md`, `SKILLS.md`, `SESSIONS.md`, and external YAML under `configs/runtime/` instead of the old `ACTION.md` queue. `TARGETS.md` declares the target class and kind, runtime endpoint for remote targets, target adapter, sensor config, and runtime contract. `SKILLS.md` declares `runtime_kind`, loop mode, observation contract, policy requirements, and target-tool policy. `SESSIONS.md` selects a target and skill; adapter plans and tool manifests are resolved by preflight. Sensor YAML and perception YAML are checked before execution, while actual target observation channels are validated when the runtime reads a target observation for environment refresh or skill execution.
-
-To create the default runtime protocol files:
-```bash
-python scripts/init_runtime_workspace.py --workspace /tmp/paos_runtime_smoke
-```
-
-Run one supervisor pass with:
-```bash
-python scripts/run_runtime_watchdog.py --workspace /tmp/paos_runtime_smoke --once
-```
-For a continuous serial polling loop, omit `--once`:
-```bash
-python scripts/run_runtime_watchdog.py --workspace /tmp/paos_runtime_smoke
-```
-On success, the selected pending session is marked `succeeded` and an episode summary is written under `artifacts/runtime/<session_id>/episode.json`. Preflight failures are marked `rejected` before runtime execution starts and are recorded in `LESSONS.md`. Observation or perception pipeline failures after the session enters `running` are marked `failed` without writing a partial environment update. When multiple sessions are pending, the serial scheduler chooses `high` priority before `normal` before `low`, preserving file order within the same priority.
-
-### 4. Interaction Example
-In the `paos agent` CLI, input:
-> "Look at what is on the table, then grasp that apple for me."
-
-You will see the action execution in the simulation logs in Terminal 1, and receive completion confirmation from the Agent in Terminal 2.
-
-To auto-onboard a new robot into `PhyAgentOS-rekep-real-plugin` with the built-in skill:
-
-1. Place the robot SDK under `../PhyAgentOS-rekep-real-plugin/runtime/third_party/<robot_slug>/` or `~/.PhyAgentOS/plugins/repos/rekep_real/runtime/third_party/<robot_slug>/`.
-2. Tell the agent: `Help me onboard a new robot <robot name> into ReKep`.
-3. The skill will inspect the SDK, draft the adapter/factory changes, and return deployment and startup instructions. Full reference: [docs/user_development_guide/PLUGIN_DEVELOPMENT_GUIDE.md](docs/user_development_guide/PLUGIN_DEVELOPMENT_GUIDE.md).
-
-### 5. More Information
-
-[User Manual](docs/user_manual/README.md): Operations guide for end users, integrators, and demo operators.
-
-[Development Guide](docs/user_development_guide/README.md): Layered guide for secondary developers, hardware integrators, plugin authors, and maintainers.
-
-## 📁 Project Structure
-
-```text
-Physical Agent Operating System/
-├── PhyAgentOS/                # Track A: Software Brain Core
-│   ├── agent/              # Agent Logic (Planner, Critic)
-│   ├── runtime/            # Session runner, schemas, skill runtimes, policy clients, targets
-│   ├── templates/          # Workspace Markdown Templates  
-│   └── ...
-├── hal/                    # Track B: Hardware HAL & Simulation
-│   ├── hal_watchdog.py     # Hardware Watchdog Daemon
-│   └── simulation/         # Simulation Environment Code
-├── scripts/                # External HAL Plugin Deployment
-│   └── deploy_rekep_real_plugin.py
-├── workspace/              # Single-instance Runtime Workspace
-│   ├── EMBODIED.md         # Runtime Robot Profile
-│   ├── ENVIRONMENT.md      # Current Scene-Graph
-│   ├── ACTION.md           # Pending Action Commands
-│   ├── SESSIONS.md         # Runtime session queue (optional)
-│   ├── TARGETS.md          # Runtime target registry (optional)
-│   ├── SKILLS.md           # Runtime skill registry (optional)
-│   ├── configs/runtime/    # Target sensor, perception, and runtime contract YAML
-│   ├── LESSONS.md          # Failure Experience Records
-│   └── SKILL.md            # Successful Workflow SOP
-├── workspaces/             # Fleet Topology
-│   ├── shared/             # Agent Workspace & Global ENVIRONMENT.md
-│   ├── go2_edu_001/        # Robot-local ACTION.md / EMBODIED.md
-│   └── ...
-├── docs/                   # Project Documentation
-│   ├── PLAN.md             # Detailed Implementation Plan
-│   └── PROJ.md             # Project Whitepaper & Architecture
-├── README.md               # English Documentation
-└── README_zh.md            # Chinese Documentation
-```
-
-## 🗺️ Roadmap
-
-- **Phase 1**: Desktop Loop & Markdown Protocol Establishment.
-    - [x] v0.0.1: Framework Design & Initialization
-    - [x] v0.0.2: Embodied Skill Plugin Deployment & Invocation Design
-    - [x] v0.0.3: Visual Decoupling + Grasping Pipeline (SAM3 & ReKep)
-    - [x] v0.0.4: Atomic Action-based VLN Pipeline (SAM3)
-    - [x] v0.0.5: Multi-Agent Protocol Design
-    - [ ] v0.0.6: Long-horizon Task Decomposition, Orchestration & Execution
-    - [ ] v0.0.7: IoT Device Integration (e.g., XiaoZhi)
-- **Phase 2**: Multi-Embodiment Coordination & Multi-modal Memory.
-- **Phase 3**: Constraint Solving & High-level Heterogeneous Coordination.
-
-## 🛠️ Supported Devices
-
-PhyAgentOS supports various embodiment types through the HAL (Hardware Abstraction Layer) protocol.
-
-| Embodiment Type | Robot | Status | Remarks |
-| :--- | :--- | :--- | :--- |
-| **Desktop Robot Arm** | AgileX PIPER | 🟢 Verified | Full-chain verified with ReKep & SAM3 |
-| **Composite Robot** | AgileX PIPER + Unitree Go2 | 🟡 Partial |  locomotion adaptation in progress |
-| **Desktop Robot Arm** | Dobot Nova 2 | 🟢 Verified | ReKep deployment verified |
-| **Quadruped Robot** | Unitree Go2 | 🟡 Partial | Currently supports mobility and semantic navigation |
-| **Dual-Arm Control** | XLeRobot | 🟢 Verified |  Deployment and dual-arm capture have now been achieved |
-| **IoT Device** | XiaoZhi (ESP32) | 🟡 Partial | Currently supports voice dialogue interaction |
-| **Industrial Robot** | Franka Research 3 | 🟢 Verified | Visual Reasoning and capture have been achieved |
-| **Edu Robot** | Hiwonder Series | 🔴 Unsupported | Awaiting driver plugin development |
-| **General Environment** | Built-in Simulator | 🟢 Verified | Lightweight simulation based on disk mapping |
-
-> **Note**: PhyAgentOS is designed with a plugin architecture. Any hardware that supports a Python control interface can be quickly integrated via `hal/drivers/`. A community plugin template is available at `docs/user_development_guide/PLUGIN_DEVELOPMENT_GUIDE.md`, with the Chinese version at `docs/user_development_guide/PLUGIN_DEVELOPMENT_GUIDE_zh.md`.
-
-## 🤝 Contribute
-
-PRs and Issues are welcome! Please refer to `docs/user_development_guide/README.md` for detailed architecture design and development guidelines.
 
 ---
 
-**Special Thanks**: This project is developed based on [nanobot](https://github.com/HKUDS/nanobot), thanks for providing the lightweight Agent framework. Everyone is welcome to go to the [nanobot](https://github.com/HKUDS/nanobot) repository and give it a star!
+## 📢 Changelog
 
-## Affiliations
+| Version | Date | Update |
+|:------|:-----|:-------|
+| ![v0.2.1](https://img.shields.io/badge/v0.2.1-FF574F) | 2026-05-29 | Based on ![v0.1.3](https://img.shields.io/badge/v0.1.3-47A882) — Minecraft ready: cloud agent connects to user's local server |
+| ![v0.1.3](https://img.shields.io/badge/v0.1.3-47A882) | 2026-05-25 | Strict separation of `PolicySkillRuntime` / `BuiltinSkillRuntime`; Game Agent & Benchmarking ready |
+| ![v0.1.2](https://img.shields.io/badge/v0.1.2-11648A) | 2026-05-20 | Perception plugin system: `SensorConfig` / `PerceptionConfig` YAML + `EnvironmentWriter` auditable writeback |
+| ![v0.1.1](https://img.shields.io/badge/v0.1.1-11648A) | 2026-05-18 | Session-Centered Runtime MVP: `DummySimTarget` + `DummyAdapter` + `DummyClient` serial pipeline |
+| ![v0.1.0](https://img.shields.io/badge/v0.1.0-11648A) | 2026-04-29 | Hackathon baseline: plugin-based HAL, ReKep / SAM3 real-robot grasping & VLN full pipeline |
 
-<p align="center">
-   <img src="docs/imgs/SYSU.png" alt="SYSU" width="150">
-   <img src="docs/imgs/Pengcheng.png" alt="HCP" width="150">
-   <img src="docs/imgs/HCP.jpg" alt="HCP" width="150">
-</p>
+---
 
-We welcome any individual or team to join as a contributor！
+## 🤔 Why PhyAgentOS?
+
+Traditional "LLM-direct-to-hardware" approaches tightly couple reasoning to execution — switching robots means rewriting the entire pipeline. PhyAgentOS changes this through **Cognitive-Physical Decoupling + Session-Centered Runtime**:
+
+<table>
+<tr><td width="32">🔌</td><td><b>One Codebase, Any Hardware</b> — Adding a new robot means implementing one Target Adapter (~100 lines); zero changes to the scheduling layer.</td></tr>
+<tr><td>🛡️</td><td><b>Three Safety Layers</b> — Critic validation → Strict Preflight → Target-side SafetyGuard; mandatory for real-robot deployment.</td></tr>
+<tr><td>📋</td><td><b>Fully Auditable</b> — State, actions, and perception results are written to Markdown + YAML files; every step is traceable and reproducible.</td></tr>
+<tr><td>🔄</td><td><b>Zero-Friction Migration</b> — The same Session protocol runs identically across sim, real, and game targets.</td></tr>
+</table>
+
+<br>
+
+<div align="center">
+  <img src="docs/imgs/framework.png" alt="Architecture" width="960">
+  <p><sub>▲ Session-Centered Runtime Architecture Overview</sub></p>
+</div>
+
+---
+
+## ✨ Core Features
+
+<table>
+<tr>
+  <td width="32">🔄</td>
+  <td width="165"><b>Session-Centered Runtime</b></td>
+  <td><code>WatchdogSupervisor</code> → <code>SessionRunner</code> → <code>SkillRuntime</code> → <code>TargetSessionHandle</code> execution pipeline, replacing the legacy Driver-Center architecture</td>
+</tr>
+<tr>
+  <td>🎯</td>
+  <td><b>Target-Configured</b></td>
+  <td>Four target kinds — <code>game</code> / <code>debug</code> / <code>simulation</code> / <code>real_robot</code> — registered in <code>TARGETS.md</code>, adapters attached on demand</td>
+</tr>
+<tr>
+  <td>🧩</td>
+  <td><b>Adapter + Bridge</b></td>
+  <td><code>TargetAdapter</code> + <code>PolicyAdapter</code> + <code>ActionBridge</code> three-way decoupling; <code>AdapterPlan</code> auto-composed, eliminating target×skill combinatorial explosion</td>
+</tr>
+<tr>
+  <td>⚡</td>
+  <td><b>Dual Skill Runtimes</b></td>
+  <td><code>PolicySkillRuntime</code> maintains policy closed-loop + <code>BuiltinSkillRuntime</code> manages agent interactive loop</td>
+</tr>
+<tr>
+  <td>🛡️</td>
+  <td><b>Strict Preflight</b></td>
+  <td>10 validation checks (target / sensor / perception / contract / tool); failures are <code>rejected</code> before execution starts</td>
+</tr>
+<tr>
+  <td>📝</td>
+  <td><b>File Protocol Matrix</b></td>
+  <td><code>TARGETS.md</code> · <code>SKILLS.md</code> · <code>SESSIONS.md</code> · <code>ENVIRONMENT.md</code> · <code>LESSONS.md</code> + external YAML configs</td>
+</tr>
+<tr>
+  <td>🔐</td>
+  <td><b>Multi-Layer Safety</b></td>
+  <td>Critic validation → Preflight contract checks → Target-side SafetyGuard → Operator Override</td>
+</tr>
+<tr>
+  <td>🌐</td>
+  <td><b>Fleet Mode</b></td>
+  <td>Multi-robot coordination with shared + per-robot workspaces, priority-based serial scheduling</td>
+</tr>
+</table>
+
+---
+
+## 🚀 5-Minute Quick Start
+
+<table>
+<tr>
+<td width="28" align="center">1</td>
+<td>
+
+**Install**
+
+```bash
+git clone https://github.com/PhyAgentOS/PhyAgentOS.git && cd PhyAgentOS
+pip install -e .            # Python ≥ 3.11
+pip install -e ".[dev]"     # Dev dependencies
+```
+</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td>
+
+**Initialize Workspace**
+
+```bash
+paos onboard
+```
+</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td>
+
+**Terminal 1: Start Runtime (Track B)**
+
+```bash
+python -m PhyAgentOS.runtime.watchdog
+```
+</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td>
+
+**Terminal 2: Start Agent (Track A)**
+
+```bash
+paos agent
+```
+</td>
+</tr>
+</table>
+
+Enter natural language commands in the Agent CLI to drive hardware. No hardware? Run the Smoke Test to verify the full pipeline:
+
+```bash
+python scripts/init_runtime_workspace.py --workspace /tmp/paos_runtime_smoke
+python scripts/run_runtime_watchdog.py --workspace /tmp/paos_runtime_smoke --once
+# → session marked succeeded, results written to artifacts/
+```
+
+---
+
+## 📦 Project Structure
+
+```
+PhyAgentOS/
+│
+├── PhyAgentOS/agent/          # Track A  ─  Planner / Critic / Memory
+│
+├── PhyAgentOS/runtime/        # Track B  ─  Execution Plane
+│   ├── watchdog/              #   WatchdogSupervisor
+│   ├── sessions/              #   SessionRunner / TargetSessionHandle
+│   ├── targets/               #   RolloutTarget (game·debug·sim·real)
+│   ├── skills/                #   PolicySkillRuntime / BuiltinSkillRuntime
+│   ├── adapters/              #   TargetAdapter / PolicyAdapter / Bridge
+│   ├── perception/            #   Perception Runtime / EnvironmentWriter
+│   ├── preflight/             #   RuntimeCompatibilityPreflight
+│   └── schemas/               #   Pydantic Schema
+│
+├── configs/runtime/           # Sensor / Perception / Contract YAML
+├── scripts/                   # Utility scripts
+├── workspace/                 # Runtime workspace
+├── docs/                      # Documentation
+└── tests/                     # Tests
+```
+
+---
+
+## 🏷️ Supported Targets
+
+| | Kind | Location | Examples |
+|:--|:-----|:-----|:-----|
+| 🎮 | `game` | Local | Minecraft, Stardew Valley — low-cost validation of long-term decisions & memory |
+| 🐛 | `debug` | Local | echo / mock / dry-run — zero-hardware protocol pipeline validation |
+| 🧪 | `simulation` | Remote | RoboCasa, LIBERO — benchmark evaluation & batch experience mining |
+| 🤖 | `real_robot` | Remote | Franka, Go2, XLeRobot, AgileX PIPER — real-world deployment |
+
+> All targets are registered in `TARGETS.md`, identified by `target_adapter://` URI.
+> More examples & demos → [Project Website](https://phy-agent-os.net/)
+
+---
+
+## 📖 Documentation
+
+| Document | Audience | Description |
+|:-----|:-----|:-----|
+| [🌐 Website](https://phy-agent-os.net/docs/en/architecture.html) | Everyone | Full docs, architecture details, demos |
+| [📘 User Manual](https://phy-agent-os.net/docs/en/api-reference.html) | Users | Installation, deployment, and operation guide |
+| [📙 Dev Guide](https://phy-agent-os.net/docs/en/developer-guide.html) | Developers | Secondary development, hardware integration, plugin authoring |
+
+---
+
+## 🤝 Contributing
+
+PRs and Issues are welcome! Check our development roadmap here → [Dev Plan](https://phy-agent-os.net/docs/en/developer-guide.html).
+
+---
+
+<div align="center">
+
+Built on **[nanobot](https://github.com/HKUDS/nanobot)**
+
+Jointly developed by **Sun Yat-sen University HCP Lab** & **Peng Cheng Laboratory**
+
+<br>
+
+<img src="docs/imgs/SYSU.png" alt="SYSU" height="128">
+&nbsp;&nbsp;&nbsp;
+<img src="docs/imgs/Pengcheng.png" alt="Pengcheng" height="128">
+&nbsp;&nbsp;&nbsp;
+<img src="docs/imgs/HCP.jpg" alt="HCP" height="128">
+
+<br>
+<sub>MIT License · Copyright © 2025-2026 PhyAgentOS</sub>
+
+</div>
