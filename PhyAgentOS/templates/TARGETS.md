@@ -10,6 +10,7 @@ targets:
     workspace: workspaces/dummy_sim
     supported_skills:
       - openpi_sim_vla
+      - pi05_libero_remote
     runtime:
       target_runtime: DummySimTargetRuntime
       target_endpoint: null
@@ -33,5 +34,5 @@ targets:
         id: dummy_delta_eef_gripper_v1
         action_dim: 7
         chunk_size: 4
-        max_chunk_size: 4
+        max_chunk_size: 50
 ```

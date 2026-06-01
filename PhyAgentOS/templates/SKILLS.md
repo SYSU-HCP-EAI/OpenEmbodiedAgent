@@ -53,4 +53,55 @@ skills:
       forbidden:
         - implicit_shape_truncation
         - implicit_representation_cast
+  - id: pi05_libero_remote
+    runtime: OpenPISkillRuntime
+    runtime_kind: policy
+    loop_mode: policy_closed_loop
+    agent_exposure: none
+    supported_target_kinds:
+      - simulation
+      - real_robot
+    policy:
+      policy_client: openpi
+      policy_adapter: policy_adapter://libero_pi05_adapter
+      supports_chunk: true
+    observation_contract:
+      observation_type: multimodal
+      empty_observation_allowed: false
+    supports_chunk: true
+    default_replan_every: 5
+    requires:
+      sensors:
+        - front_rgb
+        - wrist_rgb
+        - proprio
+      environment_outputs: []
+      strict_environment_contract: true
+    input_contract:
+      images:
+        - observation/image
+        - observation/wrist_image
+      state: observation/state
+      prompt: prompt
+    output_contract:
+      action:
+        action_space_id: libero_pi05_delta_eef_gripper_v1
+        tensor_key: actions
+        shape:
+          - T
+          - 7
+        dtype: float32
+        normalized: false
+        representation: delta_eef_pose_gripper
+        frame: base
+        chunk:
+          variable_T: true
+          default_T: 50
+          policy_hz: 20
+    adapter_requirements:
+      allowed_bridges:
+        - bridge://safety_clamp
+      forbidden:
+        - implicit_shape_truncation
+        - implicit_representation_cast
 ```

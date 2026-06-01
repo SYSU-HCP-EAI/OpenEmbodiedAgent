@@ -27,9 +27,9 @@ action_contract:
     - {name: dyaw, unit: rad}
     - {name: gripper, unit: normalized}
   chunk:
-    max_chunk_size: 4
-    preferred_chunk_size: 4
-    preferred_replan_after_steps: 4
+    max_chunk_size: 50
+    preferred_chunk_size: 50
+    preferred_replan_after_steps: 5
     switch_policy: hard_switch
 safety:
   require_target_side_validation: true

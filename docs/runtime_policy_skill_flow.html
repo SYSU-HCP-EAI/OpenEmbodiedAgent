@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PhyAgentOS PolicySkillRuntime 执行通路</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #667085;
+      --line: #c9d4e5;
+      --bg: #f7f9fc;
+      --panel: #ffffff;
+      --config: #fff4db;
+      --watchdog: #e8f3ff;
+      --runtime: #eaf8ec;
+      --policy: #f1eafd;
+      --target: #e9f7f6;
+      --result: #ffe8e4;
+      --accent: #2563eb;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      padding: 32px 5vw 18px;
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      letter-spacing: 0;
+    }
+
+    header p {
+      max-width: 1080px;
+      margin: 0;
+      color: #d5deef;
+    }
+
+    main {
+      width: min(1480px, 96vw);
+      margin: 24px auto 48px;
+    }
+
+    section {
+      margin: 22px 0;
+      padding: 22px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 21px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    p { margin: 6px 0 0; }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #eef2f7;
+      font-size: 0.92em;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .swatch {
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+
+    .config { background: var(--config); }
+    .watchdog { background: var(--watchdog); }
+    .runtime { background: var(--runtime); }
+    .policy { background: var(--policy); }
+    .target { background: var(--target); }
+    .result { background: var(--result); }
+
+    .overview {
+      display: grid;
+      grid-template-columns: minmax(210px, 0.9fr) 32px minmax(270px, 1fr) 32px minmax(270px, 1fr) 32px minmax(270px, 1fr) 32px minmax(230px, 0.9fr);
+      gap: 10px;
+      align-items: stretch;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .lane-title {
+      padding: 7px 10px;
+      color: #ffffff;
+      background: #111827;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .box {
+      min-height: 92px;
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .box p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .arrow-col {
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .loop {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(132px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .step {
+      position: relative;
+      min-height: 148px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    .step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 43%;
+      right: -18px;
+      z-index: 2;
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    .num {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      margin-bottom: 8px;
+      color: #ffffff;
+      background: var(--accent);
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .step p,
+    .note p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .path-table {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .note {
+      min-height: 132px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 900px) {
+      header h1 { font-size: 24px; }
+      section { padding: 16px; }
+      .path-table { grid-template-columns: 1fr; }
+      .overview { grid-template-columns: 1fr; }
+      .arrow-col { transform: rotate(90deg); min-height: 24px; }
+      .loop { grid-template-columns: 1fr; }
+      .step:not(:last-child)::after {
+        content: "↓";
+        right: 50%;
+        top: auto;
+        bottom: -21px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PolicySkillRuntime 执行通路</h1>
+    <p>从上层提交 session 指令，到 watchdog 选择任务、运行 preflight、构建 target 与 policy client，再进入观察-推理-动作闭环。</p>
+    <div class="legend" aria-label="图例">
+      <span><i class="swatch config"></i>配置与指令</span>
+      <span><i class="swatch watchdog"></i>watchdog 调度</span>
+      <span><i class="swatch runtime"></i>session/runtime 边界</span>
+      <span><i class="swatch policy"></i>policy 推理链路</span>
+      <span><i class="swatch target"></i>target 执行链路</span>
+      <span><i class="swatch result"></i>结果落盘</span>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>端到端总览</h2>
+      <div class="overview">
+        <div class="stack">
+          <div class="lane-title">上层输入</div>
+          <div class="box config">
+            <h3><code>SESSIONS.md</code></h3>
+            <p>用户任务进入 pending session：包含 <code>task_description</code>、<code>target_ref</code>、<code>skill_ref</code>、超时、执行步数和 <code>policy_endpoint</code>。</p>
+          </div>
+          <div class="box config">
+            <h3><code>SKILLS.md</code></h3>
+            <p>通过 <code>runtime_kind: policy</code> 与 <code>runtime: OpenPISkillRuntime</code> 选择 policy 路径，并声明 policy adapter 与动作契约。</p>
+          </div>
+          <div class="box config">
+            <h3><code>TARGETS.md</code></h3>
+            <p>指定 target runtime、target adapter、supported skills、sensor/observation/action 约束。</p>
+          </div>
+        </div>
+
+        <div class="arrow-col">→</div>
+
+        <div class="stack">
+          <div class="lane-title">调度与检查</div>
+          <div class="box watchdog">
+            <h3><code>WatchdogSupervisor.run_once()</code></h3>
+            <p>读取 runtime 文档，调用 scheduler 按优先级选择 pending session，并通过 registry 抢占 session。</p>
+          </div>
+          <div class="box watchdog">
+            <h3><code>SessionScheduler.resolve_session()</code></h3>
+            <p>解析 <code>target://</code> 和 <code>skill://</code>，检查 target 是否支持 skill，以及 skill 是否支持 target kind。</p>
+          </div>
+          <div class="box watchdog">
+            <h3><code>RuntimeCompatibilityPreflight.check()</code></h3>
+            <p>校验 policy endpoint、policy adapter、target adapter、action bridge、sensor、动作契约，并产出 <code>AdapterPlan</code>。</p>
+          </div>
+        </div>
+
+        <div class="arrow-col">→</div>
+
+        <div class="stack">
+          <div class="lane-title">运行时装配</div>
+          <div class="box runtime">
+            <h3>构建 target</h3>
+            <p><code>TargetRuntimeRegistry.build()</code> 根据 target class 选择本地 target 或 remote proxy。</p>
+          </div>
+          <div class="box policy">
+            <h3>构建 policy client</h3>
+            <p><code>build_policy_client()</code> 根据 <code>dummy://</code>、<code>openpi://</code> 或 <code>policyws://</code> 创建 websocket policy client。</p>
+          </div>
+          <div class="box runtime">
+            <h3>构建 skill runtime</h3>
+            <p><code>SkillRuntimeRegistry.build()</code> 按具体 <code>SkillRuntime</code> （如 <code>OpenPISkillRuntime</code>） 创建具体 policy skill runtime。</p>
+          </div>
+        </div>
+
+        <div class="arrow-col">→</div>
+
+        <div class="stack">
+          <div class="lane-title">SessionRunner</div>
+          <div class="box runtime">
+            <h3><code>SessionRunner.start()</code></h3>
+            <p>构建 adapter stack，依次执行 <code>target.build()</code>、<code>configure_session()</code>、<code>start_session()</code>、<code>reset()</code>。</p>
+          </div>
+          <div class="box runtime">
+            <h3><code>TargetSessionHandle</code></h3>
+            <p>把 target 原始访问收敛成受控接口：<code>observe()</code>、<code>action_chunk()</code>、<code>execution_status()</code>、environment refresh。</p>
+          </div>
+          <div class="box policy">
+            <h3>进入 policy 分支</h3>
+            <p>当 <code>runtime_kind == "policy"</code> 时，检查 runtime 类型并调用 <code>run_policy_loop()</code>。</p>
+          </div>
+        </div>
+
+        <div class="arrow-col">→</div>
+
+        <div class="stack">
+          <div class="lane-title">闭环与结果</div>
+          <div class="box policy">
+            <h3><code>OpenPISkillRuntime.run_policy_loop()</code></h3>
+            <p>在 <code>max_steps</code> 内执行观察、policy 输入转换、远端或本地推理、policy 输出转换。</p>
+          </div>
+          <div class="box target">
+            <h3>动作下发</h3>
+            <p><code>TargetSessionHandle.action_chunk()</code> 执行 action bridge 和 target adapter 转换后调用 <code>target.action_chunk()</code>。</p>
+          </div>
+          <div class="box result">
+            <h3>结果落盘</h3>
+            <p>成功、done、失败或超时后生成 <code>SkillRuntimeResult</code>，再由 watchdog 写 episode、session history，并更新 session 状态。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Policy 闭环内部步骤</h2>
+      <div class="loop">
+        <div class="step target">
+          <span class="num">1</span>
+          <h3><code>target_handle.observe()</code></h3>
+          <p>复用 reset 返回的初始 observation，之后调用 <code>target.observe()</code>，再通过 target adapter 生成 runtime observation。</p>
+        </div>
+        <div class="step target">
+          <span class="num">2</span>
+          <h3>可选环境刷新</h3>
+          <p>第 0 步如 skill 要求 environment outputs，则通过 <code>observe_for_environment()</code> 和 <code>PerceptionRuntime.refresh_environment()</code> 更新环境状态。</p>
+        </div>
+        <div class="step policy">
+          <span class="num">3</span>
+          <h3><code>PolicyAdapter.to_policy_input()</code></h3>
+          <p>把 PhyAgentOS runtime observation 映射为 <code>SkillRuntime</code> 所需输入，并注入 task、action_dim、source observation id 等。</p>
+        </div>
+        <div class="step policy">
+          <span class="num">4</span>
+          <h3><code>policy_client.infer()</code></h3>
+          <p>policy client 经 websocket 发送 msgpack observation，并要求响应包含 <code>actions</code>。</p>
+        </div>
+        <div class="step policy">
+          <span class="num">5</span>
+          <h3><code>PolicyAdapter.from_policy_output()</code></h3>
+          <p>把 policy 输出统一成 runtime action chunk；缺少动作缓冲会触发 protocol error。</p>
+        </div>
+        <div class="step target">
+          <span class="num">6</span>
+          <h3><code>target_handle.action_chunk()</code></h3>
+          <p>依次执行 safety/action bridge、target adapter 的 executable action 转换，然后调用 target 的 chunk 执行接口。</p>
+        </div>
+        <div class="step result">
+          <span class="num">7</span>
+          <h3>终止判断</h3>
+          <p>根据 <code>success</code>、<code>done</code> 或 <code>max_steps</code> 返回结果，并记录 reward、policy latency、final status。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>关键边界</h2>
+      <div class="path-table">
+        <div class="note">
+          <h3>Policy runtime 不直接拿 raw target</h3>
+          <p><code>SkillRuntime</code> 只接收 <code>TargetSessionHandle</code>，所有 observe、action chunk、environment refresh 都经过 handle 统一更新 heartbeat、step index 和 last status。</p>
+          <ul>
+            <li>观察路径：target raw observation → target adapter → runtime observation → policy adapter → policy input。</li>
+            <li>动作路径：policy output → policy adapter → action bridges → target adapter → target action chunk。</li>
+          </ul>
+        </div>
+        <div class="note">
+          <h3>Watchdog 负责外层生命周期</h3>
+          <p><code>RunnerThreadHandle</code> 在线程中运行 session，并由 watchdog 轮询快照与 <code>execute_timeout_s</code>。超时时请求 cancel/close，正常结束时写入 episode、history、result。</p>
+          <ul>
+            <li>policy client 的连接和关闭由 supervisor 管理。</li>
+            <li>runtime compatibility preflight 是进入真实执行前的最后一道契约检查。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

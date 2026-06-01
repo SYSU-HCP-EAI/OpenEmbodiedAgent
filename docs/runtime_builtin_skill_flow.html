@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PhyAgentOS BuiltinSkillRuntime 执行通路</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #667085;
+      --line: #c9d4e5;
+      --bg: #f7f9fc;
+      --panel: #ffffff;
+      --config: #fff4db;
+      --watchdog: #e8f3ff;
+      --runtime: #eaf8ec;
+      --builtin: #f1eafd;
+      --target: #e9f7f6;
+      --result: #ffe8e4;
+      --accent: #2563eb;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      padding: 32px 5vw 18px;
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      letter-spacing: 0;
+    }
+
+    header p {
+      max-width: 1080px;
+      margin: 0;
+      color: #d5deef;
+    }
+
+    main {
+      width: min(1480px, 96vw);
+      margin: 24px auto 48px;
+    }
+
+    section {
+      margin: 22px 0;
+      padding: 22px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 21px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    p { margin: 6px 0 0; }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #eef2f7;
+      font-size: 0.92em;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .swatch {
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+
+    .config { background: var(--config); }
+    .watchdog { background: var(--watchdog); }
+    .runtime { background: var(--runtime); }
+    .builtin { background: var(--builtin); }
+    .target { background: var(--target); }
+    .result { background: var(--result); }
+
+    .overview {
+      display: grid;
+      grid-template-columns: minmax(210px, 0.9fr) 32px minmax(270px, 1fr) 32px minmax(270px, 1fr) 32px minmax(270px, 1fr) 32px minmax(230px, 0.9fr);
+      gap: 10px;
+      align-items: stretch;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .lane-title {
+      padding: 7px 10px;
+      color: #ffffff;
+      background: #111827;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .box {
+      min-height: 92px;
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .box p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .arrow-col {
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(132px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .step {
+      position: relative;
+      min-height: 150px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    .step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 43%;
+      right: -18px;
+      z-index: 2;
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    .num {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      margin-bottom: 8px;
+      color: #ffffff;
+      background: var(--accent);
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .step p,
+    .note p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .path-table {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .note {
+      min-height: 142px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 980px) {
+      header h1 { font-size: 24px; }
+      section { padding: 16px; }
+      .path-table { grid-template-columns: 1fr; }
+      .overview { grid-template-columns: 1fr; }
+      .arrow-col { transform: rotate(90deg); min-height: 24px; }
+      .flow { grid-template-columns: 1fr; }
+      .step:not(:last-child)::after {
+        content: "↓";
+        right: 50%;
+        top: auto;
+        bottom: -21px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>BuiltinSkillRuntime 执行通路</h1>
+    <p>从上层提交 builtin session，到 watchdog 完成调度和 preflight，再由 SessionRunner 将受控 target handle 交给 builtin runtime 执行内置逻辑或 agent-interactive target tools。</p>
+    <div class="legend" aria-label="图例">
+      <span><i class="swatch config"></i>配置与指令</span>
+      <span><i class="swatch watchdog"></i>watchdog 调度</span>
+      <span><i class="swatch runtime"></i>session/runtime 边界</span>
+      <span><i class="swatch builtin"></i>builtin skill 逻辑</span>
+      <span><i class="swatch target"></i>target 执行链路</span>
+      <span><i class="swatch result"></i>结果落盘</span>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>端到端总览</h2>
+      <div class="overview">
+        <div class="stack">
+          <div class="lane-title">上层输入</div>
+          <div class="box config">
+            <h3><code>SESSIONS.md</code></h3>
+            <p>用户任务进入 pending session：包含 <code>task_description</code>、<code>target_ref</code>、<code>skill_ref</code>、执行步数、超时和 runtime hints。</p>
+          </div>
+          <div class="box config">
+            <h3><code>SKILLS.md</code></h3>
+            <p>通过 <code>runtime_kind: builtin</code> 选择 builtin 路径；可设置 <code>agent_exposure</code> 与 <code>target_tool_policy</code> 暴露受控 target tools。</p>
+          </div>
+          <div class="box config">
+            <h3><code>TARGETS.md</code></h3>
+            <p>声明 target runtime、target adapter、supported skills、observation 语义和可执行动作契约。</p>
+          </div>
+        </div>
+
+        <div class="arrow-col">→</div>
+
+        <div class="stack">
+          <div class="lane-title">调度与检查</div>
+          <div class="box watchdog">
+            <h3><code>WatchdogSupervisor.run_once()</code></h3>
+            <p>读取 runtime 文档，调用 scheduler 选择 pending session，并通过 registry 抢占 session。</p>
+          </div>
+          <div class="box watchdog">
+            <h3><code>SessionScheduler.resolve_session()</code></h3>
+            <p>解析 target 与 skill 引用，检查支持关系。builtin skill 可以使用 empty observation，但必须双方显式允许。</p>
+          </div>
+          <div class="box watchdog">
+            <h3><code>RuntimeCompatibilityPreflight.check()</code></h3>
+            <p>校验 target、runtime registry、adapter stack、action bridge、sensor；如果暴露 target tools，会产出 <code>TargetToolManifest</code>。</p>
+          </div>
+        </div>
+
+        <div class="arrow-col">→</div>
+
+        <div class="stack">
+          <div class="lane-title">运行时装配</div>
+          <div class="box runtime">
+            <h3>构建 target</h3>
+            <p><code>TargetRuntimeRegistry.build()</code> 根据 target class 构建本地 target 或 remote target proxy。</p>
+          </div>
+          <div class="box builtin">
+            <h3>构建 builtin runtime</h3>
+            <p><code>SkillRuntimeRegistry.build()</code> 按 skill 的 runtime 名称创建具体 <code>BuiltinSkillRuntime</code> 实现。</p>
+          </div>
+          <div class="box runtime">
+            <h3>无 policy client</h3>
+            <p>builtin 路径不会调用 <code>build_policy_client()</code>，动作选择由 builtin runtime 自己的逻辑、脚本或 agent loop 决定。</p>
+          </div>
+        </div>
+
+        <div class="arrow-col">→</div>
+
+        <div class="stack">
+          <div class="lane-title">SessionRunner</div>
+          <div class="box runtime">
+            <h3><code>SessionRunner.start()</code></h3>
+            <p>构建 adapter stack，执行 <code>target.build()</code>、<code>configure_session()</code>、<code>start_session()</code>、<code>reset()</code>。</p>
+          </div>
+          <div class="box runtime">
+            <h3><code>TargetSessionHandle</code></h3>
+            <p>将 target 原始对象包成受控接口，并携带 adapter plan、session state、perception runtime、target tool manifest。</p>
+          </div>
+          <div class="box builtin">
+            <h3>进入 builtin 分支</h3>
+            <p>当 <code>runtime_kind != "policy"</code> 时，检查 runtime 类型并调用 <code>run_builtin_loop()</code>。</p>
+          </div>
+        </div>
+
+        <div class="arrow-col">→</div>
+
+        <div class="stack">
+          <div class="lane-title">执行与结果</div>
+          <div class="box builtin">
+            <h3><code>BuiltinSkillRuntime.run_builtin_loop()</code></h3>
+            <p>具体 runtime 根据 task、runtime hints、环境状态或 agent 输出决定观察、动作、tool call 和终止条件。</p>
+          </div>
+          <div class="box target">
+            <h3>受控 target 操作</h3>
+            <p>通过 <code>observe()</code>、<code>action_chunk()</code>、<code>call_target_tool()</code>、<code>request_environment_refresh()</code> 操作底层 target。</p>
+          </div>
+          <div class="box result">
+            <h3>结果落盘</h3>
+            <p>builtin runtime 返回 <code>SkillRuntimeResult</code>，watchdog 写 episode、session history，并更新 session 状态。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Builtin 执行内部步骤</h2>
+      <div class="flow">
+        <div class="step runtime">
+          <span class="num">1</span>
+          <h3><code>skill_runtime.start()</code></h3>
+          <p>初始化一次 session 的 skill-local 状态；SessionRunner 同时维护 heartbeat、trace id 和 step index。</p>
+        </div>
+        <div class="step builtin">
+          <span class="num">2</span>
+          <h3><code>run_builtin_loop()</code></h3>
+          <p>builtin runtime 接收 <code>SkillContext</code>、<code>TargetSessionHandle</code> 和 <code>AdapterPlan</code>，不接收 policy client。</p>
+        </div>
+        <div class="step target">
+          <span class="num">3</span>
+          <h3>观察或空观察</h3>
+          <p><code>target_handle.observe()</code> 可返回 target adapter 处理后的 runtime observation；若双方显式允许 empty observation，则返回空观察。</p>
+        </div>
+        <div class="step builtin">
+          <span class="num">4</span>
+          <h3>内置决策</h3>
+          <p>runtime 可使用固定规则、动作计划、环境状态或 agent-interactive loop 生成 skill output/action chunk。</p>
+        </div>
+        <div class="step target">
+          <span class="num">5</span>
+          <h3>动作或工具调用</h3>
+          <p>动作路径经 action bridges 与 target adapter 后调用 <code>target.action_chunk()</code>；工具路径先受 <code>TargetToolManifest</code> 白名单约束。</p>
+        </div>
+        <div class="step runtime">
+          <span class="num">6</span>
+          <h3>状态更新</h3>
+          <p>handle 更新 <code>last_status</code>、<code>step_index</code> 和 heartbeat；runtime 可通过 <code>execution_status()</code> 获取底层执行状态。</p>
+        </div>
+        <div class="step result">
+          <span class="num">7</span>
+          <h3>返回结果</h3>
+          <p>达到 success、done、失败、取消或 max steps 后返回 <code>SkillRuntimeResult</code>，由 SessionRunner 转为 session result。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>关键边界</h2>
+      <div class="path-table">
+        <div class="note">
+          <h3>Target tools 暴露受 preflight 约束</h3>
+          <p>当 builtin skill 设置 <code>agent_exposure != "none"</code> 时，必须配置 <code>target_tool_policy</code>。preflight 会过滤 <code>reset</code>、<code>close</code>、<code>raw_sdk_command</code>、<code>disable_safety</code> 等危险工具。</p>
+        </div>
+        <div class="note">
+          <h3>Handle 是唯一 target 边界</h3>
+          <p>builtin runtime 通过 handle 访问 target；handle 负责 adapter 转换、action bridge、perception refresh、tool manifest 校验和 session heartbeat。</p>
+        </div>
+        <div class="note">
+          <h3>当前代码状态</h3>
+          <p>仓库中 <code>BuiltinSkillRuntime</code> 是抽象基类，具体 builtin runtime 需要继承它并注册到 <code>SkillRuntimeRegistry</code>。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
